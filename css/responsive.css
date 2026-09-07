@@ -502,8 +502,16 @@
         display: none; /* Moved to mobile-bottom-bar */
     }
 
-    .topbar-actions {
+    .topbar-right-actions {
         gap: 6px;
+    }
+
+    #userRoleText {
+        display: none;
+    }
+
+    .badge-pill {
+        padding: 6px;
     }
 
     .topbar-btn {
