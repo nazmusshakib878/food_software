@@ -1,0 +1,358 @@
+/* =========================================================
+   RECEIPT.CSS - 80mm Thermal Receipt Preview & Print Engine
+   ========================================================= */
+.receipt-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #1e293b; /* Dark PDF Reader background matching WhatsApp Web PDF viewer */
+    padding: 18px 10px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    box-sizing: border-box;
+}
+
+.thermal-paper {
+    width: 100%;
+    max-width: 300px;
+    background: #ffffff;
+    padding: 16px 14px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.16);
+    font-family: 'Courier Prime', 'Courier New', 'Cairo', Courier, monospace, sans-serif;
+    color: #000000;
+    line-height: 1.35;
+    font-size: 11.5px;
+    direction: ltr;
+    box-sizing: border-box;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+/* Header */
+.thermal-paper .receipt-header {
+    text-align: center;
+    margin-bottom: 8px;
+    border-bottom: 1px dashed #000000;
+    padding-bottom: 8px;
+}
+
+.thermal-paper .receipt-header h2 {
+    font-size: 19px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    margin: 0 0 3px 0;
+    color: #000;
+}
+
+.thermal-paper .receipt-header .header-ar {
+    font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+    font-size: 13.5px;
+    font-weight: 700;
+    margin: 2px 0;
+    direction: rtl;
+    color: #000;
+}
+
+.thermal-paper .receipt-header .vat-line {
+    font-size: 11.5px;
+    font-weight: 600;
+    margin: 2px 0;
+    letter-spacing: 0.3px;
+    color: #000;
+}
+
+.thermal-paper .receipt-header .invoice-badge-title {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    margin: 4px 0 0 0;
+    color: #000;
+}
+
+/* Info Grid */
+.receipt-info-grid {
+    margin: 6px 0;
+    font-size: 11.5px;
+    border-bottom: 1px dashed #000000;
+    padding-bottom: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.receipt-info-grid .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.receipt-info-grid .info-label {
+    flex-shrink: 0;
+    color: #000;
+    font-weight: 600;
+}
+
+.receipt-info-grid .info-val {
+    text-align: right;
+    word-break: break-word;
+    font-size: 11.5px;
+    color: #000;
+    font-weight: 700;
+}
+
+/* Receipt Items Table */
+.receipt-table {
+    width: 100%;
+    margin: 6px 0;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.receipt-table th {
+    border-bottom: none;
+    padding: 3px 2px;
+    font-size: 11.5px;
+    font-weight: 900;
+    color: #000;
+}
+
+.receipt-table th.col-item {
+    width: 60%;
+    text-align: left;
+}
+
+.receipt-table th.col-qty {
+    width: 15%;
+    text-align: center;
+}
+
+.receipt-table th.col-total {
+    width: 25%;
+    text-align: right;
+}
+
+.receipt-table td {
+    padding: 4px 2px;
+    font-size: 11px;
+    vertical-align: top;
+    line-height: 1.3;
+    color: #000;
+}
+
+.receipt-table td.td-item {
+    width: 60%;
+    text-align: left;
+    word-break: break-word;
+}
+
+.receipt-table td.col-qty {
+    width: 15%;
+    text-align: center;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.receipt-table td.col-total {
+    width: 25%;
+    text-align: right;
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+.rec-item-name-cell {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.rec-ar {
+    font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+    font-weight: 700;
+    direction: rtl;
+    unicode-bidi: embed;
+    font-size: 11.5px;
+}
+
+.rec-en {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+.rec-addon-line {
+    font-size: 9px;
+    color: #334155;
+    font-weight: 600;
+    margin-top: 1px;
+}
+
+.rec-note-line {
+    font-size: 9px;
+    color: #b45309;
+    font-weight: 700;
+    font-style: italic;
+    margin-top: 1px;
+}
+
+/* Totals Box */
+.receipt-totals-box {
+    border-top: 1px dashed #000000;
+    border-bottom: 1px dashed #000000;
+    padding: 5px 0;
+    margin-top: 6px;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.receipt-totals-box .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 11.5px;
+    color: #000;
+}
+
+.receipt-totals-box .row span:first-child {
+    font-weight: 600;
+}
+
+.receipt-totals-box .row span:last-child {
+    text-align: right;
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+/* Payment Box */
+.receipt-payment-box {
+    border-bottom: 1px dashed #000000;
+    padding-top: 5px;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.receipt-payment-box .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 11.5px;
+    color: #000;
+}
+
+.receipt-payment-box .grand-row {
+    font-weight: 900;
+    font-size: 14px;
+    margin-top: 2px;
+    margin-bottom: 3px;
+}
+
+.receipt-payment-box .grand-label {
+    font-weight: 900;
+}
+
+.receipt-payment-box .grand-val {
+    font-weight: 900;
+    font-size: 14px;
+}
+
+.receipt-payment-box .payment-row {
+    font-size: 11px;
+}
+
+.receipt-payment-box .payment-row span:last-child {
+    font-weight: 700;
+}
+
+/* QR Code */
+.receipt-qr-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 8px 0;
+    padding-top: 2px;
+}
+
+.receipt-qr-wrap #receiptQr {
+    margin-bottom: 4px;
+}
+
+.receipt-qr-wrap #receiptQr img,
+.receipt-qr-wrap #receiptQr canvas {
+    display: block;
+    margin: 0 auto;
+}
+
+.qr-verify-text {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin: 4px 0 0 0;
+    text-align: center;
+    color: #000;
+}
+
+/* Footer Messages */
+.receipt-footer-text {
+    text-align: center;
+    margin-top: 8px;
+    line-height: 1.35;
+}
+
+.receipt-footer-text .footer-en {
+    font-size: 11px;
+    font-weight: 600;
+    margin: 2px 0;
+    color: #000;
+}
+
+.receipt-footer-text .footer-ar {
+    font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    margin: 2px 0;
+    direction: rtl;
+    color: #000;
+}
+
+/* Native Print Stylesheet for POS Thermal Printers */
+@page {
+    size: 80mm auto;
+    margin: 0;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #receiptModal.open,
+    #receiptModal.open .thermal-paper, 
+    #receiptModal.open .thermal-paper * {
+        visibility: visible;
+    }
+    #receiptModal.open .thermal-paper {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: 76mm;
+        box-shadow: none;
+        padding: 4mm 2mm;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+    .modal-overlay, .modal-card {
+        position: static;
+        background: none;
+        box-shadow: none;
+        padding: 0;
+    }
+}

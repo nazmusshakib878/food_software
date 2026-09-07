@@ -1,0 +1,22 @@
+{
+  "name": "Nur Foodes - Restaurant Management & POS",
+  "short_name": "NurPOS",
+  "description": "Professional Restaurant Management, Point of Sale, and Order System",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eef2f6",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1046/1046784.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1046/1046784.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

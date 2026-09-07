@@ -1,0 +1,15 @@
+{
+  "name": "nur-foodes-pos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Professional Restaurant Management & POS App",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "npx serve ."
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}
