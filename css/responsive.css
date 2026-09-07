@@ -440,6 +440,10 @@
     .mobile-cart-floater {
         display: flex;
     }
+    
+    .catalog-floating-cart {
+        display: none !important;
+    }
 
     .mobile-bottom-bar {
         display: grid;
