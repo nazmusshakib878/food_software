@@ -68,12 +68,12 @@
 .kpi-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 18px 20px;
+    border-radius: 18px;
+    padding: 20px 22px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
     position: relative;
     overflow: hidden;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -86,44 +86,47 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--teal), #2dd4bf);
-    opacity: 0.8;
+    background: linear-gradient(90deg, var(--teal), #2dd4bf, #34d399);
+    opacity: 0.9;
 }
 
 .kpi-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+    border-color: rgba(13, 148, 136, 0.2);
 }
 
 .kpi-info h4 {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--muted);
-    font-weight: 700;
+    font-weight: 800;
     margin-bottom: 6px;
     text-transform: uppercase;
-    letter-spacing: 0.4px;
+    letter-spacing: 0.6px;
 }
 
 .kpi-info .kpi-val {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 900;
     color: var(--text);
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
 }
 
 .kpi-icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 22px;
-    transition: transform 0.2s ease;
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
 }
 
 .kpi-card:hover .kpi-icon {
-    transform: scale(1.08);
+    transform: scale(1.1) rotate(-4deg);
 }
 
 .kpi-icon.teal { background: var(--teal-soft); color: var(--teal); }
@@ -207,22 +210,31 @@ table.admin-table {
 }
 
 table.admin-table th {
-    background: var(--surface-3);
+    background: var(--surface-2);
     color: var(--muted);
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     text-align: start;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
 }
 
 table.admin-table td {
-    padding: 12px;
+    padding: 13px 14px;
     border-bottom: 1px solid #f1f5f9;
     vertical-align: middle;
+    font-size: 13px;
+}
+
+table.admin-table tr:nth-child(even) td {
+    background: #fafcfd;
 }
 
 table.admin-table tr:hover td {
-    background: #fafcfd;
+    background: #f0fdf9;
 }
 
 .action-btns-cell {
