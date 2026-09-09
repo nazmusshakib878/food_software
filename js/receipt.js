@@ -141,24 +141,33 @@ function renderReceipt(order) {
             console.warn("QR Code Generation Error:", e);
         }
     }
+
+    // Populate the Combined KOT Section
+    const kotSection = document.getElementById('receiptCombinedKotSection');
+    const kotContent = document.getElementById('receiptCombinedKotContent');
+    if (kotSection && kotContent) {
+        const kotHtml = getKitchenOrderTicketHtml(order);
+        if (kotHtml) {
+            kotContent.innerHTML = kotHtml;
+            kotSection.style.display = 'block';
+        } else {
+            kotSection.style.display = 'none';
+        }
+    }
 }
 
 function printReceiptDirect() {
     const node = document.getElementById('thermalReceiptNode');
     if (node && typeof routePrintJob === 'function') {
-        routePrintJob('cashier', node.innerHTML, 'Tax Invoice Receipt');
+        routePrintJob('cashier', node.innerHTML, 'Tax Invoice Receipt & KOT');
     } else {
         window.print();
     }
 }
 
-/* Print Clean Thermal Kitchen Order Ticket (KOT) */
-function printKitchenOrderTicket(targetOrder) {
-    const order = targetOrder || lastCompletedOrder || orders[0];
-    if (!order) {
-        showToast(currentLang === 'ar' ? "لا يوجد طلب نشط لطباعة بون المطبخ" : "No active order to print KOT", "danger");
-        return;
-    }
+function getKitchenOrderTicketHtml(targetOrder) {
+    const order = targetOrder || lastCompletedOrder || (typeof orders !== 'undefined' ? orders[0] : null);
+    if (!order) return '';
 
     const typeStr = (order.type === 'dine_in')
         ? (currentLang === 'ar' ? `محلي - طاولة ${order.table && order.table !== '-' ? order.table : '1'}` : `Dine-in - Table ${order.table && order.table !== '-' ? order.table : '1'}`)
@@ -174,7 +183,7 @@ function printKitchenOrderTicket(targetOrder) {
             : '';
 
         return `
-            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; border-bottom: 1px dashed #777; padding-bottom: 8px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; border-bottom: 1px dashed #777; padding-bottom: 8px; text-align: ${currentLang === 'ar' ? 'right' : 'left'};" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
                 <span style="font-size: 20px; font-weight: 900; border: 2px solid #000; padding: 2px 8px; border-radius: 4px; line-height: 1.1;">
                     ${item.qty}X
                 </span>
@@ -193,7 +202,7 @@ function printKitchenOrderTicket(targetOrder) {
     const timeLabel = currentLang === 'ar' ? 'الوقت:' : 'Time:';
     const cashierLabel = currentLang === 'ar' ? 'الكاشير:' : 'Cashier:';
 
-    const kotHtml = `
+    return `
         <div class="kot-header" style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 10px;">
             <div style="font-size: 14px; font-weight: 900;">${kotHeaderTitle}</div>
             <div style="font-size: 28px; font-weight: 900; margin: 4px 0;">${order.id}</div>
@@ -208,6 +217,17 @@ function printKitchenOrderTicket(targetOrder) {
             ${kotFooterNotice}
         </div>
     `;
+}
+
+/* Print Clean Thermal Kitchen Order Ticket (KOT) */
+function printKitchenOrderTicket(targetOrder) {
+    const order = targetOrder || lastCompletedOrder || (typeof orders !== 'undefined' ? orders[0] : null);
+    if (!order) {
+        showToast(currentLang === 'ar' ? "لا يوجد طلب نشط لطباعة بون المطبخ" : "No active order to print KOT", "danger");
+        return;
+    }
+
+    const kotHtml = getKitchenOrderTicketHtml(order);
 
     if (typeof routePrintJob === 'function') {
         routePrintJob('kitchen', kotHtml, `KOT - ${order.id}`);
