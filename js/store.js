@@ -60,6 +60,12 @@ var items;
                         raw[0].id === 'item_tikka_sauce';
         if (isValid) {
             items = raw;
+            // Inject default stock for demo if not present
+            let hasStock = items.some(i => i.stock !== undefined && i.stock !== null);
+            if (!hasStock) {
+                items.forEach(i => i.stock = 50);
+                localStorage.setItem('nurpos_items', JSON.stringify(items));
+            }
         } else {
             items = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
             localStorage.setItem('nurpos_menu_ver_v4', MENU_SCHEMA_VERSION);

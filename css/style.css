@@ -1108,3 +1108,29 @@ html[data-theme="dark"] .kds-item-chef-note {
     font-weight: 800;
     font-size: 12px;
 }
+
+/* Out of Stock and Stock Badge Styling */
+.product-card.out-of-stock {
+    opacity: 0.6;
+}
+.product-card.out-of-stock .product-card-media img {
+    filter: grayscale(1);
+}
+.product-card {
+    position: relative;
+}
+.out-of-stock-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(225, 29, 72, 0.9);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 20;
+    white-space: nowrap;
+    box-shadow: 0 4px 10px rgba(225, 29, 72, 0.3);
+}

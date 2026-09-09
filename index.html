@@ -536,7 +536,10 @@
                         <div class="kds-badge kds-count-prep"><span id="kdsCountPrep">0</span> <span data-i18n="kds_count_prep_lbl">قيد التجهيز Prep</span></div>
                         <div class="kds-badge kds-count-ready"><span id="kdsCountReady">0</span> <span data-i18n="kds_count_ready_lbl">جاهز Ready</span></div>
                     </div>
-                    <div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-primary" onclick="openKitchenStockModal()" style="padding: 7px 14px; font-size: 12px; background: var(--teal); border: none;">
+                            <i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="btn_manage_stock">إدارة المخزون</span>
+                        </button>
                         <button class="btn-secondary" onclick="renderKdsScreen()" style="padding: 7px 14px; font-size: 12px;">
                             <i class="fa-solid fa-rotate"></i> <span data-i18n="btn_refresh_kds">تحديث</span>
                         </button>
@@ -1431,6 +1434,25 @@
     </div>
 </div>
 
+<!-- MODAL 14: KITCHEN STOCK MODAL -->
+<div class="modal-overlay" id="kitchenStockModal">
+    <div class="modal-card" style="max-width: 600px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, var(--teal-dark), var(--teal));">
+            <h3><i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="kitchen_stock_title">إدارة المخزون اليومي</span></h3>
+            <button class="modal-close-btn" onclick="closeKitchenStockModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+            <div id="kitchenStockGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
+                <!-- Populated dynamically via renderKitchenStock() -->
+            </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button type="button" class="btn-primary" onclick="saveKitchenStock()"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save">حفظ الإعدادات</span></button>
+            <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeKitchenStockModal()"><span data-i18n="btn_cancel">إلغاء</span></button>
+        </div>
+    </div>
+</div>
+
 <!-- Floating Mobile Cart Bar -->
 <div class="mobile-cart-floater" id="mobileCartFloater" onclick="openMobileCart()">
     <div class="left-info">
@@ -1486,6 +1508,7 @@
 <script src="js/admin.js?v=20260909_06"></script>
 <script src="js/returns.js?v=1"></script>
 <script src="js/app.js?v=20260909_06"></script>
+<script src="js/kitchen_stock.js?v=1"></script>
 
 </body>
 </html>

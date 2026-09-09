@@ -214,9 +214,28 @@ function renderProducts() {
     }
 
     grid.innerHTML = filtered.map(item => {
-        const isAvailable = item.available !== false;
-        const inCart = currentCart.find(c => c.id === item.id);
-        const qtyBadge = inCart ? `<span class="cart-qty-badge">${inCart.qty}</span>` : '';
+        let isAvailable = item.available !== false;
+        
+        const inCartQty = currentCart.filter(c => c.id === item.id).reduce((sum, c) => sum + c.qty, 0);
+        
+        // Stock logic
+        let stockPillHTML = '';
+        if (item.stock !== undefined && item.stock !== null) {
+            if (item.stock <= 0) {
+                isAvailable = false;
+            } else {
+                let remaining = item.stock - inCartQty;
+                let badgeColor = remaining > 10 ? 'rgba(16, 185, 129, 0.95)' : 'rgba(245, 158, 11, 0.95)';
+                let icon = remaining > 10 ? 'fa-box-open' : 'fa-triangle-exclamation';
+                let stockText = currentLang === 'ar' ? `باقي ${remaining}` : `${remaining} Left`;
+                if (inCartQty > 0) {
+                    stockText = currentLang === 'ar' ? `المتبقي ${remaining}` : `${remaining} Left`;
+                }
+                stockPillHTML = `<span style="position: absolute; bottom: 6px; inset-inline-start: 6px; background: ${badgeColor}; color: #fff; font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 6px; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"><i class="fa-solid ${icon}"></i> ${stockText}</span>`;
+            }
+        }
+
+        const qtyBadge = inCartQty > 0 ? `<span class="cart-qty-badge">${inCartQty}</span>` : '';
         const primaryName = currentLang === 'ar' ? (item.arName || item.enName) : (item.enName || item.arName);
         const cat = categories.find(c => c.id === item.catId);
         const catName = cat ? (currentLang === 'ar' ? cat.nameAr : cat.nameEn) : '';
@@ -240,6 +259,7 @@ function renderProducts() {
                 ${qtyBadge}
                 ${outOfStockBadge}
                 <div class="product-card-media">
+                    ${stockPillHTML}
                     <img src="${imgUrl}" alt="${escapeHtml(primaryName)}" loading="lazy" onerror="handleImageError(this, '${escapeHtml(item.catId)}')">
                     ${codePill}
                     <span class="price-pill">${formatCurrency(item.price)}</span>
@@ -272,8 +292,15 @@ function addToCart(itemId) {
     const item = items.find(i => i.id === itemId);
     if (!item) return;
 
-    if (item.available === false) {
+    if (item.available === false || (item.stock !== undefined && item.stock !== null && item.stock <= 0)) {
         handleOutOfStockClick(currentLang === 'ar' ? item.arName : item.enName);
+        return;
+    }
+
+    const currentQtyInCart = currentCart.filter(c => c.id === itemId).reduce((sum, c) => sum + c.qty, 0);
+    if (item.stock !== undefined && item.stock !== null && currentQtyInCart >= item.stock) {
+        showToast(currentLang === 'ar' ? `لقد وصلت للحد الأقصى للكمية المتوفرة بالمطبخ (${item.stock})` : `Max kitchen stock limit reached (${item.stock})`, 'warning');
+        soundWarning();
         return;
     }
 
@@ -309,11 +336,23 @@ function addToCart(itemId) {
 }
 
 function changeCartQty(index, delta) {
-    const item = currentCart[index];
-    if (!item) return;
+    const cartItem = currentCart[index];
+    if (!cartItem) return;
 
-    item.qty += delta;
-    if (item.qty <= 0) {
+    if (delta > 0) {
+        const item = items.find(i => i.id === cartItem.id);
+        if (item && item.stock !== undefined && item.stock !== null) {
+            const currentQtyInCart = currentCart.filter(c => c.id === item.id).reduce((sum, c) => sum + c.qty, 0);
+            if (currentQtyInCart + delta > item.stock) {
+                showToast(currentLang === 'ar' ? `لقد وصلت للحد الأقصى للكمية المتوفرة بالمطبخ (${item.stock})` : `Max kitchen stock limit reached (${item.stock})`, 'warning');
+                soundWarning();
+                return;
+            }
+        }
+    }
+
+    cartItem.qty += delta;
+    if (cartItem.qty <= 0) {
         currentCart.splice(index, 1);
         soundTrash();
     } else if (delta > 0) {

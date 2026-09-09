@@ -178,6 +178,15 @@ function completeOrderAndShowReceipt() {
 
     orders.unshift(orderRecord);
     nextOrderSeq += 1;
+
+    // Decrement stock for ordered items
+    currentCart.forEach(cartItem => {
+        const product = items.find(i => i.id === cartItem.id);
+        if (product && product.stock !== undefined && product.stock !== null) {
+            product.stock = Math.max(0, product.stock - cartItem.qty);
+        }
+    });
+
     persistData();
     updatePosOrderBadge();
     soundSuccess();
