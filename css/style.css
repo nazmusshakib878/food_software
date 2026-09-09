@@ -1763,11 +1763,16 @@ html[data-theme="dark"] .kds-item-chef-note {
 
 
 
-/* KIOSK LOGIN DASHBOARD STYLES */
+
+/* =========================================================
+   KIOSK LOGIN DASHBOARD SCREEN - UNIFIED & RESPONSIVE
+   ========================================================= */
 .kiosk-login-overlay {
     position: fixed;
     top: 0;
     left: 0;
+    right: 0;
+    bottom: 0;
     width: 100vw;
     height: 100vh;
     background: #78C2C4;
@@ -1776,330 +1781,9 @@ html[data-theme="dark"] .kds-item-chef-note {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-}
-.kiosk-login-overlay.active {
-    display: flex;
-}
-.kiosk-lang-selector {
-    position: absolute;
-    top: 30px;
-    left: 30px;
-    z-index: 10;
-}
-.kiosk-lang-selector button {
-    background: rgba(255, 255, 255, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    color: #0F2A4A;
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-weight: bold;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 16px;
-    transition: all 0.3s;
-}
-.kiosk-lang-selector button:hover {
-    background: rgba(255, 255, 255, 0.6);
-}
-.kiosk-about-app {
-    position: absolute;
-    top: 30px;
-    right: 30px;
-    z-index: 10;
-    text-align: right;
-    color: #0F2A4A;
-}
-.kiosk-about-title {
-    font-weight: bold;
-    font-size: 16px;
-}
-.kiosk-about-version {
-    font-size: 12px;
-    opacity: 0.8;
-    margin-top: 4px;
-}
-.kiosk-login-card {
-    background: white;
-    border-radius: 24px;
-    padding: 40px;
-    width: 100%;
-    max-width: 400px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-    text-align: center;
-    position: relative;
-    z-index: 5;
-}
-.kiosk-logo-container {
-    margin-bottom: 40px;
-    position: relative;
-    display: inline-block;
-}
-.kiosk-logo-nur {
-    font-family: "Brush Script MT", "Comic Sans MS", cursive;
-    color: #0F2A4A;
-    font-size: 54px;
-    margin: 0;
-    transform: rotate(-6deg);
-    display: inline-block;
-}
-.kiosk-logo-foodes {
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 14px;
-    color: #555;
-    letter-spacing: 2px;
-    margin-top: -10px;
-    margin-left: 20px;
-}
-.kiosk-logo-icon {
-    position: absolute;
-    right: -30px;
-    top: 10px;
-    color: #0F2A4A;
-    font-size: 22px;
-}
-.kiosk-pin-container {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 30px;
-    direction: ltr;
-}
-.kiosk-pin-box {
-    width: 50px;
-    height: 50px;
-    border-radius: 12px;
-    border: 2px solid #e2e8f0;
-    background: #f8fafc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    color: #0F2A4A;
-    font-weight: bold;
-    transition: all 0.2s;
-}
-.kiosk-pin-box.filled {
-    border-color: #007A87;
-    background: white;
-    box-shadow: 0 0 10px rgba(0,122,135,0.2);
-}
-.kiosk-numpad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-bottom: 30px;
-    direction: ltr;
-}
-.kiosk-numpad-btn {
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 15px;
-    font-size: 24px;
-    font-weight: 600;
-    color: #334155;
-    cursor: pointer;
-    transition: all 0.2s;
-    user-select: none;
-}
-.kiosk-numpad-btn:hover {
-    background: #e2e8f0;
-    transform: scale(1.02);
-}
-.kiosk-numpad-btn:active {
-    transform: scale(0.95);
-}
-.kiosk-numpad-action {
-    font-size: 20px;
-    background: #e2e8f0;
-}
-.kiosk-login-btn {
-    width: 100%;
-    background: #007A87;
-    color: white;
-    border: none;
-    padding: 18px;
-    border-radius: 16px;
-    font-size: 20px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.3s, transform 0.2s;
-}
-.kiosk-login-btn:hover {
-    background: #005F69;
-    transform: translateY(-2px);
-}
-.kiosk-login-btn:active {
-    transform: translateY(0);
-}
-/* RTL support tweaks */
-html[dir="rtl"] .kiosk-about-app {
-    right: auto;
-    left: 30px;
-    text-align: left;
-}
-html[dir="rtl"] .kiosk-lang-selector {
-    left: auto;
-    right: 30px;
-}
-
-
-
-
-/* Responsive for Kiosk Login */
-@media (max-width: 600px) {
-    .kiosk-login-card {
-        padding: 20px;
-        width: 90%;
-        max-width: 320px;
-        margin-top: 40px;
-    }
-    .kiosk-login-overlay {
-        overflow-y: auto;
-        padding: 20px 0;
-        justify-content: flex-start;
-    }
-    .kiosk-about-app, .kiosk-lang-selector {
-        top: 15px;
-    }
-    .kiosk-lang-selector {
-        left: 15px;
-    }
-    .kiosk-lang-selector button {
-        padding: 6px 12px;
-        font-size: 14px;
-    }
-    .kiosk-about-app {
-        right: 15px;
-    }
-    html[dir="rtl"] .kiosk-about-app {
-        left: 15px;
-    }
-    html[dir="rtl"] .kiosk-lang-selector {
-        right: 15px;
-    }
-    .kiosk-pin-box {
-        width: 45px;
-        height: 45px;
-        font-size: 28px;
-    }
-    .kiosk-numpad-btn {
-        padding: 10px;
-        font-size: 20px;
-    }
-    .kiosk-logo-nur {
-        font-size: 40px;
-    }
-    .kiosk-logo-container {
-        margin-bottom: 25px;
-    }
-}
-
-@media (max-height: 700px) {
-    .kiosk-login-card {
-        padding: 20px;
-        margin-top: 50px;
-    }
-    .kiosk-login-overlay {
-        overflow-y: auto;
-        padding-bottom: 20px;
-    }
-    .kiosk-logo-container {
-        margin-bottom: 20px;
-    }
-    .kiosk-pin-container {
-        margin-bottom: 20px;
-    }
-    .kiosk-numpad {
-        margin-bottom: 20px;
-    }
-}
-
-
-/* Order History Cards */
-.order-history-card {
-    background: white;
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-right: 6px solid var(--teal);
-    transition: transform 0.2s, box-shadow 0.2s;
-    margin-bottom: 12px;
-}
-.order-history-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-}
-.order-history-details {
-    display: flex;
-    flex: 1;
-    justify-content: space-around;
-    gap: 15px;
-}
-.detail-row {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    font-size: 14px;
-    color: #334155;
-    font-weight: 600;
-}
-.detail-label {
-    font-size: 12px;
-    color: #94a3b8;
-    margin-top: 4px;
-    font-weight: 400;
-}
-.order-history-actions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-left: 20px;
-}
-.action-btn {
-    padding: 8px 16px;
-    border-radius: 8px;
-    background: #f1f5f9;
-    color: #475569;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-}
-.action-btn:hover {
-    background: #e2e8f0;
-}
-.action-btn.deliver-btn {
-    background: var(--teal);
-    color: white;
-}
-.action-btn.deliver-btn:hover {
-    background: #0d9488;
-}
-/*
----
-Kiosk
-Login
----
-*/
-
-
-.kiosk-login-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: #78C2C4;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 99999;
-    flex-direction: column;
+    overflow-y: auto;
+    padding: 20px 15px;
+    box-sizing: border-box;
 }
 
 .kiosk-login-overlay.open,
@@ -2107,181 +1791,296 @@ Login
     display: flex !important;
 }
 
-.kiosk-logo-container {
+/* Language Selector (Top Corner) */
+.kiosk-lang-selector {
+    position: absolute;
+    top: 24px;
+    z-index: 20;
+}
+/* In LTR: Language on Left, About on Right */
+html[dir="ltr"] .kiosk-lang-selector,
+[dir="ltr"] .kiosk-lang-selector {
+    left: 28px;
+    right: auto;
+}
+/* In RTL: Language on Right, About on Left */
+html[dir="rtl"] .kiosk-lang-selector,
+[dir="rtl"] .kiosk-lang-selector {
+    right: 28px;
+    left: auto;
+}
+
+.kiosk-lang-selector button {
+    background: rgba(255, 255, 255, 0.45);
+    border: 1.5px solid rgba(255, 255, 255, 0.7);
+    color: #0F2A4A;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.kiosk-lang-selector button:hover {
+    background: rgba(255, 255, 255, 0.7);
+    transform: translateY(-1px);
+}
+
+/* About App Badge (Opposite Top Corner) */
+.kiosk-about-app {
+    position: absolute;
+    top: 24px;
+    z-index: 20;
+    color: #0F2A4A;
+}
+/* In LTR: About on Right */
+html[dir="ltr"] .kiosk-about-app,
+[dir="ltr"] .kiosk-about-app {
+    right: 28px;
+    left: auto;
+    text-align: right;
+}
+/* In RTL: About on Left */
+html[dir="rtl"] .kiosk-about-app,
+[dir="rtl"] .kiosk-about-app {
+    left: 28px;
+    right: auto;
+    text-align: left;
+}
+
+.kiosk-about-title {
+    font-weight: 700;
+    font-size: 14.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.kiosk-about-version {
+    font-size: 11.5px;
+    opacity: 0.85;
+    margin-top: 2px;
+    font-family: monospace;
+    font-weight: 600;
+}
+
+/* Center White Card */
+.kiosk-login-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 32px 28px 28px 28px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 50px rgba(15, 42, 74, 0.12);
     text-align: center;
-    margin-bottom: 2rem;
     position: relative;
+    z-index: 10;
+    box-sizing: border-box;
+    margin: auto;
+}
+
+/* Logo: Nur foodes */
+.kiosk-logo-container {
+    margin-bottom: 24px;
+    position: relative;
+    display: inline-block;
+    text-align: center;
 }
 
 .kiosk-logo-nur {
-    font-family: 'Pacifico', cursive;
-    font-size: 5rem;
+    font-family: "Brush Script MT", "Caveat", cursive, sans-serif;
     color: #1e3a8a;
+    font-size: 58px;
+    line-height: 1;
     margin: 0;
     transform: rotate(-6deg);
     display: inline-block;
-    line-height: 1;
 }
 
 .kiosk-logo-foodes {
-    font-family: 'Inter', sans-serif;
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #ffffff;
-    margin-top: -10px;
-    letter-spacing: 2px;
+    font-family: "Inter", -apple-system, sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+    color: #0f766e;
+    letter-spacing: 3px;
+    text-transform: lowercase;
+    margin-top: -4px;
 }
 
 .kiosk-logo-icon {
     position: absolute;
-    top: -10px;
-    right: -30px;
-    font-size: 2rem;
-    color: #facc15;
+    right: -24px;
+    top: 6px;
+    color: #f59e0b;
+    font-size: 20px;
 }
 
-.kiosk-login-card {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 2.5rem;
-    border-radius: 24px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-    width: 100%;
-    max-width: 420px;
-    text-align: center;
-}
-
-.kiosk-login-title {
-    font-size: 1.5rem;
-    color: #334155;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-}
-
-.kiosk-login-subtitle {
-    color: #64748b;
-    margin-bottom: 2rem;
-    font-size: 0.95rem;
-}
-
+/* 4 PIN Boxes */
 .kiosk-pin-container {
     display: flex;
     justify-content: center;
     gap: 12px;
-    margin-bottom: 2.5rem;
-    direction: ltr;
+    margin-bottom: 24px;
+    direction: ltr !important;
 }
 
 .kiosk-pin-box {
-    width: 45px;
-    height: 55px;
+    width: 50px;
+    height: 56px;
     border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    font-size: 1.5rem;
+    border-radius: 14px;
+    background: #f8fafc;
     display: flex;
     justify-content: center;
     align-items: center;
-    color: #0f172a;
-    font-weight: 600;
-    background: #f8fafc;
-    transition: all 0.2s ease;
+    font-size: 26px;
+    color: #0f766e;
+    font-weight: 900;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
 }
 
 .kiosk-pin-box.filled {
-    border-color: #78C2C4;
-    background: #e0f2f1;
+    border-color: #0d9488;
+    background: #f0fdfa;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
 }
 
 .kiosk-pin-box.error {
-    border-color: #ef4444;
-    animation: shake 0.4s ease-in-out;
+    border-color: #ef4444 !important;
+    background: #fef2f2 !important;
+    color: #ef4444 !important;
+    animation: kioskShake 0.4s ease-in-out;
 }
 
-@keyframes shake {
+@keyframes kioskShake {
     0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
 }
 
+/* Numpad 3x4 */
 .kiosk-numpad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-bottom: 2rem;
-    direction: ltr;
+    gap: 10px;
+    margin-bottom: 22px;
+    direction: ltr !important;
 }
 
 .kiosk-numpad-btn {
-    background: #f1f5f9;
-    border: none;
-    border-radius: 16px;
-    height: 65px;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #334155;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    height: 56px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
     cursor: pointer;
-    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.15s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.kiosk-numpad-btn:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+.kiosk-numpad-btn:active {
+    transform: scale(0.96);
+    background: #e2e8f0;
+}
+
+.kiosk-numpad-action {
+    color: #64748b;
+    font-size: 19px;
+}
+
+.kiosk-numpad-btn.backspace-btn:active,
+.kiosk-numpad-action:active {
+    color: #0f172a;
+}
+
+/* Login Action Button */
+.kiosk-login-btn {
+    background: #0d9488;
+    color: #ffffff;
+    border: none;
+    width: 100%;
+    height: 50px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.kiosk-numpad-btn:hover, .kiosk-numpad-btn:active {
-    background: #e2e8f0;
-    transform: scale(0.98);
-}
-
-.kiosk-numpad-btn.clear-btn {
-    background: #fee2e2;
-    color: #ef4444;
-}
-
-.kiosk-numpad-btn.clear-btn:hover {
-    background: #fecaca;
-}
-
-.kiosk-login-btn {
-    background: #78C2C4;
-    color: white;
-    border: none;
-    width: 100%;
-    padding: 16px;
-    border-radius: 16px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(120, 194, 196, 0.3);
-}
-
 .kiosk-login-btn:hover {
-    background: #5CA3A5;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(120, 194, 196, 0.4);
+    background: #0f766e;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(13, 148, 136, 0.45);
 }
 
-.kiosk-hidden {
-    display: none !important;
+.kiosk-login-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
 }
 
-/* RTL Support */
-[dir="rtl"] .kiosk-login-card {
-    direction: rtl;
-}
-[dir="rtl"] .kiosk-pin-container, 
-[dir="rtl"] .kiosk-numpad {
-    direction: ltr;
-}
-
+/* Responsive Scaling for Small Phones / Tablets */
 @media (max-width: 600px) {
-    .kiosk-logo-nur { font-size: 4rem; }
-    .kiosk-logo-foodes { font-size: 2rem; }
-    .kiosk-login-card {
-        padding: 1.5rem;
-        border-radius: 20px;
-        max-width: 90%;
+    .kiosk-lang-selector, .kiosk-about-app {
+        top: 14px;
     }
-    .kiosk-pin-box { width: 40px; height: 50px; }
-    .kiosk-numpad-btn { height: 55px; }
+    html[dir="ltr"] .kiosk-lang-selector, [dir="ltr"] .kiosk-lang-selector { left: 16px; }
+    html[dir="rtl"] .kiosk-lang-selector, [dir="rtl"] .kiosk-lang-selector { right: 16px; }
+    html[dir="ltr"] .kiosk-about-app, [dir="ltr"] .kiosk-about-app { right: 16px; }
+    html[dir="rtl"] .kiosk-about-app, [dir="rtl"] .kiosk-about-app { left: 16px; }
+
+    .kiosk-lang-selector button {
+        padding: 6px 14px;
+        font-size: 13.5px;
+    }
+    .kiosk-about-title { font-size: 13px; }
+    .kiosk-about-version { font-size: 10.5px; }
+
+    .kiosk-login-card {
+        padding: 24px 20px 20px 20px;
+        max-width: 320px;
+        margin-top: 48px;
+    }
+    .kiosk-logo-nur { font-size: 46px; }
+    .kiosk-logo-foodes { font-size: 14px; }
+    .kiosk-pin-box { width: 42px; height: 48px; font-size: 22px; }
+    .kiosk-numpad-btn { height: 48px; font-size: 20px; }
+    .kiosk-login-btn { height: 46px; font-size: 15px; }
+}
+
+@media (max-height: 700px) {
+    .kiosk-login-card {
+        padding: 20px 20px 16px 20px;
+        margin-top: 50px;
+    }
+    .kiosk-logo-container { margin-bottom: 14px; }
+    .kiosk-pin-container { margin-bottom: 14px; }
+    .kiosk-numpad { margin-bottom: 14px; gap: 8px; }
+    .kiosk-numpad-btn { height: 44px; }
 }
 
 
@@ -2329,66 +2128,4 @@ Login
         padding: 8px 4px;
         font-size: 12px;
     }
-}
-
-
-/* Kiosk Footer Elements */
-.kiosk-lang-selector {
-    position: absolute;
-    bottom: 30px;
-    right: 30px;
-}
-
-.kiosk-lang-selector button {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 20px;
-    padding: 8px 16px;
-    color: #1e293b;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    backdrop-filter: blur(4px);
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.kiosk-lang-selector button:hover {
-    background: rgba(255, 255, 255, 0.4);
-}
-
-.kiosk-about-app {
-    position: absolute;
-    bottom: 30px;
-    left: 30px;
-    text-align: left;
-    color: #1e293b;
-    font-family: 'Inter', sans-serif;
-}
-
-[dir="rtl"] .kiosk-lang-selector {
-    right: auto;
-    left: 30px;
-}
-
-[dir="rtl"] .kiosk-about-app {
-    left: auto;
-    right: 30px;
-    text-align: right;
-}
-
-.kiosk-about-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 4px;
-}
-
-.kiosk-about-version {
-    font-size: 0.8rem;
-    opacity: 0.8;
 }
