@@ -218,7 +218,7 @@ function completeOrderAndShowReceipt() {
         setTimeout(() => {
             const receiptNode = document.getElementById('thermalReceiptNode');
             if (receiptNode) {
-                routePrintJob('cashier', receiptNode.innerHTML, `Receipt #${orderRecord.seq}`);
+                routePrintJob('cashier', receiptNode.outerHTML, `Receipt #${orderRecord.seq}`);
             }
         }, 500);
     }

@@ -317,30 +317,25 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
             }
             return;
         }
-        frameDoc.open();
+        const stylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).map(el => el.outerHTML).join('\n');
+
         frameDoc.write(`
             <!DOCTYPE html>
             <html lang="${currentLang}" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
             <head>
                 <meta charset="UTF-8">
                 <title>${escapeHtml(title)}</title>
+                ${stylesheets}
                 <style>
-                    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 12px; color: #111; font-size: 13px; line-height: 1.4; }
-                    .text-center { text-align: center; }
-                    .text-end { text-align: end; }
-                    .fw-bold { font-weight: bold; }
-                    .divider { border-bottom: 1px dashed #666; margin: 8px 0; }
-                    table { width: 100%; border-collapse: collapse; margin: 6px 0; }
-                    th, td { padding: 4px 6px; }
-                    th { border-bottom: 1px solid #333; }
-                    .receipt-footer { text-align: center; margin-top: 12px; font-size: 11px; color: #666; }
-                    @media print {
-                        body { padding: 0; }
-                    }
+                    body { margin: 0; padding: 0; background: #fff; }
                 </style>
             </head>
             <body>
-                ${contentHtml}
+                <div id="receiptModal" class="open" style="display:block; position:static;">
+                    <div class="modal-card" style="box-shadow:none; border:none; padding:0; margin:0;">
+                        ${contentHtml}
+                    </div>
+                </div>
             </body>
             </html>
         `);

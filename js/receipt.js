@@ -165,7 +165,7 @@ function renderReceipt(order) {
 function printReceiptDirect() {
     const node = document.getElementById('thermalReceiptNode');
     if (node && typeof routePrintJob === 'function') {
-        routePrintJob('cashier', node.innerHTML, 'Tax Invoice Receipt & KOT');
+        routePrintJob('cashier', node.outerHTML, 'Tax Invoice Receipt & KOT');
     } else {
         window.print();
     }
