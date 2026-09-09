@@ -491,6 +491,11 @@ document.addEventListener('keydown', (e) => {
 /* KIOSK LOGIN LOGIC */
 let kioskPinDigits = [];
 
+function kioskFillDemoPin(pin) {
+    kioskPinDigits = String(pin).slice(0, 4).split('');
+    updateKioskPinDisplay();
+}
+
 function kioskKeyPress(key) {
     if (key === 'C' || key === 'c') {
         kioskPinDigits = [];

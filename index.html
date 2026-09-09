@@ -42,7 +42,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <!-- Modular CSS Architecture -->
-    <link rel="stylesheet" href="css/style.css?v=20260910_03">
+    <link rel="stylesheet" href="css/style.css?v=20260910_04">
     <link rel="stylesheet" href="css/pos.css?v=20260910_03">
     <link rel="stylesheet" href="css/admin.css?v=20260909_06">
     <link rel="stylesheet" href="css/receipt.css?v=20260909_06">
@@ -805,6 +805,12 @@
             <i class="fa-solid fa-link kiosk-logo-icon"></i>
         </div>
 
+        <!-- Demo PIN Notice -->
+        <div class="kiosk-demo-badge" onclick="kioskFillDemoPin('1234')" title="انقر لملء الرمز 1234 / Click to auto-fill 1234">
+            <i class="fa-solid fa-key"></i>
+            <span>Demo PIN: <strong>1234</strong></span>
+        </div>
+
         <!-- 4 PIN Boxes -->
         <div class="kiosk-pin-container">
             <div class="kiosk-pin-box" id="kioskPin0"></div>
@@ -833,6 +839,16 @@
         <button class="kiosk-login-btn" onclick="kioskSubmitLogin()">
             <span data-i18n="btn_login_kiosk">تسجيل الدخول</span>
         </button>
+
+        <!-- Quick Fill Helpers -->
+        <div class="kiosk-demo-helpers">
+            <button type="button" class="kiosk-demo-pill" onclick="kioskFillDemoPin('1234')" title="Admin Login">
+                <i class="fa-solid fa-user-shield"></i> <span>Admin: <strong>1234</strong></span>
+            </button>
+            <button type="button" class="kiosk-demo-pill" onclick="kioskFillDemoPin('0000')" title="Cashier Login">
+                <i class="fa-solid fa-cash-register"></i> <span>Cashier: <strong>0000</strong></span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -1597,7 +1613,7 @@
 <script src="js/receipt.js?v=20260910_02"></script>
 <script src="js/admin.js?v=20260910_02"></script>
 <script src="js/returns.js?v=2"></script>
-<script src="js/app.js?v=20260910_03"></script>
+<script src="js/app.js?v=20260910_04"></script>
 <script src="js/kitchen_stock.js?v=2"></script>
 
 </body>
