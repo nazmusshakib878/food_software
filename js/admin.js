@@ -100,7 +100,6 @@ function renderAllOrdersTable(targetList) {
         const invoiceId = o.id.replace('B.', '56226886') + Math.floor(Math.random() * 900 + 100); // Mock Invoice ID if not real
         
         return `
-        return `
             <div class="order-history-card" style="border-right-color: ${borderColor};">
                 <div class="order-history-details">
                     <div class="detail-row">
