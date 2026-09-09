@@ -198,6 +198,9 @@ function applyLanguage(lang) {
 
     if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
     if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
+
+    const kioskLangText = document.getElementById('kioskLangText');
+    if (kioskLangText) kioskLangText.innerText = lang === 'ar' ? 'English' : 'العربية';
     if (typeof renderCategoriesRibbon === 'function') renderCategoriesRibbon();
     if (typeof renderProducts === 'function') renderProducts();
     if (typeof renderCart === 'function') renderCart();
@@ -469,3 +472,68 @@ document.addEventListener('keydown', (e) => {
         closeMorePanel();
     }
 });
+
+/* KIOSK LOGIN LOGIC */
+let kioskPinDigits = [];
+
+function kioskKeyPress(key) {
+    if (key === 'C') {
+        kioskPinDigits = [];
+    } else if (key === 'BACK') {
+        if (kioskPinDigits.length > 0) {
+            kioskPinDigits.pop();
+        }
+    } else {
+        if (kioskPinDigits.length < 4) {
+            kioskPinDigits.push(key);
+        }
+    }
+    updateKioskPinDisplay();
+}
+
+function updateKioskPinDisplay() {
+    for (let i = 0; i < 4; i++) {
+        const box = document.getElementById('kioskPin' + i);
+        if (box) {
+            if (i < kioskPinDigits.length) {
+                box.innerHTML = '&bull;'; // Show dot
+                box.classList.add('filled');
+            } else {
+                box.innerHTML = '';
+                box.classList.remove('filled');
+            }
+        }
+    }
+}
+
+function kioskSubmitLogin() {
+    const pin = kioskPinDigits.join('');
+    if (pin.length !== 4) {
+        showToast(currentLang === 'ar' ? "يرجى إدخال 4 أرقام" : "Please enter 4 digits", "danger");
+        return;
+    }
+
+    if (pin === storeSettings.adminPin) {
+        currentUser = { role: 'admin', name: 'Nawaf Saeed (Manager)' };
+        persistData();
+        updateUserBadge();
+        closeLoginModal();
+        showToast(currentLang === 'ar' ? "مرحباً بك كمدير للنظام" : "Welcome Admin", "success");
+        switchView('admin');
+        kioskPinDigits = [];
+        updateKioskPinDisplay();
+    } else if (pin === storeSettings.staffPin) {
+        currentUser = { role: 'staff', name: 'Cashier 1' };
+        persistData();
+        updateUserBadge();
+        closeLoginModal();
+        showToast(currentLang === 'ar' ? "تم تسجيل الدخول ككاشير" : "Logged in as Cashier", "success");
+        switchView('pos');
+        kioskPinDigits = [];
+        updateKioskPinDisplay();
+    } else {
+        showToast(currentLang === 'ar' ? "الرمز السري غير صحيح!" : "Invalid PIN!", "danger");
+        kioskPinDigits = [];
+        updateKioskPinDisplay();
+    }
+}

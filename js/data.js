@@ -12,8 +12,8 @@ const DEFAULT_STORE = {
     taxRate: 15,
     currency: "SAR",
     currencyAr: "ر.س",
-    adminPin: "123456",
-    staffPin: "000000"
+    adminPin: "1234",
+    staffPin: "0000"
 };
 
 const DEFAULT_CATEGORIES = [

@@ -33,9 +33,10 @@ var storeSettings = (() => {
         s.companyName = "شركة صح للتجارة";
         s.companyNameAr = "شركة صح للتجارة";
         s.vatNumber = "300987654300003";
+        // Ensure valid fallback logic
+        if (!s.adminPin) s.adminPin = "1234";
+        if (!s.staffPin) s.staffPin = "0000";
         if (!s.currencyAr) s.currencyAr = DEFAULT_STORE.currencyAr;
-        if (s.adminPin === "1234") s.adminPin = "123456";
-        if (s.staffPin === "0000") s.staffPin = "000000";
         return s;
     } catch (e) {
         return { ...DEFAULT_STORE };

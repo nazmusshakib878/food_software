@@ -758,38 +758,59 @@
      MODALS SECTION
      ========================================================= -->
 
-<!-- MODAL 1: AUTHENTICATION / ROLE LOGIN -->
-<div class="modal-overlay" id="loginModal">
-    <div class="modal-card modern-login-card" style="max-width: 420px; border-radius: 24px; padding: 10px; overflow: hidden; background: linear-gradient(145deg, #ffffff, #f8fafc); box-shadow: 0 20px 50px rgba(0,0,0,0.15);">
-        <div style="background: var(--teal); padding: 30px 20px; margin: -10px -10px 20px -10px; border-radius: 20px 20px 0 0; text-align: center; color: white;">
-            <i class="fa-solid fa-shield-halved" style="font-size: 42px; margin-bottom: 12px; opacity: 0.9;"></i>
-            <h3 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 0.5px;"><span data-i18n="login_modal_title">تسجيل الدخول للنظام</span></h3>
-            <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.8;" data-i18n="login_modal_subtitle">اختر نوع الحساب وأدخل الرمز السري</p>
-            <button type="button" class="modal-close-btn" onclick="closeLoginModal()" style="position: absolute; top: 15px; right: 15px; color: white; background: rgba(255,255,255,0.2); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: background 0.3s;"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <form onsubmit="submitLogin(event)" style="padding: 0 15px 15px 15px;">
-            <div class="modal-body" style="padding: 0;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
-                    <button type="button" class="role-selector-btn active" id="rolePickStaff" onclick="selectLoginRole('staff')" style="padding: 15px; border-radius: 16px; border: 2px solid var(--teal); background: rgba(15,118,110,0.05); color: var(--teal); font-weight: 700; font-size: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: all 0.3s;">
-                        <i class="fa-solid fa-user" style="font-size: 24px;"></i> <span data-i18n="login_role_staff">Staff / كاشير</span>
-                    </button>
-                    <button type="button" class="role-selector-btn" id="rolePickAdmin" onclick="selectLoginRole('admin')" style="padding: 15px; border-radius: 16px; border: 2px solid transparent; background: #f1f5f9; color: #64748b; font-weight: 700; font-size: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: all 0.3s;">
-                        <i class="fa-solid fa-user-shield" style="font-size: 24px;"></i> <span data-i18n="login_role_admin">Admin / مدير</span>
-                    </button>
-                </div>
+<!-- MODAL 1: AUTHENTICATION / ROLE LOGIN (KIOSK) -->
+<div class="kiosk-login-overlay" id="loginModal">
+    <!-- Language Dropdown -->
+    <div class="kiosk-lang-selector">
+        <button id="kioskLangToggle" onclick="toggleLanguage()">
+            <i class="fa-solid fa-chevron-down"></i> <span id="kioskLangText">العربية</span>
+        </button>
+    </div>
+    
+    <!-- About App -->
+    <div class="kiosk-about-app">
+        <div class="kiosk-about-title"><i class="fa-solid fa-circle-info"></i> <span data-i18n="about_app">عن التطبيق</span></div>
+        <div class="kiosk-about-version">T.1.5-119</div>
+    </div>
 
-                <div class="form-group" style="margin-bottom: 25px;">
-                    <label style="display: block; text-align: center; font-weight: 700; color: #334155; margin-bottom: 12px; font-size: 15px;" data-i18n="login_pin_lbl">رمز المرور 6 أرقام (PIN):</label>
-                    <input type="password" class="form-control" id="loginPinInput" maxlength="6" style="text-align: center; font-size: 32px; letter-spacing: 16px; padding: 15px; border-radius: 16px; border: 2px solid #e2e8f0; background: #f8fafc; font-weight: 800; color: var(--teal); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); transition: all 0.3s;" placeholder="******" required autofocus>
-                    <small style="display: block; text-align: center; margin-top: 12px; color: #94a3b8; font-size: 12px; background: #f1f5f9; padding: 8px; border-radius: 8px;" data-i18n="login_hint">افتراضي: المدير (123456) | الكاشير (000000)</small>
-                </div>
-            </div>
-            <div class="modal-footer" style="padding: 0; border-top: none; margin-top: 0;">
-                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 14px; font-size: 16px; border-radius: 14px; background: linear-gradient(135deg, var(--teal), #0d9488); box-shadow: 0 4px 15px rgba(13,148,136,0.3);">
-                    <i class="fa-solid fa-arrow-right-to-bracket" style="font-size: 18px;"></i> <span data-i18n="btn_login">تسجيل الدخول</span>
-                </button>
-            </div>
-        </form>
+    <!-- Center Card -->
+    <div class="kiosk-login-card">
+        
+        <!-- Logo -->
+        <div class="kiosk-logo-container">
+            <h1 class="kiosk-logo-nur">Nur</h1>
+            <div class="kiosk-logo-foodes">foodes</div>
+            <i class="fa-solid fa-link kiosk-logo-icon"></i>
+        </div>
+
+        <!-- 4 PIN Boxes -->
+        <div class="kiosk-pin-container">
+            <div class="kiosk-pin-box" id="kioskPin0"></div>
+            <div class="kiosk-pin-box" id="kioskPin1"></div>
+            <div class="kiosk-pin-box" id="kioskPin2"></div>
+            <div class="kiosk-pin-box" id="kioskPin3"></div>
+        </div>
+
+        <!-- Numpad 3x4 -->
+        <div class="kiosk-numpad">
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('1')">1</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('2')">2</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('3')">3</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('4')">4</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('5')">5</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('6')">6</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('7')">7</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('8')">8</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('9')">9</button>
+            <button class="kiosk-numpad-btn kiosk-numpad-action" onclick="kioskKeyPress('C')">C</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('0')">0</button>
+            <button class="kiosk-numpad-btn kiosk-numpad-action backspace-btn" onclick="kioskKeyPress('BACK')"><i class="fa-solid fa-delete-left"></i></button>
+        </div>
+
+        <!-- Login Button -->
+        <button class="kiosk-login-btn" onclick="kioskSubmitLogin()">
+            <span data-i18n="btn_login_kiosk">تسجيل الدخول</span>
+        </button>
     </div>
 </div>
 

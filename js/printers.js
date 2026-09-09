@@ -59,7 +59,7 @@ function submitPassCode() {
     const pin = (inputEl ? inputEl.value : '').trim();
 
     // Valid if matches admin pin, or 1234
-    const validPin = storeSettings.adminPin || '123456';
+    const validPin = storeSettings.adminPin || '1234';
     if (pin === validPin || (currentUser.role === 'admin' && pin === storeSettings.adminPin)) {
         const cb = passcodeCallback;
         closePassCodeModal();
