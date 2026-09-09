@@ -100,38 +100,39 @@ function renderAllOrdersTable(targetList) {
         const invoiceId = o.id.replace('B.', '56226886') + Math.floor(Math.random() * 900 + 100); // Mock Invoice ID if not real
         
         return `
-            <div style="background: #f1f5f9; border-right: 4px solid ${borderColor}; padding: 0; display: flex; flex-direction: column; font-size: 14px; font-weight: 600; color: #334155; direction: ltr;">
-                <div style="padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: right; line-height: 1.6;">
-                    <div style="display: flex; justify-content: space-between;">
+        return `
+            <div class="order-history-card" style="border-right-color: ${borderColor};">
+                <div class="order-history-details">
+                    <div class="detail-row">
                         <span>${escapeHtml(o.dateFormatted || '')}</span>
-                        <span style="color: #64748b;">:Date</span>
+                        <span class="detail-label">:Date</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between;">
+                    <div class="detail-row">
                         <span>${escapeHtml(o.id)}</span>
-                        <span style="color: #64748b;">:Order Number</span>
+                        <span class="detail-label">:Order Number</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between;">
+                    <div class="detail-row">
                         <span>${escapeHtml(formatPaymentMethod(o.method, currentLang))}/${escapeHtml(o.total)}</span>
-                        <span style="color: #64748b;">:Payment Types</span>
+                        <span class="detail-label">:Payment Types</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between;">
+                    <div class="detail-row">
                         <span>${escapeHtml(o.total)}</span>
-                        <span style="color: #64748b;">:Total</span>
+                        <span class="detail-label">:Total</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between;">
+                    <div class="detail-row">
                         <span>${invoiceId}</span>
-                        <span style="color: #64748b;">:Invoice Id</span>
+                        <span class="detail-label">:Invoice Id</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between;">
+                    <div class="detail-row">
                         <span>${escapeHtml(o.cashier || (currentLang === 'ar' ? 'غير محدد' : 'Unknown'))}</span>
-                        <span style="color: #64748b;">:User Name</span>
+                        <span class="detail-label">:User Name</span>
                     </div>
                 </div>
-                <div style="display: flex; width: 100%; text-align: center; font-weight: bold; font-size: 13px;">
-                    <div onclick="showToast('Delivered', 'success')" style="flex: 1; background: #8f2d56; color: white; padding: 10px 5px; cursor: pointer;">Order Delivered</div>
-                    <div onclick="voidOrder('${escapeHtml(o.id)}')" style="flex: 1; background: #2a9d8f; color: white; padding: 10px 5px; border-right: 1px solid rgba(255,255,255,0.2); cursor: pointer;">Return</div>
-                    <div onclick="printKitchen('${escapeHtml(o.id)}')" style="flex: 1; background: #2a9d8f; color: white; padding: 10px 5px; border-right: 1px solid rgba(255,255,255,0.2); cursor: pointer;">Kitchen Print</div>
-                    <div onclick="previewExistingOrderReceipt('${escapeHtml(o.id)}')" style="flex: 1; background: #2a9d8f; color: white; padding: 10px 5px; border-right: 1px solid rgba(255,255,255,0.2); cursor: pointer;">Print</div>
+                <div class="order-history-actions">
+                    <div class="action-btn deliver-btn" onclick="showToast('Delivered', 'success')">Order Delivered</div>
+                    <div class="action-btn" onclick="voidOrder('${escapeHtml(o.id)}')">Return</div>
+                    <div class="action-btn" onclick="printKitchen('${escapeHtml(o.id)}')">Kitchen Print</div>
+                    <div class="action-btn" onclick="previewExistingOrderReceipt('${escapeHtml(o.id)}')">Print</div>
                 </div>
             </div>
         `;
