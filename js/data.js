@@ -733,7 +733,11 @@ const i18n = {
         table_3: "طاولة 3",
         table_4: "طاولة 4",
         table_5: "طاولة 5",
-        table_6: "طاولة 6"
+        table_6: "طاولة 6",
+        btn_login_kiosk: "تسجيل الدخول",
+        about_app: "عن التطبيق",
+        demo_admin_pin: "المدير: 1234",
+        demo_cashier_pin: "كاشير: 0000"
     },
     en: {
         pos_nav: "POS Terminal",
@@ -1055,7 +1059,11 @@ const i18n = {
         table_3: "Table 3",
         table_4: "Table 4",
         table_5: "Table 5",
-        table_6: "Table 6"
+        table_6: "Table 6",
+        btn_login_kiosk: "Log In",
+        about_app: "About App",
+        demo_admin_pin: "Manager: 1234",
+        demo_cashier_pin: "Cashier: 0000"
     }
 };
 

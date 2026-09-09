@@ -164,8 +164,16 @@ var posPreferences = (() => {
     }
 })();
 
-// Runtime State Variables
-var currentLang = localStorage.getItem('nurpos_lang') || 'ar';
+// Runtime State Variables (Default to English as requested)
+var currentLang = (() => {
+    try {
+        const pref = localStorage.getItem('nurpos_lang_v3');
+        if (pref === 'ar' || pref === 'en') return pref;
+        return 'en'; // Default English
+    } catch (e) {
+        return 'en';
+    }
+})();
 var activeCategory = 'all';
 var currentCart = [];
 var currentOrderType = 'local';
@@ -259,6 +267,7 @@ function persistData() {
         localStorage.setItem('nurpos_orders', JSON.stringify(orders));
         localStorage.setItem('nurpos_user', JSON.stringify(currentUser));
         localStorage.setItem('nurpos_lang', currentLang);
+        localStorage.setItem('nurpos_lang_v3', currentLang);
         localStorage.setItem('nurpos_order_seq', String(nextOrderSeq));
         localStorage.setItem('nurpos_customers', JSON.stringify(customers));
         localStorage.setItem('nurpos_order_types', JSON.stringify(orderTypes));
