@@ -2,27 +2,7 @@
    STORE.JS - LocalStorage State Management & Storage Engine
    ========================================================= */
 
-// Category-Aware Smart Fallback Images
-function getCategoryFallbackImage(catId) {
-    switch (catId) {
-        case 'drinks':
-            return 'https://images.unsplash.com/photo-1559839914-17aae19cec71?auto=format&fit=crop&w=400&q=80';
-        case 'hot_drinks':
-            return 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=400&q=80';
-        case 'sandwiches':
-            return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=400&q=80';
-        case 'meals':
-        default:
-            return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=400&q=80';
-    }
-}
-
-// Global Image Error Handler (prevents infinite loop & replaces with proper category image)
-function handleImageError(imgEl, catId) {
-    if (!imgEl) return;
-    imgEl.onerror = null;
-    imgEl.src = getCategoryFallbackImage(catId);
-}
+// Global Image Error Handler is now in index.html <head>
 
 // Persistent Collections
 var storeSettings = (() => {

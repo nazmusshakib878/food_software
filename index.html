@@ -5,6 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Nur Foodes - Restaurant POS & Management System</title>
     
+    <script>
+        // Global Image Error Handler to prevent reference errors before store.js loads
+        function getCategoryFallbackImage(catId) {
+            switch (catId) {
+                case 'sandwiches': return 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=400&q=80';
+                case 'pastries': return 'https://images.unsplash.com/photo-1509365465994-3e284000301a?auto=format&fit=crop&w=400&q=80';
+                case 'salads': return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80';
+                case 'drinks': return 'https://images.unsplash.com/photo-1556881286-fc6915169721?auto=format&fit=crop&w=400&q=80';
+                case 'icecream': return 'https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=400&q=80';
+                case 'fastfood': return 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?auto=format&fit=crop&w=400&q=80';
+                case 'pizza': return 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=400&q=80';
+                case 'pasta': return 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=400&q=80';
+                case 'desserts': return 'https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=400&q=80';
+                default: return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=400&q=80';
+            }
+        }
+        function handleImageError(imgEl, catId) {
+            if (!imgEl) return;
+            imgEl.onerror = null;
+            imgEl.src = getCategoryFallbackImage(catId);
+        }
+    </script>
+    
     <!-- PWA Manifest & App Store Meta -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f766e">
