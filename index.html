@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="css/admin.css?v=20260908_05">
     <link rel="stylesheet" href="css/receipt.css?v=20260908_05">
     <link rel="stylesheet" href="css/reports.css?v=20260908_05">
+    <link rel="stylesheet" href="css/returns.css?v=1">
     <link rel="stylesheet" href="css/responsive.css?v=20260908_05">
 
     <!-- Core Vendor Libraries (PDF, QR Code & Confetti) -->
@@ -66,6 +67,10 @@
             <button class="nav-tab-btn" id="tabAdminBtn" onclick="requestAdminAccess()">
                 <i class="fa-solid fa-chart-pie"></i>
                 <span data-i18n="admin_nav">Admin & Reports</span>
+            </button>
+            <button class="nav-tab-btn" id="tabReturnsBtn" onclick="switchView('returns')">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span data-i18n="returns_nav">Orders</span>
             </button>
             <button class="nav-tab-btn" id="tabTaxInvoiceBtn" onclick="previewSampleTaxInvoice()" title="Preview Official Tax Invoice (Image 1)">
                 <i class="fa-solid fa-receipt"></i>
@@ -544,6 +549,118 @@
             </div>
         </div>
 
+        <!-- ================= VIEW 5: RETURNS & ORDERS VIEW ================= -->
+        <div class="screen-view returns-screen-container" id="returnsView">
+            <!-- Screen 1: Order History -->
+            <div class="returns-sub-view active" id="returnsScreen1">
+                <div class="returns-header">
+                    <h2><i class="fa-solid fa-clock-rotate-left"></i> Orders History</h2>
+                </div>
+                <div class="returns-orders-grid" id="returnsOrdersGrid">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Screen 2: Cancel Invoice Item Selection -->
+            <div class="returns-sub-view" id="returnsScreen2">
+                <div class="returns-layout-split">
+                    <div class="returns-main-panel">
+                        <div class="returns-table-container">
+                            <table class="returns-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;"><input type="checkbox" id="retSelectAll" onchange="toggleSelectAllReturns(this.checked)"></th>
+                                        <th>Name</th>
+                                        <th>Price</th>
+                                        <th>Return Qty / Qty</th>
+                                        <th>Damaged Qty</th>
+                                        <th>Total Damage</th>
+                                        <th>Damaged</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="returnsItemsTbody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="returns-action-row">
+                            <div class="left-actions">
+                                <button type="button" class="btn-return-action" onclick="incrementReturnItem()"><i class="fa-solid fa-plus"></i> Add</button>
+                                <button type="button" class="btn-return-action" onclick="decrementReturnItem()"><i class="fa-solid fa-minus"></i> Remove</button>
+                                <button type="button" class="btn-return-action"><i class="fa-solid fa-note-sticky"></i> Notes</button>
+                                <button type="button" class="btn-return-action btn-back" onclick="goReturnsScreen1()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+                            </div>
+                            <div class="right-actions">
+                                <button type="button" class="btn-return-big btn-back-big" onclick="goReturnsScreen1()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+                                <button type="button" class="btn-return-big btn-next" onclick="goReturnsScreen3()">Next <i class="fa-solid fa-arrow-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="returns-sidebar">
+                        <h1>Cancel Invoice</h1>
+                        <div class="sidebar-meta" id="retSidebarMeta">
+                            <!-- Order details here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 3: Cancel Confirmation & Security -->
+            <div class="returns-sub-view" id="returnsScreen3">
+                <div class="returns-layout-split">
+                    <div class="returns-main-panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <div class="security-panel">
+                            <div class="reason-group">
+                                <h3>Reason for cancellation:</h3>
+                                <label class="radio-label"><input type="radio" name="cancelReason" value="Error" checked> Error</label>
+                                <label class="radio-label"><input type="radio" name="cancelReason" value="Client Cancellation"> Client Cancellation</label>
+                                <label class="radio-label"><input type="radio" name="cancelReason" value="Wrong Order"> Wrong Order</label>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>Client Phone Number</label>
+                                <input type="text" id="retClientPhone" class="ret-input" placeholder="05xxxxxxxx" readonly onclick="setActiveRetInput('retClientPhone')">
+                            </div>
+
+                            <div class="input-group">
+                                <label>User Key (PIN)</label>
+                                <input type="password" id="retUserKey" class="ret-input" placeholder="****" readonly onclick="setActiveRetInput('retUserKey')">
+                            </div>
+                        </div>
+
+                        <div class="ret-numpad-container">
+                            <div class="ret-numpad">
+                                <button type="button" onclick="retPadPress('1')">1</button>
+                                <button type="button" onclick="retPadPress('2')">2</button>
+                                <button type="button" onclick="retPadPress('3')">3</button>
+                                <button type="button" onclick="retPadPress('4')">4</button>
+                                <button type="button" onclick="retPadPress('5')">5</button>
+                                <button type="button" onclick="retPadPress('6')">6</button>
+                                <button type="button" onclick="retPadPress('7')">7</button>
+                                <button type="button" onclick="retPadPress('8')">8</button>
+                                <button type="button" onclick="retPadPress('9')">9</button>
+                                <button type="button" onclick="retPadPress('C')" style="color: var(--danger);">C</button>
+                                <button type="button" onclick="retPadPress('0')">0</button>
+                                <button type="button" onclick="retPadPress('BACK')"><i class="fa-solid fa-delete-left"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="returns-action-row" style="width: 100%; max-width: 600px; margin-top: 30px;">
+                            <button type="button" class="btn-return-big btn-back-big" onclick="goReturnsScreen2()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+                            <button type="button" class="btn-return-big btn-confirm" onclick="confirmCancellation()"><i class="fa-solid fa-check-double"></i> Confirm Cancellation</button>
+                        </div>
+                    </div>
+                    <div class="returns-sidebar">
+                        <h1>Cancel Invoice</h1>
+                        <div class="sidebar-meta" id="retSidebarMeta3">
+                            <!-- Order details here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
     </div>
 
 
@@ -568,6 +685,11 @@
         <div class="drawer-menu-item" onclick="switchView('pos'); closeSideDrawer();">
             <i class="fa-solid fa-desktop"></i>
             <span data-i18n="nav_main_screen">شاشة البيع الرئيسية (POS)</span>
+        </div>
+        
+        <div class="drawer-menu-item" onclick="switchView('returns'); closeSideDrawer();">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span data-i18n="nav_returns_screen">الطلبات والإرجاع (Orders)</span>
         </div>
         
         <div class="drawer-section-title">تقارير المبيعات والعمليات</div>
@@ -1325,6 +1447,10 @@
         <i class="fa-solid fa-cash-register"></i>
         <span data-i18n="pos_nav">نقطة البيع</span>
     </button>
+    <button type="button" class="mobile-nav-btn" id="mobileNavReturns" onclick="switchView('returns')">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span data-i18n="returns_nav">Orders</span>
+    </button>
     <button type="button" class="mobile-nav-btn" id="mobileNavKds" onclick="switchView('kds')">
         <i class="fa-solid fa-bell-concierge"></i>
         <span data-i18n="kds_nav">المطبخ</span>
@@ -1353,6 +1479,7 @@
 <script src="js/payment.js?v=20260908_05"></script>
 <script src="js/receipt.js?v=20260908_05"></script>
 <script src="js/admin.js?v=20260908_05"></script>
+<script src="js/returns.js?v=1"></script>
 <script src="js/app.js?v=20260908_05"></script>
 
 </body>

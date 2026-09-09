@@ -1,0 +1,377 @@
+/* =========================================================
+   RETURNS & CANCELLATIONS UI (css/returns.css)
+   ========================================================= */
+
+/* Main Container */
+.returns-screen-container {
+    padding: 20px;
+    background: var(--bg);
+    color: var(--text);
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* Sub Views */
+.returns-sub-view {
+    display: none;
+    height: 100%;
+    flex-direction: column;
+}
+.returns-sub-view.active {
+    display: flex;
+}
+
+/* Header */
+.returns-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.returns-header h2 {
+    margin: 0;
+    font-size: 24px;
+    color: var(--text);
+}
+
+/* Screen 1: Order History Grid */
+.returns-orders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    padding-bottom: 20px;
+}
+
+.ret-order-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.ret-order-card-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 8px;
+}
+.ret-order-card-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--teal);
+}
+.ret-order-card-header .ret-time {
+    font-size: 12px;
+    color: var(--muted);
+}
+.ret-order-card-body {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+.ret-order-card-body .ret-total {
+    font-weight: 700;
+    font-size: 16px;
+}
+.ret-order-card-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+.ret-status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.ret-status-delivered { background: var(--success); color: #fff; }
+.ret-status-cancelled { background: var(--danger); color: #fff; }
+
+.ret-btn-group {
+    display: flex;
+    gap: 6px;
+}
+.ret-btn-small {
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.ret-btn-small:hover {
+    background: var(--border);
+}
+.ret-btn-return {
+    background: var(--orange);
+    color: #fff;
+    border-color: var(--orange);
+}
+.ret-btn-return:hover {
+    background: #e65c00;
+}
+
+/* Screen 2 & 3: Split Layout */
+.returns-layout-split {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    gap: 20px;
+}
+.returns-main-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-y: auto;
+}
+.returns-sidebar {
+    width: 300px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.returns-sidebar h1 {
+    font-size: 24px;
+    margin: 0;
+    color: var(--danger);
+    text-align: center;
+    border-bottom: 2px solid var(--danger);
+    padding-bottom: 10px;
+}
+.sidebar-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 14px;
+}
+.sidebar-meta-row {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 4px;
+}
+
+/* Returns Table */
+.returns-table-container {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+.returns-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.returns-table th, .returns-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+.returns-table th {
+    background: var(--surface-hover);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.returns-table tr.selected {
+    background: rgba(225, 29, 72, 0.05); /* light red/danger tint */
+}
+.qty-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.qty-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.qty-btn:hover { background: var(--surface-hover); }
+
+/* Action Buttons Bottom Row */
+.returns-action-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+}
+.left-actions, .right-actions {
+    display: flex;
+    gap: 10px;
+}
+.btn-return-action {
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-return-action:hover {
+    background: var(--border);
+}
+.btn-return-big {
+    background: var(--teal);
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.btn-return-big:hover {
+    background: var(--teal-dark);
+}
+.btn-back-big {
+    background: var(--muted);
+}
+.btn-back-big:hover {
+    background: #475569;
+}
+.btn-next {
+    background: var(--orange);
+}
+.btn-next:hover {
+    background: #e65c00;
+}
+.btn-confirm {
+    background: var(--danger);
+}
+.btn-confirm:hover {
+    background: #be123c;
+}
+
+/* Security Panel (Screen 3) */
+.security-panel {
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 30px;
+}
+.reason-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+.reason-group h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    padding: 8px;
+    background: var(--surface-hover);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+}
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+.input-group label {
+    font-size: 14px;
+    font-weight: 600;
+}
+.ret-input {
+    padding: 12px;
+    font-size: 18px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    text-align: center;
+    cursor: pointer;
+}
+.ret-input:focus, .ret-input.active {
+    border-color: var(--teal);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2);
+}
+
+/* Numpad */
+.ret-numpad-container {
+    display: flex;
+    justify-content: center;
+}
+.ret-numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+.ret-numpad button {
+    width: 70px;
+    height: 70px;
+    font-size: 24px;
+    font-weight: 700;
+    border-radius: 12px;
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+}
+.ret-numpad button:active {
+    background: var(--border);
+    transform: scale(0.95);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .returns-layout-split {
+        flex-direction: column-reverse;
+    }
+    .returns-sidebar {
+        width: 100%;
+        height: auto;
+    }
+    .security-panel {
+        flex-direction: column;
+    }
+}
