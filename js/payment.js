@@ -148,9 +148,9 @@ function completeOrderAndShowReceipt() {
         dateFormatted: new Date().toLocaleString(currentLang === 'ar' ? 'ar-SA' : 'en-US'),
         type: currentOrderType,
         table: tableVal,
-        customer: customerObj ? (currentLang === 'ar' ? customerObj.nameAr : customerObj.nameEn) : 'عميل نقدي',
+        customer: customerObj ? (currentLang === 'ar' ? customerObj.nameAr : customerObj.nameEn) : (currentLang === 'ar' ? 'عميل نقدي' : 'Cash Customer'),
         customerId: currentCustomerId,
-        orderType: orderTypeObj ? (currentLang === 'ar' ? orderTypeObj.nameAr : orderTypeObj.nameEn) : 'محلي',
+        orderType: orderTypeObj ? (currentLang === 'ar' ? orderTypeObj.nameAr : orderTypeObj.nameEn) : (currentLang === 'ar' ? 'محلي' : 'Dine-in'),
         orderTypeId: currentOrderTypeId,
         notes: currentOrderNotes,
         phone: currentClientPhone,
@@ -215,12 +215,9 @@ function completeOrderAndShowReceipt() {
     document.getElementById('receiptModal')?.classList.add('open');
 
     // Automatic Printing if enabled
-    if (posPreferences && posPreferences.autoPrint && typeof routePrintJob === 'function') {
+    if (posPreferences && posPreferences.autoPrint) {
         setTimeout(() => {
-            const receiptNode = document.getElementById('thermalReceiptNode');
-            if (receiptNode) {
-                routePrintJob('cashier', receiptNode.outerHTML, `Receipt #${orderRecord.seq}`);
-            }
+            window.print();
         }, 500);
     }
 }

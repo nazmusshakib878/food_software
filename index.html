@@ -114,7 +114,7 @@
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span id="cashierNameDisplay"><i class="fa-solid fa-user"></i> Cashier</span>
                                 <span id="currentCompanyDisplay" class="company-badge-text" style="font-size: 11px; font-weight: 700; color: var(--teal);"><i class="fa-solid fa-store"></i> Nur foodes</span>
-                                <button class="icon-btn-top mobile-cart-close-btn" onclick="closeMobileCart()" title="إغلاق السلة" id="closeMobileCartBtn">
+                                <button class="icon-btn-top mobile-cart-close-btn" onclick="closeMobileCart()" title="إغلاق السلة" data-i18n-title="btn_close" id="closeMobileCartBtn">
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
@@ -126,14 +126,14 @@
                                 <label><i class="fa-solid fa-user-tag"></i> <span data-i18n="customer_lbl">العميل:</span></label>
                                 <div class="select-wrap">
                                     <select id="posCustomerSelect" class="form-select-pos" onchange="onPosCustomerChange(this.value)"></select>
-                                    <button type="button" class="btn-gear-icon" onclick="promptAddCustomer()" title="إضافة عميل"><i class="fa-solid fa-gear"></i></button>
+                                    <button type="button" class="btn-gear-icon" onclick="promptAddCustomer()" title="إضافة عميل" data-i18n-title="add_customer_title"><i class="fa-solid fa-gear"></i></button>
                                 </div>
                             </div>
                             <div class="selector-field-row">
                                 <label><i class="fa-solid fa-truck-ramp-box"></i> <span data-i18n="order_type_lbl">نوع الطلب:</span></label>
                                 <div class="select-wrap">
                                     <select id="posOrderTypeSelect" class="form-select-pos" onchange="onPosOrderTypeChange(this.value)"></select>
-                                    <button type="button" class="btn-gear-icon" onclick="promptAddOrderType()" title="إضافة نوع طلب"><i class="fa-solid fa-gear"></i></button>
+                                    <button type="button" class="btn-gear-icon" onclick="promptAddOrderType()" title="إضافة نوع طلب" data-i18n-title="add_order_type_title"><i class="fa-solid fa-gear"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -142,48 +142,54 @@
                         <div class="table-picker-row" id="tablePickerRow">
                             <label style="font-size: 11.5px; font-weight: 700;" data-i18n="table_num">الطاولة:</label>
                             <select class="table-picker-select" id="tableSelect">
-                                <option value="Table 1">Table 1 (طاولة ١)</option>
-                                <option value="Table 2">Table 2 (طاولة ٢)</option>
-                                <option value="Table 3">Table 3 (طاولة ٣)</option>
-                                <option value="Table 4">Table 4 (طاولة ٤)</option>
-                                <option value="Table 5">Table 5 (طاولة ٥)</option>
-                                <option value="VIP 1">VIP Lounge 1</option>
+                                <option value="Table 1" data-i18n="table_1">Table 1 (طاولة ١)</option>
+                                <option value="Table 2" data-i18n="table_2">Table 2 (طاولة ٢)</option>
+                                <option value="Table 3" data-i18n="table_3">Table 3 (طاولة ٣)</option>
+                                <option value="Table 4" data-i18n="table_4">Table 4 (طاولة ٤)</option>
+                                <option value="Table 5" data-i18n="table_5">Table 5 (طاولة ٥)</option>
+                                <option value="Table 6" data-i18n="table_6">Table 6</option>
+                                <option value="Terrace" data-i18n="terrace_table">Outdoor Terrace</option>
                             </select>
                         </div>
                     </div>
 
                     <!-- Cart Item Rows (Rendered dynamically as table #, Name, Qty, Price, Total) -->
-                    <div class="order-items-scroll cart-table-container" id="cartItemsList">
-                        <!-- Rendered dynamically via js/pos.js -->
+                    <div class="pos-cart-table-wrapper" id="posCartTableWrapper">
+                        <!-- Rendered via renderCart() in js/pos.js -->
                     </div>
 
-                    <!-- Bill Summary Box -->
-                    <div class="order-summary-box">
-                        <div class="sum-line">
-                            <span data-i18n="additions">الإضافات</span>
-                            <span class="val" id="summaryAdditions">SAR 0.00</span>
-                        </div>
-                        <div class="sum-line">
-                            <span data-i18n="subtotal">المجموع الفرعي</span>
-                            <span class="val" id="summarySubtotal">SAR 0.00</span>
-                        </div>
-                        <div class="sum-line">
-                            <span data-i18n="discount">الخصم</span>
-                            <span class="val" id="summaryDiscount">SAR 0.00</span>
-                        </div>
-                        <div class="sum-line">
-                            <span data-i18n="tax_vat">ضريبة القيمة المضافة</span>
-                            <span class="val" id="summaryTax">SAR 0.00</span>
+                    <!-- Cart Sticky Footer (Discount, Tax, Grand Total & Pay CTA) -->
+                    <div class="pos-cart-footer">
+                        
+                        <!-- Totals Breakdown Lines -->
+                        <div class="totals-breakdown">
+                            <div class="row">
+                                <span><i class="fa-solid fa-puzzle-piece"></i> <span data-i18n="additions">الإضافات</span></span>
+                                <span id="cartAddonsTotal">0.00</span>
+                            </div>
+                            <div class="row">
+                                <span><i class="fa-solid fa-calculator"></i> <span data-i18n="subtotal">المجموع الفرعي</span></span>
+                                <span id="cartSubtotal">0.00</span>
+                            </div>
+                            <div class="row">
+                                <span><i class="fa-solid fa-percent"></i> <span data-i18n="discount">الخصم</span></span>
+                                <span id="cartDiscount" style="color: var(--danger);">0.00</span>
+                            </div>
+                            <div class="row">
+                                <span><i class="fa-solid fa-receipt"></i> <span data-i18n="tax_vat">ضريبة القيمة المضافة</span></span>
+                                <span id="cartTax">0.00</span>
+                            </div>
                         </div>
 
-                        <div class="sum-line grand-total-line" style="border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 4px; font-size: 13.5px; font-weight: 800; color: var(--text);">
-                            <span data-i18n="total_due_label">Total Due / الإجمالي المطلوب</span>
-                            <span class="val" id="summaryTotalDueDisplay" style="color: var(--teal); font-size: 15px; font-weight: 900;">SAR 0.00</span>
+                        <!-- Grand Total & Pay CTA Bar -->
+                        <div class="pay-cta-banner">
+                            <span class="lbl" data-i18n="total_due_label">Total Due / الإجمالي المطلوب</span>
+                            <span class="grand-val" id="cartGrandTotal">SAR 0.00</span>
+                            <button type="button" class="btn-pay-cta" onclick="openPaymentModal()">
+                                <i class="fa-solid fa-credit-card"></i> <span data-i18n="pay_action">دفع الحساب</span>
+                            </button>
                         </div>
-                        <button class="grand-total-btn" onclick="openPaymentModal()">
-                            <span data-i18n="pay_action">دفع الحساب</span>
-                            <span id="summaryGrandTotal">SAR 0.00</span>
-                        </button>
+
                     </div>
                 </aside>
 
@@ -192,19 +198,19 @@
                     
                     <!-- 4 MAIN POS ACTION BUTTONS (Cancel, Discounts, Notes, More) -->
                     <div class="pos-top-actions-bar">
-                        <button type="button" class="pos-action-btn btn-cancel" onclick="safeCancelOrder()" title="إلغاء الطلب الحالي">
+                        <button type="button" class="pos-action-btn btn-cancel" onclick="safeCancelOrder()" title="إلغاء الطلب الحالي" data-i18n-title="btn_cancel">
                             <i class="fa-solid fa-ban"></i>
                             <span data-i18n="btn_cancel">إلغاء</span>
                         </button>
-                        <button type="button" class="pos-action-btn btn-discounts" onclick="openDiscountModal()" title="تطبيق خصم">
+                        <button type="button" class="pos-action-btn btn-discounts" onclick="openDiscountModal()" title="تطبيق خصم" data-i18n-title="btn_discount">
                             <i class="fa-solid fa-tags"></i>
                             <span data-i18n="btn_discount">الخصومات</span>
                         </button>
-                        <button type="button" class="pos-action-btn btn-notes" onclick="openNotesModal()" title="ملاحظات الطلب والعميل">
+                        <button type="button" class="pos-action-btn btn-notes" onclick="openNotesModal()" title="ملاحظات الطلب والعميل" data-i18n-title="btn_notes">
                             <i class="fa-solid fa-clipboard"></i>
                             <span data-i18n="btn_notes">الملاحظات</span>
                         </button>
-                        <button type="button" class="pos-action-btn btn-more" onclick="toggleMorePanel()" title="المزيد والإعدادات">
+                        <button type="button" class="pos-action-btn btn-more" onclick="toggleMorePanel()" title="المزيد والإعدادات" data-i18n-title="btn_more">
                             <i class="fa-solid fa-ellipsis-vertical"></i>
                             <span data-i18n="btn_more">المزيد</span>
                         </button>
@@ -347,13 +353,13 @@
                             <table class="admin-table">
                                 <thead>
                                     <tr>
-                                        <th>رقم الطلب</th>
-                                        <th>الوقت والتاريخ</th>
-                                        <th>النوع</th>
-                                        <th>الكاشير</th>
-                                        <th>المجموع</th>
-                                        <th>طريقة الدفع</th>
-                                        <th>الإجراء</th>
+                                        <th data-i18n="th_order_id">رقم الطلب</th>
+                                        <th data-i18n="th_date_time">الوقت والتاريخ</th>
+                                        <th data-i18n="th_type">النوع</th>
+                                        <th data-i18n="th_cashier">الكاشير</th>
+                                        <th data-i18n="th_total">المجموع</th>
+                                        <th data-i18n="th_payment_method">طريقة الدفع</th>
+                                        <th data-i18n="th_actions">الإجراء</th>
                                     </tr>
                                 </thead>
                                 <tbody id="recentOrdersTbody">
@@ -368,13 +374,13 @@
                 <div class="admin-pane" id="paneMenu">
                     <div class="admin-card">
                         <div class="admin-card-header">
-                            <h3><i class="fa-solid fa-utensils"></i> قائمة الأصناف بالمنيو</h3>
+                            <h3><i class="fa-solid fa-utensils"></i> <span data-i18n="admin_menu_title">قائمة الأصناف بالمنيو</span></h3>
                             <div style="display: flex; gap: 8px;">
-                                <button class="btn-primary" style="background: var(--teal);" onclick="resetMenuToDefaults()" title="استعادة الأصناف الافتراضية مع الصور">
-                                    <i class="fa-solid fa-rotate-left"></i> استعادة الصور الأصلية
+                                <button class="btn-primary" style="background: var(--teal);" onclick="resetMenuToDefaults()" title="استعادة الأصناف الافتراضية مع الصور" data-i18n-title="btn_restore_images">
+                                    <i class="fa-solid fa-rotate-left"></i> <span data-i18n="btn_restore_images">استعادة الصور الأصلية</span>
                                 </button>
                                 <button class="btn-primary" onclick="openItemModal()">
-                                    <i class="fa-solid fa-plus"></i> إضافة صنف جديد
+                                    <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_item">إضافة صنف جديد</span>
                                 </button>
                             </div>
                         </div>
@@ -382,13 +388,13 @@
                             <table class="admin-table">
                                 <thead>
                                     <tr>
-                                        <th>الصورة</th>
-                                        <th>الاسم بالعربي</th>
-                                        <th>الاسم بالإنجليزي</th>
-                                        <th>القسم</th>
-                                        <th>السعر</th>
-                                        <th>الحالة</th>
-                                        <th>الإجراءات</th>
+                                        <th data-i18n="th_image">الصورة</th>
+                                        <th data-i18n="th_name_ar">الاسم بالعربي</th>
+                                        <th data-i18n="th_name_en">الاسم بالإنجليزي</th>
+                                        <th data-i18n="th_category_col">القسم</th>
+                                        <th data-i18n="th_price">السعر</th>
+                                        <th data-i18n="th_status">الحالة</th>
+                                        <th data-i18n="th_actions">الإجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody id="adminItemsTbody">
@@ -403,20 +409,20 @@
                 <div class="admin-pane" id="paneCategories">
                     <div class="admin-card">
                         <div class="admin-card-header">
-                            <h3><i class="fa-solid fa-tags"></i> تصنيفات المنيو</h3>
+                            <h3><i class="fa-solid fa-tags"></i> <span data-i18n="admin_cats_title">تصنيفات المنيو</span></h3>
                             <button class="btn-primary" onclick="openCategoryModal()">
-                                <i class="fa-solid fa-plus"></i> إضافة قسم جديد
+                                <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_cat">إضافة قسم جديد</span>
                             </button>
                         </div>
                         <div class="table-responsive">
                             <table class="admin-table">
                                 <thead>
                                     <tr>
-                                        <th>الأيقونة</th>
-                                        <th>اسم القسم (عربي)</th>
-                                        <th>اسم القسم (EN)</th>
-                                        <th>الأصناف المرتبطة</th>
-                                        <th>الإجراءات</th>
+                                        <th data-i18n="th_icon">الأيقونة</th>
+                                        <th data-i18n="th_cat_ar">اسم القسم (عربي)</th>
+                                        <th data-i18n="th_cat_en">اسم القسم (EN)</th>
+                                        <th data-i18n="th_linked_items">الأصناف المرتبطة</th>
+                                        <th data-i18n="th_actions">الإجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody id="adminCategoriesTbody">
@@ -431,17 +437,17 @@
                 <div class="admin-pane" id="paneOrders">
                     <div class="admin-card">
                         <div class="admin-card-header" style="flex-wrap: wrap; gap: 10px;">
-                            <h3><i class="fa-solid fa-receipt"></i> سجل الفواتير والمبيعات الشامل</h3>
+                            <h3><i class="fa-solid fa-receipt"></i> <span data-i18n="admin_orders_title">سجل الفواتير والمبيعات الشامل</span></h3>
                             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                                <input type="text" id="orderSearchInput" class="form-control" placeholder="بحث برقم الفاتورة أو العميل..." oninput="filterOrders()" style="width: 200px; padding: 6px 12px; font-size: 13px;">
+                                <input type="text" id="orderSearchInput" class="form-control" placeholder="بحث برقم الفاتورة أو العميل..." data-i18n-placeholder="search_orders_placeholder" oninput="filterOrders()" style="width: 200px; padding: 6px 12px; font-size: 13px;">
                                 <select id="orderStatusFilter" class="form-control" onchange="filterOrders()" style="width: 120px; padding: 6px 10px; font-size: 13px;">
-                                    <option value="all">كل الحالات</option>
-                                    <option value="completed">مكتمل</option>
-                                    <option value="new">جديد / تحضير</option>
-                                    <option value="cancelled">ملغي</option>
+                                    <option value="all" data-i18n="opt_all_status">كل الحالات</option>
+                                    <option value="completed" data-i18n="opt_completed">مكتمل</option>
+                                    <option value="new" data-i18n="opt_new_prep">جديد / تحضير</option>
+                                    <option value="cancelled" data-i18n="opt_cancelled">ملغي</option>
                                 </select>
                                 <button class="btn-primary" onclick="exportOrdersCSV()">
-                                    <i class="fa-solid fa-file-excel"></i> تصدير إكسل
+                                    <i class="fa-solid fa-file-excel"></i> <span data-i18n="export_excel_btn">تصدير إكسل</span>
                                 </button>
                             </div>
                         </div>
@@ -449,15 +455,15 @@
                             <table class="admin-table">
                                 <thead>
                                     <tr>
-                                        <th>رقم الطلب</th>
-                                        <th>التاريخ والوقت</th>
-                                        <th>نوع الطلب</th>
-                                        <th>العميل</th>
-                                        <th>الأصناف</th>
-                                        <th>المجموع</th>
-                                        <th>طريقة الدفع</th>
-                                        <th>الكاشير</th>
-                                        <th>الإجراء</th>
+                                        <th data-i18n="th_order_id">رقم الطلب</th>
+                                        <th data-i18n="th_date_time">التاريخ والوقت</th>
+                                        <th data-i18n="th_type">نوع الطلب</th>
+                                        <th data-i18n="th_customer_col">العميل</th>
+                                        <th data-i18n="th_items_col">الأصناف</th>
+                                        <th data-i18n="th_total">المجموع</th>
+                                        <th data-i18n="th_payment_method">طريقة الدفع</th>
+                                        <th data-i18n="th_cashier">الكاشير</th>
+                                        <th data-i18n="th_actions">الإجراء</th>
                                     </tr>
                                 </thead>
                                 <tbody id="allOrdersTbody">
@@ -472,42 +478,42 @@
                 <div class="admin-pane" id="paneSettings">
                     <div class="admin-card" style="max-width: 600px;">
                         <div class="admin-card-header">
-                            <h3><i class="fa-solid fa-sliders"></i> إعدادات المتجر والضريبة</h3>
+                            <h3><i class="fa-solid fa-sliders"></i> <span data-i18n="admin_settings">إعدادات المتجر والضريبة</span></h3>
                         </div>
                         <form onsubmit="saveStoreSettings(event)" style="padding: 16px;">
                             <div class="form-group">
-                                <label>اسم المطعم (عربي):</label>
+                                <label data-i18n="lbl_store_name_ar">اسم المطعم (عربي):</label>
                                 <input type="text" class="form-control" id="setStoreNameAr" required>
                             </div>
                             <div class="form-group">
-                                <label>اسم المطعم (English):</label>
+                                <label data-i18n="lbl_store_name_en">اسم المطعم (English):</label>
                                 <input type="text" class="form-control" id="setStoreNameEn" required>
                             </div>
                             <div class="form-group">
-                                <label>اسم الشركة / الفرع:</label>
+                                <label data-i18n="lbl_company_name">اسم الشركة / الفرع:</label>
                                 <input type="text" class="form-control" id="setCompanyName" required>
                             </div>
                             <div class="form-group">
-                                <label>الرقم الضريبي (VAT Number):</label>
+                                <label data-i18n="lbl_vat_number">الرقم الضريبي (VAT Number):</label>
                                 <input type="text" class="form-control" id="setVatNumber" required>
                             </div>
                             <div class="form-row-2">
                                 <div class="form-group">
-                                    <label>نسبة الضريبة (%):</label>
+                                    <label data-i18n="lbl_tax_rate">نسبة الضريبة (%):</label>
                                     <input type="number" class="form-control" id="setTaxRate" step="0.1" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>العملة:</label>
+                                    <label data-i18n="lbl_currency">العملة:</label>
                                     <input type="text" class="form-control" id="setCurrency" required>
                                 </div>
                             </div>
                             <div class="form-row-2">
                                 <div class="form-group">
-                                    <label>رمز المدير PIN:</label>
+                                    <label data-i18n="lbl_admin_pin">رمز المدير PIN:</label>
                                     <input type="password" class="form-control" id="setAdminPin" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>رمز الكاشير PIN:</label>
+                                    <label data-i18n="lbl_staff_pin">رمز الكاشير PIN:</label>
                                     <input type="password" class="form-control" id="setStaffPin" required>
                                 </div>
                             </div>
@@ -526,13 +532,13 @@
             <div class="kds-layout">
                 <div class="kds-topbar">
                     <div class="kds-counts-summary">
-                        <div class="kds-badge kds-count-new"><span id="kdsCountNew">0</span> طلبات جديدة New</div>
-                        <div class="kds-badge kds-count-prep"><span id="kdsCountPrep">0</span> قيد التجهيز Prep</div>
-                        <div class="kds-badge kds-count-ready"><span id="kdsCountReady">0</span> جاهز Ready</div>
+                        <div class="kds-badge kds-count-new"><span id="kdsCountNew">0</span> <span data-i18n="kds_count_new_lbl">طلبات جديدة New</span></div>
+                        <div class="kds-badge kds-count-prep"><span id="kdsCountPrep">0</span> <span data-i18n="kds_count_prep_lbl">قيد التجهيز Prep</span></div>
+                        <div class="kds-badge kds-count-ready"><span id="kdsCountReady">0</span> <span data-i18n="kds_count_ready_lbl">جاهز Ready</span></div>
                     </div>
                     <div>
                         <button class="btn-secondary" onclick="renderKdsScreen()" style="padding: 7px 14px; font-size: 12px;">
-                            <i class="fa-solid fa-rotate"></i> تحديث
+                            <i class="fa-solid fa-rotate"></i> <span data-i18n="btn_refresh_kds">تحديث</span>
                         </button>
                     </div>
                 </div>
@@ -675,7 +681,7 @@
     <div class="drawer-header">
         <div class="drawer-brand">
             <i class="fa-solid fa-cash-register"></i>
-            <span>نظام نقاط البيع والإدارة</span>
+            <span data-i18n="drawer_brand_name">نظام نقاط البيع والإدارة</span>
         </div>
         <button type="button" class="drawer-close-btn" onclick="closeSideDrawer()">
             <i class="fa-solid fa-xmark"></i>
@@ -692,58 +698,58 @@
             <span data-i18n="nav_returns_screen">الطلبات والإرجاع (Orders)</span>
         </div>
         
-        <div class="drawer-section-title">تقارير المبيعات والعمليات</div>
+        <div class="drawer-section-title" data-i18n="drawer_sales_reports_title">تقارير المبيعات والعمليات</div>
 
         <div class="drawer-menu-item" onclick="toggleDrawerReportsSubmenu()">
             <i class="fa-solid fa-chart-line"></i>
-            <span style="flex:1;">1. تقارير المبيعات (Reports)</span>
+            <span style="flex:1;" data-i18n="drawer_rep_sales">1. تقارير المبيعات (Reports)</span>
             <i class="fa-solid fa-chevron-down" id="drawerReportsArrow" style="font-size: 12px;"></i>
         </div>
         <div class="drawer-sub-menu" id="drawerReportsSubmenu">
-            <div class="drawer-sub-item" data-report-id="invoice_reports" onclick="openReportModule('invoice_reports')"><i class="fa-solid fa-receipt"></i> تقارير الفواتير</div>
-            <div class="drawer-sub-item" data-report-id="items_report" onclick="openReportModule('items_report')"><i class="fa-solid fa-box-open"></i> تقرير الأصناف</div>
-            <div class="drawer-sub-item" data-report-id="daily_shifts" onclick="openReportModule('daily_shifts')"><i class="fa-solid fa-user-clock"></i> تقارير الورديات اليومية</div>
-            <div class="drawer-sub-item" data-report-id="damaged_items" onclick="openReportModule('damaged_items')"><i class="fa-solid fa-trash-can"></i> تقرير التوالف والهالك</div>
-            <div class="drawer-sub-item" data-report-id="application_reports" onclick="openReportModule('application_reports')"><i class="fa-solid fa-mobile-screen-button"></i> تقارير التطبيقات</div>
-            <div class="drawer-sub-item" data-report-id="service_durations" onclick="openReportModule('service_durations')"><i class="fa-solid fa-stopwatch"></i> أوقات إنجاز الخدمة</div>
-            <div class="drawer-sub-item" data-report-id="totals_report" onclick="openReportModule('totals_report')"><i class="fa-solid fa-calculator"></i> تقرير الإجماليات</div>
-            <div class="drawer-sub-item" data-report-id="active_meals" onclick="openReportModule('active_meals')"><i class="fa-solid fa-fire"></i> الوجبات النشطة حالياً</div>
-            <div class="drawer-sub-item" data-report-id="meals_reports" onclick="openReportModule('meals_reports')"><i class="fa-solid fa-chart-pie"></i> تقارير فئات الوجبات</div>
+            <div class="drawer-sub-item" data-report-id="invoice_reports" onclick="openReportModule('invoice_reports')"><i class="fa-solid fa-receipt"></i> <span data-i18n="rep_sub_invoices">تقارير الفواتير</span></div>
+            <div class="drawer-sub-item" data-report-id="items_report" onclick="openReportModule('items_report')"><i class="fa-solid fa-box-open"></i> <span data-i18n="rep_sub_items">تقرير الأصناف</span></div>
+            <div class="drawer-sub-item" data-report-id="daily_shifts" onclick="openReportModule('daily_shifts')"><i class="fa-solid fa-user-clock"></i> <span data-i18n="rep_sub_shifts">تقارير الورديات اليومية</span></div>
+            <div class="drawer-sub-item" data-report-id="damaged_items" onclick="openReportModule('damaged_items')"><i class="fa-solid fa-trash-can"></i> <span data-i18n="rep_sub_damaged">تقرير التوالف والهالك</span></div>
+            <div class="drawer-sub-item" data-report-id="application_reports" onclick="openReportModule('application_reports')"><i class="fa-solid fa-mobile-screen-button"></i> <span data-i18n="rep_sub_apps">تقارير التطبيقات</span></div>
+            <div class="drawer-sub-item" data-report-id="service_durations" onclick="openReportModule('service_durations')"><i class="fa-solid fa-stopwatch"></i> <span data-i18n="rep_sub_durations">أوقات إنجاز الخدمة</span></div>
+            <div class="drawer-sub-item" data-report-id="totals_report" onclick="openReportModule('totals_report')"><i class="fa-solid fa-calculator"></i> <span data-i18n="rep_sub_totals">تقرير الإجماليات</span></div>
+            <div class="drawer-sub-item" data-report-id="active_meals" onclick="openReportModule('active_meals')"><i class="fa-solid fa-fire"></i> <span data-i18n="rep_sub_active_meals">الوجبات النشطة حالياً</span></div>
+            <div class="drawer-sub-item" data-report-id="meals_reports" onclick="openReportModule('meals_reports')"><i class="fa-solid fa-chart-pie"></i> <span data-i18n="rep_sub_meals_cat">تقارير فئات الوجبات</span></div>
         </div>
 
         <div class="drawer-menu-item" data-report-id="payment_type_report" onclick="openReportModule('payment_type_report')">
             <i class="fa-solid fa-credit-card"></i>
-            <span>2. تقرير طرق الدفع</span>
+            <span data-i18n="menu_payment_type_report">2. تقرير طرق الدفع</span>
         </div>
 
         <div class="drawer-menu-item" data-report-id="balancing_payments" onclick="openReportModule('balancing_payments')">
             <i class="fa-solid fa-scale-balanced"></i>
-            <span>3. مطابقة طرق الدفع (Balancing)</span>
+            <span data-i18n="menu_balancing_payments">3. مطابقة طرق الدفع (Balancing)</span>
         </div>
 
         <div class="drawer-menu-item" data-report-id="applications_review" onclick="openReportModule('applications_review')">
             <i class="fa-solid fa-table-list"></i>
-            <span>4. مراجعة بيانات التطبيقات</span>
+            <span data-i18n="menu_apps_data_review">4. مراجعة بيانات التطبيقات</span>
         </div>
 
         <div class="drawer-menu-item" data-report-id="internal_orders" onclick="openReportModule('internal_orders')">
             <i class="fa-solid fa-clipboard-list"></i>
-            <span>5. الطلبات الداخلية</span>
+            <span data-i18n="menu_internal_orders">5. الطلبات الداخلية</span>
         </div>
 
         <div class="drawer-menu-item" data-report-id="inventory_auditing" onclick="openReportModule('inventory_auditing')">
             <i class="fa-solid fa-clipboard-check"></i>
-            <span>6. جرد ومطابقة المخزون</span>
+            <span data-i18n="menu_inventory_auditing">6. جرد ومطابقة المخزون</span>
         </div>
 
         <div class="drawer-menu-item" data-report-id="daily_inventory" onclick="openReportModule('daily_inventory')">
             <i class="fa-solid fa-warehouse"></i>
-            <span>7. المخزون اليومي</span>
+            <span data-i18n="menu_daily_inventory">7. المخزون اليومي</span>
         </div>
 
         <div class="drawer-menu-item" data-report-id="daily_stock_calculator" onclick="openReportModule('daily_stock_calculator')">
             <i class="fa-solid fa-calculator"></i>
-            <span>8. حاسبة المخزون اليومي</span>
+            <span data-i18n="menu_daily_stock_calc">8. حاسبة المخزون اليومي</span>
         </div>
     </div>
 </aside>
@@ -756,37 +762,33 @@
 <div class="modal-overlay" id="loginModal">
     <div class="modal-card" style="max-width: 380px;">
         <div class="modal-header">
-            <h3><i class="fa-solid fa-lock"></i> تسجيل الدخول للنظام</h3>
+            <h3><i class="fa-solid fa-lock"></i> <span data-i18n="login_modal_title">تسجيل الدخول للنظام</span></h3>
             <button class="modal-close-btn" onclick="closeLoginModal()"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form onsubmit="submitLogin(event)">
             <div class="modal-body">
                 <div style="text-align: center; margin-bottom: 14px;">
-                    <p style="font-size: 13px; color: var(--muted); font-weight: 600;">
-                        اختر نوع الحساب وأدخل الرمز (PIN)
-                    </p>
+                    <p style="font-size: 13px; color: var(--muted); font-weight: 600;" data-i18n="login_modal_subtitle">اختر نوع الحساب وأدخل الرمز (PIN)</p>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;">
                     <button type="button" class="order-type-btn active" id="rolePickStaff" onclick="selectLoginRole('staff')">
-                        <i class="fa-solid fa-user"></i> Staff / كاشير
+                        <i class="fa-solid fa-user"></i> <span data-i18n="login_role_staff">Staff / كاشير</span>
                     </button>
                     <button type="button" class="order-type-btn" id="rolePickAdmin" onclick="selectLoginRole('admin')">
-                        <i class="fa-solid fa-user-shield"></i> Admin / مدير
+                        <i class="fa-solid fa-user-shield"></i> <span data-i18n="login_role_admin">Admin / مدير</span>
                     </button>
                 </div>
 
                 <div class="form-group">
-                    <label>رمز المرور (PIN):</label>
+                    <label data-i18n="login_pin_lbl">رمز المرور (PIN):</label>
                     <input type="password" class="form-control" id="loginPinInput" maxlength="6" style="text-align: center; font-size: 20px; letter-spacing: 4px;" placeholder="****" required autofocus>
-                    <small style="display: block; text-align: center; margin-top: 6px; color: var(--muted); font-size: 11px;">
-                        افتراضي: المدير (1234) | الكاشير (0000)
-                    </small>
+                    <small style="display: block; text-align: center; margin-top: 6px; color: var(--muted); font-size: 11px;" data-i18n="login_hint">افتراضي: المدير (1234) | الكاشير (0000)</small>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
-                    <i class="fa-solid fa-arrow-right-to-bracket"></i> دخول
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> <span data-i18n="btn_login">دخول</span>
                 </button>
             </div>
         </form>
@@ -797,7 +799,7 @@
 <div class="modal-overlay" id="paymentModal">
     <div class="modal-card" style="max-width: 560px;">
         <div class="modal-header">
-            <h3><i class="fa-solid fa-money-bill-wave"></i> تأكيد السداد وإصدار الفاتورة</h3>
+            <h3><i class="fa-solid fa-money-bill-wave"></i> <span data-i18n="pay_modal_title">تأكيد السداد وإصدار الفاتورة</span></h3>
             <button class="modal-close-btn" onclick="closePaymentModal()"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="modal-body">
@@ -818,7 +820,7 @@
                         <div class="numpad-key" onclick="pressNumpad('.')">.</div>
                         <div class="numpad-key" onclick="pressNumpad('0')">0</div>
                         <div class="numpad-key" onclick="pressNumpad('BACK')"><i class="fa-solid fa-delete-left"></i></div>
-                        <div class="numpad-key accent" onclick="pressNumpadQuick('EXACT')" style="font-size: 11px; font-weight: 800;">EXACT</div>
+                        <div class="numpad-key accent" onclick="pressNumpadQuick('EXACT')" style="font-size: 11px; font-weight: 800;"><span data-i18n="numpad_exact">EXACT</span></div>
                         <div class="numpad-key accent" onclick="pressNumpadQuick(50)">50</div>
                         <div class="numpad-key accent" onclick="pressNumpadQuick(100)">100</div>
                         <div class="numpad-key accent" onclick="pressNumpadQuick(200)">200</div>
@@ -840,21 +842,21 @@
                     </div>
 
                     <div class="pay-disp-card" style="background: var(--orange-soft);">
-                        <small style="color: var(--orange);" id="changeLabel">المتبقي / الباقي للعميل</small>
+                        <small style="color: var(--orange);" id="changeLabel" data-i18n="change_return">المتبقي / الباقي للعميل</small>
                         <div class="big-num" style="color: var(--orange);" id="payModalChange">0.00</div>
                     </div>
 
                     <div class="pay-methods-selector">
                         <div class="pay-method-radio active" onclick="selectPayMethod('Cash', this)">
-                            <span><i class="fa-solid fa-money-bill-1-wave"></i> نقدي (Cash)</span>
+                            <span><i class="fa-solid fa-money-bill-1-wave"></i> <span data-i18n="pay_method_cash">نقدي (Cash)</span></span>
                             <i class="radio-dot fa-solid fa-circle-check"></i>
                         </div>
                         <div class="pay-method-radio" onclick="selectPayMethod('Mada / Card', this)">
-                            <span><i class="fa-solid fa-credit-card"></i> بطاقة مدى / Card</span>
+                            <span><i class="fa-solid fa-credit-card"></i> <span data-i18n="pay_method_card">بطاقة مدى / Card</span></span>
                             <i class="radio-dot fa-regular fa-circle"></i>
                         </div>
                         <div class="pay-method-radio" onclick="selectPayMethod('Online / Transfer', this)">
-                            <span><i class="fa-solid fa-globe"></i> تطبيق / تحويل</span>
+                            <span><i class="fa-solid fa-globe"></i> <span data-i18n="pay_method_online">تطبيق / تحويل</span></span>
                             <i class="radio-dot fa-regular fa-circle"></i>
                         </div>
                     </div>
@@ -864,7 +866,7 @@
         </div>
         <div class="modal-footer">
             <button class="btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 15px;" onclick="completeOrderAndShowReceipt()">
-                <i class="fa-solid fa-check"></i> إتمام الطلب وطباعة الفاتورة
+                <i class="fa-solid fa-check"></i> <span data-i18n="btn_complete_order">إتمام الطلب وطباعة الفاتورة</span>
             </button>
         </div>
     </div>
@@ -974,15 +976,16 @@
 
         </div>
         <div class="modal-footer" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; gap: 6px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                 <button class="btn-primary" onclick="printReceiptDirect()">
-                    <i class="fa-solid fa-print"></i> طباعة (Print)
+                    <i class="fa-solid fa-print"></i> <span data-i18n="btn_print_receipt">طباعة (Print)</span>
                 </button>
-
-
+                <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);" onclick="downloadReceiptPdf()">
+                    <i class="fa-solid fa-file-pdf"></i> <span data-i18n="btn_download_pdf">تحميل PDF</span>
+                </button>
             </div>
             <button class="btn-danger" style="background: var(--muted);" onclick="closeReceiptModal()">
-                إغلاق
+                <span data-i18n="btn_close">إغلاق</span>
             </button>
         </div>
     </div>
@@ -992,7 +995,7 @@
 <div class="modal-overlay" id="itemModal">
     <div class="modal-card" style="max-width: 480px;">
         <div class="modal-header">
-            <h3 id="itemModalTitle"><i class="fa-solid fa-burger"></i> إضافة صنف جديد</h3>
+            <h3 id="itemModalTitle"><i class="fa-solid fa-burger"></i> <span data-i18n="item_modal_title_add">إضافة صنف جديد</span></h3>
             <button class="modal-close-btn" onclick="closeItemModal()"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form onsubmit="saveItemForm(event)">
@@ -1000,32 +1003,32 @@
                 <input type="hidden" id="editItemId">
 
                 <div class="form-group">
-                    <label>الاسم بالعربي</label>
-                    <input type="text" class="form-control" id="itemArName" placeholder="مثال: برجر لحم مشوي" required>
+                    <label data-i18n="lbl_item_ar_name">الاسم بالعربي</label>
+                    <input type="text" class="form-control" id="itemArName" data-i18n-placeholder="item_placeholder_name" placeholder="مثال: برجر لحم مشوي" required>
                 </div>
 
                 <div class="form-group">
-                    <label>الاسم بالإنجليزي (English)</label>
+                    <label data-i18n="lbl_item_en_name">الاسم بالإنجليزي (English)</label>
                     <input type="text" class="form-control" id="itemEnName" placeholder="Example: Grilled Beef Burger" required>
                 </div>
 
                 <div class="form-row-2">
                     <div class="form-group">
-                        <label>القسم / التصنيف</label>
+                        <label data-i18n="lbl_item_category">القسم / التصنيف</label>
                         <select class="form-control" id="itemCategorySelect" required onchange="renderAdminImagePresets(this.value); updateItemImagePreview(document.getElementById('itemImageInput').value, this.value)">
                             <!-- Generated via js/admin.js -->
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>السعر (ريال / SAR)</label>
+                        <label data-i18n="lbl_item_price">السعر (ريال / SAR)</label>
                         <input type="number" step="any" class="form-control" id="itemPrice" placeholder="18.50" required>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <label style="margin-bottom: 0;">رابط صورة الصنف (Image URL):</label>
-                        <small style="color: var(--teal); font-weight: 700; font-size: 11px;">(أو اختر من المعرض أدناه)</small>
+                        <label style="margin-bottom: 0;" data-i18n="lbl_item_img_url">رابط صورة الصنف (Image URL):</label>
+                        <small style="color: var(--teal); font-weight: 700; font-size: 11px;" data-i18n="lbl_item_img_hint">(أو اختر من المعرض أدناه)</small>
                     </div>
                     <input type="url" class="form-control" id="itemImageInput" placeholder="https://images.unsplash.com/..." oninput="updateItemImagePreview(this.value, document.getElementById('itemCategorySelect').value)">
                 </div>
@@ -1039,25 +1042,25 @@
                 <div class="image-preview-box">
                     <img id="itemPreviewImg" src="" alt="Live Preview" onerror="handleImageError(this, document.getElementById('itemCategorySelect').value)">
                     <div class="preview-info">
-                        <strong id="itemPreviewTitle">معاينة مباشرة للصورة</strong>
-                        <small id="itemPreviewNotice">ستظهر هذه الصورة في شاشة الكاشير</small>
+                        <strong id="itemPreviewTitle" data-i18n="item_preview_live">معاينة مباشرة للصورة</strong>
+                        <small id="itemPreviewNotice" data-i18n="item_preview_sub">ستظهر هذه الصورة في شاشة الكاشير</small>
                     </div>
                 </div>
 
                 <div class="form-row-2">
                     <div class="form-group">
-                        <label>كود الصنف (#Code):</label>
-                        <input type="text" class="form-control" id="itemCode" placeholder="مثال: 101">
+                        <label data-i18n="lbl_item_code">كود الصنف (#Code):</label>
+                        <input type="text" class="form-control" id="itemCode" data-i18n-placeholder="item_placeholder_code" placeholder="مثال: 101">
                     </div>
                     <div class="form-group" style="display: flex; align-items: center; padding-top: 25px; gap: 8px;">
                         <input type="checkbox" id="itemAvailable" style="width: 18px; height: 18px;" checked>
-                        <label for="itemAvailable" style="margin-bottom: 0; cursor: pointer;">متوفر للطلب حالياً</label>
+                        <label for="itemAvailable" style="margin-bottom: 0; cursor: pointer;" data-i18n="lbl_item_available">متوفر للطلب حالياً</label>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeItemModal()">إلغاء</button>
-                <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> حفظ الصنف</button>
+                <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeItemModal()"><span data-i18n="btn_cancel">إلغاء</span></button>
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save_item">حفظ الصنف</span></button>
             </div>
         </form>
     </div>
@@ -1067,7 +1070,7 @@
 <div class="modal-overlay" id="categoryModal">
     <div class="modal-card" style="max-width: 420px;">
         <div class="modal-header">
-            <h3 id="categoryModalTitle"><i class="fa-solid fa-tags"></i> إضافة قسم جديد</h3>
+            <h3 id="categoryModalTitle"><i class="fa-solid fa-tags"></i> <span data-i18n="cat_modal_title_add">إضافة قسم جديد</span></h3>
             <button class="modal-close-btn" onclick="closeCategoryModal()"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form onsubmit="saveCategoryForm(event)">
@@ -1075,31 +1078,31 @@
                 <input type="hidden" id="editCatId">
 
                 <div class="form-group">
-                    <label>اسم القسم بالعربي</label>
-                    <input type="text" class="form-control" id="catArName" placeholder="مثال: مشويات وحلويات" required>
+                    <label data-i18n="lbl_cat_ar_name">اسم القسم بالعربي</label>
+                    <input type="text" class="form-control" id="catArName" data-i18n-placeholder="cat_placeholder_name" placeholder="مثال: مشويات وحلويات" required>
                 </div>
 
                 <div class="form-group">
-                    <label>اسم القسم بالإنجليزي (English)</label>
+                    <label data-i18n="lbl_cat_en_name">اسم القسم بالإنجليزي (English)</label>
                     <input type="text" class="form-control" id="catEnName" placeholder="Example: Grills & Desserts" required>
                 </div>
 
                 <div class="form-group">
-                    <label>أيقونة القسم (FontAwesome Icon):</label>
+                    <label data-i18n="lbl_cat_icon">أيقونة القسم (FontAwesome Icon):</label>
                     <select class="form-control" id="catIconSelect">
-                        <option value="fa-burger">🍔 برجر / وجبات (fa-burger)</option>
-                        <option value="fa-hotdog">🌭 سندوتشات (fa-hotdog)</option>
-                        <option value="fa-bottle-water">🥤 مشروبات باردة (fa-bottle-water)</option>
-                        <option value="fa-mug-hot">☕ مشروبات ساخنة (fa-mug-hot)</option>
-                        <option value="fa-pizza-slice">🍕 بيتزا ومعجنات (fa-pizza-slice)</option>
-                        <option value="fa-fish">🐟 مأكولات بحرية (fa-fish)</option>
-                        <option value="fa-ice-cream">🍨 آيسكريم وحلى (fa-ice-cream)</option>
+                        <option value="fa-burger" data-i18n="cat_icon_burger">🍔 برجر / وجبات (fa-burger)</option>
+                        <option value="fa-hotdog" data-i18n="cat_icon_hotdog">🌭 سندوتشات (fa-hotdog)</option>
+                        <option value="fa-bottle-water" data-i18n="cat_icon_cold">🥤 مشروبات باردة (fa-bottle-water)</option>
+                        <option value="fa-mug-hot" data-i18n="cat_icon_hot">☕ مشروبات ساخنة (fa-mug-hot)</option>
+                        <option value="fa-pizza-slice" data-i18n="cat_icon_pizza">🍕 بيتزا ومعجنات (fa-pizza-slice)</option>
+                        <option value="fa-fish" data-i18n="cat_icon_seafood">🐟 مأكولات بحرية (fa-fish)</option>
+                        <option value="fa-ice-cream" data-i18n="cat_icon_dessert">🍨 آيسكريم وحلى (fa-ice-cream)</option>
                     </select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeCategoryModal()">إلغاء</button>
-                <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> حفظ القسم</button>
+                <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeCategoryModal()"><span data-i18n="btn_cancel">إلغاء</span></button>
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save_cat">حفظ القسم</span></button>
             </div>
         </form>
     </div>
@@ -1109,16 +1112,14 @@
 <div class="modal-overlay" id="customizerModal">
     <div class="modal-card" style="max-width: 480px;">
         <div class="modal-header">
-            <h3 id="customizerItemTitle"><i class="fa-solid fa-sliders"></i> تخصيص إضافات الصنف</h3>
+            <h3 id="customizerItemTitle"><i class="fa-solid fa-sliders"></i> <span data-i18n="customizer_title">تخصيص إضافات الصنف</span></h3>
             <button class="modal-close-btn" onclick="closeItemCustomizer()"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form onsubmit="saveItemCustomizer(event)">
             <div class="modal-body">
                 <input type="hidden" id="customizerCartIndex">
 
-                <div style="font-size: 12.5px; font-weight: 700; margin-bottom: 8px; color: var(--muted);">
-                    اختر الإضافات المطلوبة لهذا الصنف:
-                </div>
+                <div style="font-size: 12.5px; font-weight: 700; margin-bottom: 8px; color: var(--muted);" data-i18n="customizer_addons_help">اختر الإضافات المطلوبة لهذا الصنف:</div>
 
                 <!-- Addons Grid -->
                 <div class="modifier-picker-grid" id="modifierGridContainer">
@@ -1127,20 +1128,20 @@
 
                 <div class="form-group" style="margin-top: 14px;">
                     <label data-i18n="kitchen_notes_label">ملاحظات وتوجيهات المطبخ:</label>
-                    <input type="text" class="form-control" id="customizerItemNote" placeholder="مثال: بدون بصل، زيادة صوص...">
+                    <input type="text" class="form-control" id="customizerItemNote" data-i18n-placeholder="notes_placeholder" placeholder="مثال: بدون بصل، زيادة صوص...">
                     <div class="quick-note-chips" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
-                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون بصل')">بدون بصل 🧅</button>
-                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون مخلل')">بدون مخلل 🥒</button>
-                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('زيادة صوص')">زيادة صوص 🥫</button>
-                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون مايونيز')">بدون مايونيز</button>
-                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون ثوم')">بدون ثوم 🧄</button>
-                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('سفري')">سفري 🛍️</button>
+                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون بصل')"><span data-i18n="quick_no_onion">بدون بصل</span> 🧅</button>
+                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون مخلل')"><span data-i18n="quick_no_pickles">بدون مخلل</span> 🥒</button>
+                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('زيادة صوص')"><span data-i18n="quick_extra_sauce">زيادة صوص</span> 🥫</button>
+                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون مايونيز')"><span data-i18n="quick_no_mayo">بدون مايونيز</span></button>
+                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون ثوم')"><span data-i18n="quick_no_garlic">بدون ثوم</span> 🧄</button>
+                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('سفري')"><span data-i18n="quick_takeaway">سفري</span> 🛍️</button>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeItemCustomizer()">إلغاء</button>
-                <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> حفظ التعديل</button>
+                <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeItemCustomizer()"><span data-i18n="btn_cancel">إلغاء</span></button>
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> <span data-i18n="save_changes">حفظ التعديل</span></button>
             </div>
         </form>
     </div>
@@ -1161,37 +1162,37 @@
                     <span id="zDateTime">2026-09-07 15:50</span>
                 </div>
                 <div class="z-line"></div>
-                <div class="z-row"><span>الكاشير المسؤول:</span><strong id="zCashier">Nawaf Saeed</strong></div>
-                <div class="z-row"><span>تاريخ أول طلب:</span><span id="zFirstOrder">-</span></div>
-                <div class="z-row"><span>تاريخ آخر طلب:</span><span id="zLastOrder">-</span></div>
+                <div class="z-row"><span data-i18n="z_cashier_lbl">الكاشير المسؤول:</span><strong id="zCashier">Nawaf Saeed</strong></div>
+                <div class="z-row"><span data-i18n="z_first_order_lbl">تاريخ أول طلب:</span><span id="zFirstOrder">-</span></div>
+                <div class="z-row"><span data-i18n="z_last_order_lbl">تاريخ آخر طلب:</span><span id="zLastOrder">-</span></div>
                 <div class="z-line"></div>
-                <div class="z-row bold"><span>إجمالي الفواتير الصادرة:</span><span id="zTotalOrdersCount">0</span></div>
-                <div class="z-row bold" style="color: var(--danger);"><span>الطلبات الملغاة:</span><span id="zCancelledCount">0</span></div>
+                <div class="z-row bold"><span data-i18n="z_total_issued_lbl">إجمالي الفواتير الصادرة:</span><span id="zTotalOrdersCount">0</span></div>
+                <div class="z-row bold" style="color: var(--danger);"><span data-i18n="z_cancelled_lbl">الطلبات الملغاة:</span><span id="zCancelledCount">0</span></div>
                 <div class="z-line"></div>
-                <div class="z-row"><span>المبيعات قبل الضريبة:</span><span id="zGrossSales">0.00</span></div>
-                <div class="z-row"><span>إجمالي الخصومات:</span><span id="zTotalDiscounts">0.00</span></div>
-                <div class="z-row"><span>ضريبة القيمة المضافة (15%):</span><span id="zTotalTax">0.00</span></div>
+                <div class="z-row"><span data-i18n="z_gross_sales_lbl">المبيعات قبل الضريبة:</span><span id="zGrossSales">0.00</span></div>
+                <div class="z-row"><span data-i18n="z_total_disc_lbl">إجمالي الخصومات:</span><span id="zTotalDiscounts">0.00</span></div>
+                <div class="z-row"><span data-i18n="z_vat_lbl">ضريبة القيمة المضافة (15%):</span><span id="zTotalTax">0.00</span></div>
                 <div class="z-row bold" style="font-size: 13px; color: #000; margin-top: 4px;">
                     <span data-i18n="sum_net">صافي المبيعات:</span>
                     <strong id="zNetSales">SAR 0.00</strong>
                 </div>
                 <div class="z-line"></div>
                 <div style="font-weight: 800; font-size: 11.5px; margin-bottom: 4px;" data-i18n="menu_payment_type_report">تفصيل طرق الدفع:</div>
-                <div class="z-row"><span>نقدي:</span><span id="zCashTotal">0.00</span></div>
-                <div class="z-row"><span>شبكة ومدى:</span><span id="zCardTotal">0.00</span></div>
-                <div class="z-row"><span>تطبيقات التوصيل:</span><span id="zOnlineTotal">0.00</span></div>
+                <div class="z-row"><span data-i18n="pay_method_cash">نقدي:</span><span id="zCashTotal">0.00</span></div>
+                <div class="z-row"><span data-i18n="pay_method_card">شبكة ومدى:</span><span id="zCardTotal">0.00</span></div>
+                <div class="z-row"><span data-i18n="pay_method_online">تطبيقات التوصيل:</span><span id="zOnlineTotal">0.00</span></div>
                 <div class="z-line"></div>
                 <div style="text-align: center; font-size: 10px; margin-top: 10px;">
-                    <p>توقيع الكاشير: ____________________</p>
-                    <p style="margin-top: 6px;">توقيع المشرف: ____________________</p>
+                    <p><span data-i18n="z_cashier_sig">توقيع الكاشير: ____________________</span></p>
+                    <p style="margin-top: 6px;"><span data-i18n="z_supervisor_sig">توقيع المشرف: ____________________</span></p>
                 </div>
             </div>
         </div>
         <div class="modal-footer" style="justify-content: space-between;">
             <button class="btn-primary" onclick="printZReport()">
-                <i class="fa-solid fa-print"></i> طباعة التقرير
+                <i class="fa-solid fa-print"></i> <span data-i18n="btn_print_report">طباعة التقرير</span>
             </button>
-            <button class="btn-danger" style="background: var(--muted);" onclick="closeZReportModal()">إغلاق</button>
+            <button class="btn-danger" style="background: var(--muted);" onclick="closeZReportModal()"><span data-i18n="btn_close">إغلاق</span></button>
         </div>
     </div>
 </div>
@@ -1218,7 +1219,7 @@
                 <i class="fa-solid fa-check"></i> <span data-i18n="btn_done">تم الحفظ</span>
             </button>
             <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeNotesModal()">
-                إلغاء
+                <span data-i18n="btn_cancel">إلغاء</span>
             </button>
         </div>
     </div>
@@ -1253,7 +1254,7 @@
                 <i class="fa-solid fa-check"></i> <span data-i18n="btn_apply_discount">تطبيق الخصم</span>
             </button>
             <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeDiscountModal()">
-                إلغاء
+                <span data-i18n="btn_cancel">إلغاء</span>
             </button>
         </div>
     </div>
@@ -1286,8 +1287,8 @@
                 <span class="title" data-i18n="lbl_orders_view">طريقة عرض السلة</span>
             </div>
             <div class="segmented-toggle">
-                <button type="button" class="segmented-btn" id="ordersViewBriefBtn" onclick="setOrdersViewPreference('briefly')">مختصر</button>
-                <button type="button" class="segmented-btn" id="ordersViewDetailBtn" onclick="setOrdersViewPreference('detailed')">مفصل</button>
+                <button type="button" class="segmented-btn" id="ordersViewBriefBtn" onclick="setOrdersViewPreference('briefly')"><span data-i18n="opt_briefly">مختصر</span></button>
+                <button type="button" class="segmented-btn" id="ordersViewDetailBtn" onclick="setOrdersViewPreference('detailed')"><span data-i18n="opt_detailed">مفصل</span></button>
             </div>
         </div>
 
@@ -1298,8 +1299,8 @@
                 <span class="title" data-i18n="lbl_stay_category">البقاء في القسم المختار بعد الإضافة</span>
             </div>
             <div class="segmented-toggle">
-                <button type="button" class="segmented-btn" id="stayCatStayBtn" onclick="setStayAtCategoryPreference('stay')">Stay</button>
-                <button type="button" class="segmented-btn" id="stayCatExitBtn" onclick="setStayAtCategoryPreference('exit')">Exit</button>
+                <button type="button" class="segmented-btn" id="stayCatStayBtn" onclick="setStayAtCategoryPreference('stay')"><span data-i18n="opt_stay">Stay</span></button>
+                <button type="button" class="segmented-btn" id="stayCatExitBtn" onclick="setStayAtCategoryPreference('exit')"><span data-i18n="opt_exit">Exit</span></button>
             </div>
         </div>
 
@@ -1374,7 +1375,7 @@
                 <i class="fa-solid fa-check"></i> <span data-i18n="btn_verify">تأكيد الدخول</span>
             </button>
             <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closePassCodeModal()">
-                إلغاء
+                <span data-i18n="btn_cancel">إلغاء</span>
             </button>
         </div>
     </div>
@@ -1403,10 +1404,10 @@
         </div>
         <div class="modal-footer" style="justify-content: space-between;">
             <button type="button" class="btn-primary" onclick="savePrintingDevicesSettings()">
-                <i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات
+                <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save">حفظ الإعدادات</span>
             </button>
             <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closePrintingDevicesModal()">
-                إغلاق
+                <span data-i18n="btn_close">إغلاق</span>
             </button>
         </div>
     </div>
@@ -1425,7 +1426,7 @@
             </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeTablePickerModal()">إلغاء</button>
+            <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeTablePickerModal()"><span data-i18n="btn_cancel">إلغاء</span></button>
         </div>
     </div>
 </div>
@@ -1469,8 +1470,8 @@
     </button>
 </nav>
 
-<!-- Hidden Silent Thermal Print Frame -->
-<iframe id="posSilentPrintFrame" style="display:none;position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:0;"></iframe>
+<!-- Silent Thermal Print Frame (Rendered in viewport behind UI so Chrome/Edge compositor does not skip painting) -->
+<iframe id="posSilentPrintFrame" style="position:fixed;right:0;bottom:0;width:80mm;height:100vh;border:none;opacity:1;visibility:visible;pointer-events:none;z-index:-9999;"></iframe>
 
 <!-- =========================================================
      MODULAR JAVASCRIPT ARCHITECTURE

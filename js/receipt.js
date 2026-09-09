@@ -164,9 +164,41 @@ function renderReceipt(order) {
 }
 
 function printReceiptDirect() {
+    // Direct native window print: Since #receiptModal is already open, printing the main window is 100% reliable and never produces blank pages in Chrome/Edge.
+    window.print();
+}
+
+function downloadReceiptPdf() {
     const node = document.getElementById('thermalReceiptNode');
-    if (node && typeof routePrintJob === 'function') {
-        routePrintJob('cashier', node.outerHTML, 'Tax Invoice Receipt & KOT');
+    if (!node) return;
+
+    const orderNum = (document.getElementById('recOrderNum')?.innerText || 'Order').replace(/^#/, '');
+
+    if (typeof showToast === 'function') {
+        showToast(currentLang === 'ar' ? 'جاري إنشاء ملف PDF وتنزيله...' : 'Generating and downloading PDF...', 'info');
+    }
+
+    const opt = {
+        margin: [4, 2, 4, 2],
+        filename: `Receipt-${orderNum}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        },
+        jsPDF: { unit: 'mm', format: [80, 297], orientation: 'portrait' }
+    };
+
+    if (typeof html2pdf !== 'undefined') {
+        html2pdf().set(opt).from(node).save().then(() => {
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? 'تم تنزيل ملف الفاتورة PDF بنجاح!' : 'Receipt PDF downloaded successfully!', 'success');
+            }
+        }).catch(err => {
+            console.warn("html2pdf fallback to native print:", err);
+            window.print();
+        });
     } else {
         window.print();
     }

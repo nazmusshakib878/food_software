@@ -48,7 +48,7 @@ function renderAdminOverview() {
         const totalStyle = isCancelled ? 'text-decoration: line-through; color: var(--danger);' : '';
         const statusBadge = isCancelled 
             ? `<span class="stock-tag" style="background: var(--danger-soft); color: var(--danger); font-weight: 800;">${currentLang === 'ar' ? 'ملغي' : 'Voided'}</span>`
-            : `<span class="stock-tag">${escapeHtml(o.type)}</span>`;
+            : `<span class="stock-tag">${escapeHtml(formatOrderType(o.type, currentLang))}</span>`;
 
         return `
             <tr>
@@ -57,7 +57,7 @@ function renderAdminOverview() {
                 <td>${statusBadge}</td>
                 <td>${escapeHtml(o.cashier)}</td>
                 <td><strong style="${totalStyle}">${formatCurrency(o.total)}</strong></td>
-                <td>${escapeHtml(o.method)}</td>
+                <td>${escapeHtml(formatPaymentMethod(o.method, currentLang))}</td>
                 <td>
                     <button class="btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="previewExistingOrderReceipt('${escapeHtml(o.id)}')">
                         <i class="fa-solid fa-receipt"></i> ${currentLang === 'ar' ? 'الفاتورة' : 'Receipt'}
@@ -83,29 +83,29 @@ function renderAllOrdersTable(targetList) {
         const isCancelled = o.status === 'cancelled';
         const totalStyle = isCancelled ? 'text-decoration: line-through; color: var(--danger);' : '';
         
-        let statusBadge = `<span class="kds-badge" style="background: var(--teal-soft); color: var(--teal); font-size: 11px; padding: 2px 8px;">جديد</span>`;
+        let statusBadge = `<span class="kds-badge" style="background: var(--teal-soft); color: var(--teal); font-size: 11px; padding: 2px 8px;">${currentLang === 'ar' ? 'جديد' : 'New'}</span>`;
         if (isCancelled) {
-            statusBadge = `<span class="kds-badge" style="background: var(--danger-soft); color: var(--danger); font-size: 11px; padding: 2px 8px; font-weight: 800;">ملغي / Void</span>`;
+            statusBadge = `<span class="kds-badge" style="background: var(--danger-soft); color: var(--danger); font-size: 11px; padding: 2px 8px; font-weight: 800;">${currentLang === 'ar' ? 'ملغي' : 'Void'}</span>`;
         } else if (o.status === 'served') {
-            statusBadge = `<span class="kds-badge" style="background: var(--success-soft); color: var(--success); font-size: 11px; padding: 2px 8px;">مكتمل / Served</span>`;
+            statusBadge = `<span class="kds-badge" style="background: var(--success-soft); color: var(--success); font-size: 11px; padding: 2px 8px;">${currentLang === 'ar' ? 'مكتمل' : 'Served'}</span>`;
         } else if (o.status === 'preparing') {
-            statusBadge = `<span class="kds-badge" style="background: var(--orange-soft); color: var(--orange); font-size: 11px; padding: 2px 8px;">قيد التجهيز</span>`;
+            statusBadge = `<span class="kds-badge" style="background: var(--orange-soft); color: var(--orange); font-size: 11px; padding: 2px 8px;">${currentLang === 'ar' ? 'قيد التجهيز' : 'Cooking'}</span>`;
         } else if (o.status === 'ready') {
-            statusBadge = `<span class="kds-badge" style="background: var(--success-soft); color: var(--success); font-size: 11px; padding: 2px 8px;">جاهز Ready</span>`;
+            statusBadge = `<span class="kds-badge" style="background: var(--success-soft); color: var(--success); font-size: 11px; padding: 2px 8px;">${currentLang === 'ar' ? 'جاهز' : 'Ready'}</span>`;
         }
 
         const voidBtn = !isCancelled
-            ? `<button class="btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="voidOrder('${escapeHtml(o.id)}')" title="إلغاء الطلب"><i class="fa-solid fa-ban"></i> ${currentLang === 'ar' ? 'إلغاء' : 'Void'}</button>`
+            ? `<button class="btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="voidOrder('${escapeHtml(o.id)}')" title="${currentLang === 'ar' ? 'إلغاء الطلب' : 'Void Order'}"><i class="fa-solid fa-ban"></i> ${currentLang === 'ar' ? 'إلغاء' : 'Void'}</button>`
             : '';
 
         return `
             <tr>
                 <td><strong>${escapeHtml(o.id)}</strong></td>
                 <td>${escapeHtml(o.dateFormatted)}</td>
-                <td>${escapeHtml(o.type)}</td>
+                <td>${escapeHtml(formatOrderType(o.type, currentLang))}</td>
                 <td>${escapeHtml(o.table || '-')}</td>
                 <td><strong style="${totalStyle}">${formatCurrency(o.total)}</strong></td>
-                <td>${escapeHtml(o.method)}</td>
+                <td>${escapeHtml(formatPaymentMethod(o.method, currentLang))}</td>
                 <td>${statusBadge}</td>
                 <td>
                     <div style="display: flex; gap: 6px; align-items: center;">
@@ -220,10 +220,10 @@ function renderAdminItems() {
                 </td>
                 <td>
                     <div class="action-btns-cell">
-                        <button class="action-icon-btn edit" onclick="editItem('${escapeHtml(item.id)}')" title="تعديل">
+                        <button class="action-icon-btn edit" onclick="editItem('${escapeHtml(item.id)}')" title="${currentLang === 'ar' ? 'تعديل' : 'Edit'}">
                             <i class="fa-solid fa-pen"></i>
                         </button>
-                        <button class="action-icon-btn delete" onclick="deleteItem('${escapeHtml(item.id)}')" title="حذف">
+                        <button class="action-icon-btn delete" onclick="deleteItem('${escapeHtml(item.id)}')" title="${currentLang === 'ar' ? 'حذف' : 'Delete'}">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
@@ -445,7 +445,7 @@ function renderAdminCategories() {
                 <td>${escapeHtml(cat.nameEn)}</td>
                 <td><span class="stock-tag">${count} ${currentLang === 'ar' ? 'صنف' : 'items'}</span></td>
                 <td>
-                    <button class="action-icon-btn delete" onclick="deleteCategory('${escapeHtml(cat.id)}')" title="حذف">
+                    <button class="action-icon-btn delete" onclick="deleteCategory('${escapeHtml(cat.id)}')" title="${currentLang === 'ar' ? 'حذف' : 'Delete'}">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </td>

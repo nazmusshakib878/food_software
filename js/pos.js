@@ -355,7 +355,7 @@ function setOrderType(type, btn) {
 
 // 5. Cart Table Rendering (Columns: # | Name | Qty | Price | Total)
 function renderCart() {
-    const container = document.getElementById('cartItemsList');
+    const container = document.getElementById('posCartTableWrapper') || document.getElementById('cartItemsList');
     if (!container) return;
 
     const isDetailed = posPreferences.ordersView !== 'briefly';
@@ -435,19 +435,19 @@ function renderCart() {
     // Calculation using compliant accounting
     const totals = calculateCartTotals();
 
-    const addEl = document.getElementById('summaryAdditions');
+    const addEl = document.getElementById('cartAddonsTotal') || document.getElementById('summaryAdditions');
     if (addEl) addEl.innerText = formatCurrency(totals.additionsTotal);
 
-    const subEl = document.getElementById('summarySubtotal');
+    const subEl = document.getElementById('cartSubtotal') || document.getElementById('summarySubtotal');
     if (subEl) subEl.innerText = formatCurrency(totals.subtotal);
 
-    const taxEl = document.getElementById('summaryTax');
+    const taxEl = document.getElementById('cartTax') || document.getElementById('summaryTax');
     if (taxEl) taxEl.innerText = formatCurrency(totals.tax);
 
-    const discEl = document.getElementById('summaryDiscount');
+    const discEl = document.getElementById('cartDiscount') || document.getElementById('summaryDiscount');
     if (discEl) discEl.innerText = formatCurrency(totals.discount);
 
-    const grandEl = document.getElementById('summaryGrandTotal');
+    const grandEl = document.getElementById('cartGrandTotal') || document.getElementById('summaryGrandTotal');
     if (grandEl) grandEl.innerText = formatCurrency(totals.grandTotal);
 
     const totalDueEl = document.getElementById('summaryTotalDueDisplay');

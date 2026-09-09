@@ -293,20 +293,39 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
         console.log(`[PrintRouter] Routing job "${title}" to printer "${targetPrinter.name}" (${targetPrinter.ip})`);
     }
 
-    // Silent IFrame or Pop-up Print Execution
+    // If receipt modal is open and printing cashier receipt, use direct native window.print() (Zero blank pages, full rasterization)
+    const receiptModal = document.getElementById('receiptModal');
+    if (role === 'cashier' && receiptModal && receiptModal.classList.contains('open')) {
+        setTimeout(() => {
+            window.print();
+        }, 150);
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? `تم إرسال أمر الطباعة (${escapeHtml(title)})` : `Print job sent (${escapeHtml(title)})`, 'success');
+        }
+        return;
+    }
+
+    // Silent IFrame Execution for Reports or Background Print Jobs
     try {
         let printFrame = document.getElementById('posSilentPrintFrame');
         if (!printFrame) {
             printFrame = document.createElement('iframe');
             printFrame.id = 'posSilentPrintFrame';
-            printFrame.style.position = 'fixed';
-            printFrame.style.right = '0';
-            printFrame.style.bottom = '0';
-            printFrame.style.width = '0px';
-            printFrame.style.height = '0px';
-            printFrame.style.border = 'none';
             document.body.appendChild(printFrame);
         }
+
+        // Render in viewport behind UI so Chrome/Edge compositor does not cull it
+        printFrame.style.position = 'fixed';
+        printFrame.style.right = '0';
+        printFrame.style.bottom = '0';
+        printFrame.style.width = '80mm';
+        printFrame.style.height = '100vh';
+        printFrame.style.border = 'none';
+        printFrame.style.opacity = '1';
+        printFrame.style.visibility = 'visible';
+        printFrame.style.pointerEvents = 'none';
+        printFrame.style.zIndex = '-9999';
+        printFrame.style.display = 'block';
 
         const frameDoc = (printFrame.contentWindow && printFrame.contentWindow.document) 
             ? printFrame.contentWindow.document 
@@ -317,6 +336,7 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
             }
             return;
         }
+
         const stylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).map(el => el.outerHTML).join('\n');
 
         frameDoc.open();
@@ -329,12 +349,193 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
                 <title>${escapeHtml(title)}</title>
                 ${stylesheets}
                 <style>
-                    body { margin: 0; padding: 0; background: #fff; }
+                    @page {
+                        margin: 0;
+                        size: auto;
+                    }
+                    * {
+                        box-sizing: border-box;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: #ffffff !important;
+                        color: #000000 !important;
+                        width: 100% !important;
+                        height: auto !important;
+                        font-family: 'Courier Prime', 'Courier New', 'Cairo', 'Inter', Courier, monospace, sans-serif !important;
+                        -webkit-font-smoothing: antialiased;
+                    }
+                    #receiptModal,
+                    .modal-card {
+                        display: block !important;
+                        position: static !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        overflow: visible !important;
+                    }
+                    .modal-header,
+                    .modal-footer,
+                    .modal-close-btn {
+                        display: none !important;
+                    }
+                    .thermal-paper {
+                        display: block !important;
+                        visibility: visible !important;
+                        position: static !important;
+                        width: 76mm !important;
+                        max-width: 76mm !important;
+                        margin: 0 auto !important;
+                        padding: 8px 6px !important;
+                        box-shadow: none !important;
+                        color: #000000 !important;
+                        background: #ffffff !important;
+                        font-family: 'Courier Prime', 'Courier New', 'Cairo', Courier, monospace, sans-serif !important;
+                        font-size: 11.5px !important;
+                        line-height: 1.35 !important;
+                        overflow: visible !important;
+                    }
+                    .thermal-paper * {
+                        visibility: visible !important;
+                        color: #000000 !important;
+                    }
+                    .receipt-header {
+                        text-align: center !important;
+                        margin-bottom: 8px !important;
+                        border-bottom: 1px dashed #000 !important;
+                        padding-bottom: 8px !important;
+                    }
+                    .receipt-header h2 {
+                        font-size: 19px !important;
+                        font-weight: 900 !important;
+                        margin: 0 0 3px 0 !important;
+                        letter-spacing: 0.5px !important;
+                    }
+                    .receipt-header .header-ar {
+                        font-family: 'Cairo', sans-serif !important;
+                        font-size: 13.5px !important;
+                        font-weight: 700 !important;
+                        margin: 2px 0 !important;
+                        direction: rtl !important;
+                    }
+                    .receipt-header .vat-line {
+                        font-size: 11.5px !important;
+                        font-weight: 600 !important;
+                        margin: 2px 0 !important;
+                    }
+                    .receipt-header .invoice-badge-title {
+                        font-size: 11px !important;
+                        font-weight: 800 !important;
+                        border: 1px dashed #000 !important;
+                        display: inline-block !important;
+                        padding: 2px 8px !important;
+                        margin: 5px 0 0 0 !important;
+                    }
+                    .receipt-info-grid {
+                        margin: 8px 0 !important;
+                        padding-bottom: 6px !important;
+                        border-bottom: 1px dashed #000 !important;
+                    }
+                    .receipt-info-grid .row {
+                        display: flex !important;
+                        justify-content: space-between !important;
+                        font-size: 11px !important;
+                        margin: 2px 0 !important;
+                    }
+                    .receipt-table {
+                        width: 100% !important;
+                        border-collapse: collapse !important;
+                        margin: 8px 0 !important;
+                    }
+                    .receipt-table th {
+                        border-top: 1px dashed #000 !important;
+                        border-bottom: 1px dashed #000 !important;
+                        padding: 4px 2px !important;
+                        font-size: 11px !important;
+                        font-weight: 800 !important;
+                    }
+                    .receipt-table td {
+                        padding: 4px 2px !important;
+                        font-size: 11px !important;
+                        border-bottom: 1px dashed #e0e0e0 !important;
+                        vertical-align: top !important;
+                    }
+                    .rec-item-name-cell {
+                        display: flex !important;
+                        flex-direction: column !important;
+                    }
+                    .rec-item-name-cell .rec-ar {
+                        font-family: 'Cairo', sans-serif !important;
+                        font-size: 11.5px !important;
+                        font-weight: 700 !important;
+                    }
+                    .rec-item-name-cell .rec-en {
+                        font-size: 10.5px !important;
+                        color: #333 !important;
+                    }
+                    .rec-addon-line {
+                        font-size: 10px !important;
+                        color: #555 !important;
+                    }
+                    .rec-note-line {
+                        font-size: 10px !important;
+                        font-style: italic !important;
+                    }
+                    .receipt-totals {
+                        margin: 8px 0 !important;
+                        border-top: 1px dashed #000 !important;
+                        padding-top: 4px !important;
+                    }
+                    .receipt-totals .row {
+                        display: flex !important;
+                        justify-content: space-between !important;
+                        font-size: 11px !important;
+                        margin: 2px 0 !important;
+                    }
+                    .receipt-totals .grand-total {
+                        font-size: 14px !important;
+                        font-weight: 900 !important;
+                        border-top: 1px solid #000 !important;
+                        border-bottom: 1px solid #000 !important;
+                        padding: 5px 0 !important;
+                        margin: 4px 0 !important;
+                    }
+                    .receipt-qr-zone {
+                        text-align: center !important;
+                        margin: 10px auto !important;
+                        display: flex !important;
+                        justify-content: center !important;
+                        align-items: center !important;
+                    }
+                    .receipt-qr-zone img,
+                    .receipt-qr-zone canvas {
+                        display: block !important;
+                        margin: 0 auto !important;
+                        max-width: 110px !important;
+                        max-height: 110px !important;
+                    }
+                    .receipt-footer-text {
+                        text-align: center !important;
+                        margin-top: 8px !important;
+                        font-size: 10.5px !important;
+                    }
+                    #receiptCombinedKotSection {
+                        margin-top: 20px !important;
+                        border-top: 2px dashed #000 !important;
+                        padding-top: 10px !important;
+                    }
                 </style>
             </head>
-            <body>
-                <div id="receiptModal" class="open" style="display:block; position:static;">
-                    <div class="modal-card" style="box-shadow:none; border:none; padding:0; margin:0;">
+            <body style="margin:0;padding:0;background:#ffffff;">
+                <div id="receiptModal" class="open" style="display:block;position:static;width:100%;">
+                    <div class="modal-card" style="box-shadow:none;border:none;padding:0;margin:0;width:100%;max-width:100%;">
                         ${contentHtml}
                     </div>
                 </div>
@@ -350,7 +551,7 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
             } catch (err) {
                 console.warn("Print execution note:", err);
             }
-        }, 250);
+        }, 300);
 
         if (typeof showToast === 'function') {
             showToast(currentLang === 'ar' ? `تم إرسال أمر الطباعة (${escapeHtml(title)})` : `Print job sent (${escapeHtml(title)})`, 'success');

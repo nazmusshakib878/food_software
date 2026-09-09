@@ -590,7 +590,150 @@ const i18n = {
         notes_title: "ملاحظات الطلب وبيانات العميل",
         more_settings_title: "الإعدادات والتفضيلات",
         view_order: "عرض الطلب",
-        reports_nav: "التقارير"
+        reports_nav: "التقارير",
+
+        // Payment Modal
+        pay_modal_title: "تأكيد السداد وإصدار الفاتورة",
+        pay_method_cash: "نقدي",
+        pay_method_card: "بطاقة مدى / شبكة",
+        pay_method_online: "تطبيق / تحويل",
+        btn_complete_order: "إتمام الطلب وطباعة الفاتورة",
+        change_return: "المتبقي / الباقي للعميل",
+        remaining_due: "المبلغ المتبقي على العميل",
+        numpad_exact: "تماماً",
+
+        // Login Modal
+        login_modal_title: "تسجيل الدخول للنظام",
+        login_modal_subtitle: "اختر نوع الحساب وأدخل الرمز (PIN)",
+        login_role_staff: "كاشير",
+        login_role_admin: "مدير",
+        login_pin_lbl: "رمز المرور (PIN):",
+        login_hint: "افتراضي: المدير (1234) | الكاشير (0000)",
+        btn_login: "دخول",
+
+        // Drawer
+        drawer_brand_name: "نظام نقاط البيع والإدارة",
+        drawer_sales_reports_title: "تقارير المبيعات والعمليات",
+        drawer_rep_sales: "1. تقارير المبيعات",
+        rep_sub_invoices: "تقارير الفواتير",
+        rep_sub_items: "تقرير الأصناف",
+        rep_sub_shifts: "تقارير الورديات اليومية",
+        rep_sub_damaged: "تقرير التوالف والهالك",
+        rep_sub_apps: "تقارير التطبيقات",
+        rep_sub_durations: "أوقات إنجاز الخدمة",
+        rep_sub_totals: "تقرير الإجماليات",
+        rep_sub_active_meals: "الوجبات النشطة حالياً",
+        rep_sub_meals_cat: "تقارير فئات الوجبات",
+
+        // Admin Tables & Views
+        th_order_id: "رقم الطلب",
+        th_date_time: "الوقت والتاريخ",
+        th_type: "النوع",
+        th_cashier: "الكاشير",
+        th_payment_method: "طريقة الدفع",
+        th_actions: "الإجراءات",
+        admin_menu_title: "قائمة الأصناف بالمنيو",
+        btn_restore_images: "استعادة الصور الأصلية",
+        th_image: "الصورة",
+        th_name_ar: "الاسم بالعربي",
+        th_name_en: "الاسم بالإنجليزي",
+        th_category_col: "القسم",
+        th_status: "الحالة",
+        admin_cats_title: "تصنيفات المنيو",
+        th_icon: "الأيقونة",
+        th_cat_ar: "اسم القسم (عربي)",
+        th_cat_en: "اسم القسم (EN)",
+        th_linked_items: "الأصناف المرتبطة",
+        admin_orders_title: "سجل الفواتير والمبيعات الشامل",
+        search_orders_placeholder: "بحث برقم الفاتورة أو العميل...",
+        opt_all_status: "كل الحالات",
+        opt_completed: "مكتمل",
+        opt_new_prep: "جديد / تحضير",
+        opt_cancelled: "ملغي",
+        th_items_col: "الأصناف",
+        th_customer_col: "العميل",
+
+        // Settings Form Labels
+        lbl_store_name_ar: "اسم المطعم (عربي):",
+        lbl_store_name_en: "اسم المطعم (English):",
+        lbl_company_name: "اسم الشركة / الفرع:",
+        lbl_vat_number: "الرقم الضريبي (VAT Number):",
+        lbl_tax_rate: "نسبة الضريبة (%):",
+        lbl_currency: "العملة:",
+        lbl_admin_pin: "رمز المدير PIN:",
+        lbl_staff_pin: "رمز الكاشير PIN:",
+
+        // Item Modal (Admin)
+        item_modal_title_add: "إضافة صنف جديد",
+        lbl_item_ar_name: "الاسم بالعربي",
+        lbl_item_en_name: "الاسم بالإنجليزي (English)",
+        lbl_item_category: "القسم / التصنيف",
+        lbl_item_price: "السعر (ريال / SAR)",
+        lbl_item_img_url: "رابط صورة الصنف (Image URL):",
+        lbl_item_img_hint: "(أو اختر من المعرض أدناه)",
+        item_preview_live: "معاينة مباشرة للصورة",
+        item_preview_sub: "ستظهر هذه الصورة في شاشة الكاشير",
+        lbl_item_code: "كود الصنف (#Code):",
+        lbl_item_available: "متوفر للطلب حالياً",
+        item_placeholder_name: "مثال: برجر لحم مشوي",
+        item_placeholder_code: "مثال: 101",
+        btn_save_item: "حفظ الصنف",
+
+        // Category Modal (Admin)
+        cat_modal_title_add: "إضافة قسم جديد",
+        lbl_cat_ar_name: "اسم القسم بالعربي",
+        lbl_cat_en_name: "اسم القسم بالإنجليزي (English)",
+        cat_placeholder_name: "مثال: مشويات وحلويات",
+        lbl_cat_icon: "أيقونة القسم (FontAwesome Icon):",
+        cat_icon_burger: "🍔 برجر / وجبات",
+        cat_icon_hotdog: "🌭 سندوتشات",
+        cat_icon_cold: "🥤 مشروبات باردة",
+        cat_icon_hot: "☕ مشروبات ساخنة",
+        cat_icon_pizza: "🍕 بيتزا ومعجنات",
+        cat_icon_seafood: "🐟 مأكولات بحرية",
+        cat_icon_dessert: "🍨 آيسكريم وحلى",
+        btn_save_cat: "حفظ القسم",
+
+        // KDS
+        kds_count_new_lbl: "طلبات جديدة",
+        kds_count_prep_lbl: "قيد التجهيز",
+        kds_count_ready_lbl: "جاهز",
+        btn_refresh_kds: "تحديث",
+
+        // Customizer / Quick Notes
+        quick_no_onion: "بدون بصل",
+        quick_no_pickles: "بدون مخلل",
+        quick_extra_sauce: "زيادة صوص",
+        quick_no_mayo: "بدون مايونيز",
+        quick_no_garlic: "بدون ثوم",
+        quick_takeaway: "سفري",
+
+        // Z-Report
+        z_cashier_lbl: "الكاشير المسؤول:",
+        z_first_order_lbl: "تاريخ أول طلب:",
+        z_last_order_lbl: "تاريخ آخر طلب:",
+        z_total_issued_lbl: "إجمالي الفواتير الصادرة:",
+        z_cancelled_lbl: "الطلبات الملغاة:",
+        z_gross_sales_lbl: "المبيعات قبل الضريبة:",
+        z_total_disc_lbl: "إجمالي الخصومات:",
+        z_vat_lbl: "ضريبة القيمة المضافة (15%):",
+        z_cashier_sig: "توقيع الكاشير: ____________________",
+        z_supervisor_sig: "توقيع المشرف: ____________________",
+
+        // Action titles / buttons
+        add_customer_title: "إضافة عميل",
+        add_order_type_title: "إضافة نوع طلب",
+        btn_print_receipt: "طباعة الفاتورة",
+        btn_download_pdf: "تحميل PDF",
+        btn_save_settings: "حفظ الإعدادات",
+        returns_nav: "الطلبات والإرجاع",
+        nav_returns_screen: "الطلبات والإرجاع",
+        table_1: "طاولة 1",
+        table_2: "طاولة 2",
+        table_3: "طاولة 3",
+        table_4: "طاولة 4",
+        table_5: "طاولة 5",
+        table_6: "طاولة 6"
     },
     en: {
         pos_nav: "POS Terminal",
@@ -769,9 +912,183 @@ const i18n = {
         notes_title: "Order Notes & Customer Info",
         more_settings_title: "Settings & Preferences",
         view_order: "View Order",
-        reports_nav: "Reports"
+        reports_nav: "Reports",
+
+        // Payment Modal
+        pay_modal_title: "Confirm Payment & Issue Invoice",
+        pay_method_cash: "Cash",
+        pay_method_card: "Card / Mada",
+        pay_method_online: "Online / Transfer",
+        btn_complete_order: "Complete Order & Issue Invoice",
+        change_return: "Change Return",
+        remaining_due: "Remaining Due",
+        numpad_exact: "EXACT",
+
+        // Login Modal
+        login_modal_title: "System Login",
+        login_modal_subtitle: "Select role and enter security PIN",
+        login_role_staff: "Cashier",
+        login_role_admin: "Admin",
+        login_pin_lbl: "Security PIN:",
+        login_hint: "Default: Admin (1234) | Cashier (0000)",
+        btn_login: "Sign In",
+
+        // Drawer
+        drawer_brand_name: "POS & Management System",
+        drawer_sales_reports_title: "Sales & Operations Reports",
+        drawer_rep_sales: "1. Sales Reports",
+        rep_sub_invoices: "Invoice Reports",
+        rep_sub_items: "Items Report",
+        rep_sub_shifts: "Daily Shift Reports",
+        rep_sub_damaged: "Damaged Items Report",
+        rep_sub_apps: "Application Reports",
+        rep_sub_durations: "Service Durations",
+        rep_sub_totals: "Totals Report",
+        rep_sub_active_meals: "Active Meals",
+        rep_sub_meals_cat: "Meal Category Reports",
+
+        // Admin Tables & Views
+        th_order_id: "Order ID",
+        th_date_time: "Date & Time",
+        th_type: "Type",
+        th_cashier: "Cashier",
+        th_payment_method: "Payment Method",
+        th_actions: "Actions",
+        admin_menu_title: "Menu Items Catalog",
+        btn_restore_images: "Restore Original Images",
+        th_image: "Image",
+        th_name_ar: "Name (Arabic)",
+        th_name_en: "Name (English)",
+        th_category_col: "Category",
+        th_status: "Status",
+        admin_cats_title: "Menu Categories",
+        th_icon: "Icon",
+        th_cat_ar: "Category (Arabic)",
+        th_cat_en: "Category (English)",
+        th_linked_items: "Linked Items",
+        admin_orders_title: "All Orders & Invoices History",
+        search_orders_placeholder: "Search invoice # or customer...",
+        opt_all_status: "All Statuses",
+        opt_completed: "Completed",
+        opt_new_prep: "New / Preparing",
+        opt_cancelled: "Cancelled",
+        th_items_col: "Items",
+        th_customer_col: "Customer",
+
+        // Settings Form Labels
+        lbl_store_name_ar: "Store Name (Arabic):",
+        lbl_store_name_en: "Store Name (English):",
+        lbl_company_name: "Company / Branch Name:",
+        lbl_vat_number: "VAT Number:",
+        lbl_tax_rate: "Tax Rate (%):",
+        lbl_currency: "Currency:",
+        lbl_admin_pin: "Admin PIN:",
+        lbl_staff_pin: "Cashier PIN:",
+
+        // Item Modal (Admin)
+        item_modal_title_add: "Add New Product",
+        lbl_item_ar_name: "Name in Arabic",
+        lbl_item_en_name: "Name in English",
+        lbl_item_category: "Category",
+        lbl_item_price: "Price (SAR)",
+        lbl_item_img_url: "Product Image URL:",
+        lbl_item_img_hint: "(Or choose from gallery below)",
+        item_preview_live: "Live Image Preview",
+        item_preview_sub: "This image will appear on the cashier POS screen",
+        lbl_item_code: "Item Code (#Code):",
+        lbl_item_available: "Available for ordering",
+        item_placeholder_name: "e.g. Grilled Beef Burger",
+        item_placeholder_code: "e.g. 101",
+        btn_save_item: "Save Product",
+
+        // Category Modal (Admin)
+        cat_modal_title_add: "Add New Category",
+        lbl_cat_ar_name: "Category Name (Arabic)",
+        lbl_cat_en_name: "Category Name (English)",
+        cat_placeholder_name: "e.g. Grills & Desserts",
+        lbl_cat_icon: "Category Icon:",
+        cat_icon_burger: "🍔 Burger / Meals",
+        cat_icon_hotdog: "🌭 Sandwiches",
+        cat_icon_cold: "🥤 Cold Drinks",
+        cat_icon_hot: "☕ Hot Drinks",
+        cat_icon_pizza: "🍕 Pizza & Pastries",
+        cat_icon_seafood: "🐟 Seafood",
+        cat_icon_dessert: "🍨 Ice Cream & Desserts",
+        btn_save_cat: "Save Category",
+
+        // KDS
+        kds_count_new_lbl: "New Orders",
+        kds_count_prep_lbl: "Preparing",
+        kds_count_ready_lbl: "Ready",
+        btn_refresh_kds: "Refresh",
+
+        // Customizer / Quick Notes
+        quick_no_onion: "No Onion",
+        quick_no_pickles: "No Pickles",
+        quick_extra_sauce: "Extra Sauce",
+        quick_no_mayo: "No Mayo",
+        quick_no_garlic: "No Garlic",
+        quick_takeaway: "Takeaway",
+
+        // Z-Report
+        z_cashier_lbl: "Cashier in Charge:",
+        z_first_order_lbl: "First Order Time:",
+        z_last_order_lbl: "Last Order Time:",
+        z_total_issued_lbl: "Total Invoices Issued:",
+        z_cancelled_lbl: "Cancelled Orders:",
+        z_gross_sales_lbl: "Gross Sales (Pre-Tax):",
+        z_total_disc_lbl: "Total Discounts:",
+        z_vat_lbl: "VAT (15%):",
+        z_cashier_sig: "Cashier Signature: ____________________",
+        z_supervisor_sig: "Supervisor Signature: ____________________",
+
+        // Action titles / buttons
+        add_customer_title: "Add Customer",
+        add_order_type_title: "Add Order Type",
+        btn_print_receipt: "Print Receipt",
+        btn_download_pdf: "Download PDF",
+        btn_save_settings: "Save Settings",
+        returns_nav: "Orders",
+        nav_returns_screen: "Orders History",
+        table_1: "Table 1",
+        table_2: "Table 2",
+        table_3: "Table 3",
+        table_4: "Table 4",
+        table_5: "Table 5",
+        table_6: "Table 6"
     }
 };
+
+/* Language / Localization Display Helpers */
+function formatPaymentMethod(method, lang = (typeof currentLang !== 'undefined' ? currentLang : 'ar')) {
+    if (!method) return lang === 'ar' ? 'نقدي' : 'Cash';
+    const m = String(method).toLowerCase();
+    if (m.includes('cash') || m.includes('نقدي')) {
+        return lang === 'ar' ? 'نقدي' : 'Cash';
+    }
+    if (m.includes('mada') || m.includes('مدى') || m.includes('card') || m.includes('بطاق') || m.includes('شبكة')) {
+        return lang === 'ar' ? 'بطاقة مدى' : 'Card / Mada';
+    }
+    if (m.includes('online') || m.includes('transfer') || m.includes('تطبيق') || m.includes('تحويل')) {
+        return lang === 'ar' ? 'تطبيق / تحويل' : 'Online / Transfer';
+    }
+    return method;
+}
+
+function formatOrderType(type, lang = (typeof currentLang !== 'undefined' ? currentLang : 'ar')) {
+    if (!type) return lang === 'ar' ? 'محلي' : 'Dine-in';
+    const t = String(type).toLowerCase();
+    if (t.includes('local') || t.includes('dine') || t.includes('محلي')) {
+        return lang === 'ar' ? 'محلي' : 'Dine-in';
+    }
+    if (t.includes('takeaway') || t.includes('receive') || t.includes('سفري') || t.includes('استلام')) {
+        return lang === 'ar' ? 'سفري' : 'Takeaway';
+    }
+    if (t.includes('delivery') || t.includes('توصيل')) {
+        return lang === 'ar' ? 'توصيل' : 'Delivery';
+    }
+    return type;
+}
 const SAMPLE_ORD_1013 = {
     id: "ORD-1013",
     seq: 1013,

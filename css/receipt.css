@@ -323,14 +323,31 @@
     color: #000;
 }
 
-/* Native Print Stylesheet for POS Thermal Printers */
+/* Native Print Stylesheet for POS Thermal Printers & Virtual PDF Printers */
 @page {
     margin: 0;
-    size: 80mm auto;
+    size: auto;
 }
 
 @media print {
-    /* Hide the main app wrapper to prevent blank pages */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        animation: none !important;
+        transition: none !important;
+        opacity: 1 !important;
+    }
+
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    /* Hide the main app wrapper to prevent blank pages when printing from main window */
     body > :not(#receiptModal) {
         display: none !important;
     }
@@ -342,6 +359,9 @@
         background: transparent !important;
         padding: 0 !important;
         margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
     }
     
     #receiptModal:not(.open) {
@@ -356,24 +376,50 @@
         margin: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
+        max-height: none !important;
+        overflow: visible !important;
+        background: transparent !important;
+    }
+
+    #receiptModal .modal-body {
+        overflow: visible !important;
+        max-height: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    #receiptModal .receipt-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        display: block !important;
     }
 
     /* Hide UI elements from the printed paper */
     #receiptModal .modal-header,
-    #receiptModal .modal-footer {
+    #receiptModal .modal-footer,
+    #receiptModal .modal-close-btn {
         display: none !important;
     }
 
-    /* Configure the thermal paper element for an 80mm roll */
+    /* Configure the thermal paper element for standard 80mm roll and A4/PDF */
+    .thermal-paper,
     #receiptModal .thermal-paper {
+        display: block !important;
+        visibility: visible !important;
         position: static !important;
         width: 76mm !important; /* 80mm paper width minus printer margins */
         max-width: 76mm !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        margin: 0 auto !important;
+        padding: 8px 6px !important;
         box-shadow: none !important;
         /* Ensure font renders sharply in black and white */
-        color: #000 !important;
-        background: #fff !important;
+        color: #000000 !important;
+        background: #ffffff !important;
+        overflow: visible !important;
+    }
+
+    .thermal-paper * {
+        visibility: visible !important;
     }
 }

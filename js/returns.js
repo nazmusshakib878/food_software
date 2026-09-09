@@ -288,16 +288,4 @@ function confirmCancellation() {
     goReturnsScreen1();
 }
 
-// Listen for view changes to auto-initialize Returns screen
-const originalSwitchView = switchView;
-window.switchView = function(viewName) {
-    originalSwitchView(viewName);
-    if (viewName === 'returns') {
-        document.getElementById('returnsView')?.classList.add('active');
-        document.getElementById('tabReturnsBtn')?.classList.add('active');
-        document.getElementById('mobileNavReturns')?.classList.add('active');
-        goReturnsScreen1();
-    } else {
-        document.getElementById('returnsView')?.classList.remove('active');
-    }
-};
+

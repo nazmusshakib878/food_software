@@ -30,6 +30,11 @@ function switchView(viewName) {
     } else if (viewName === 'reports_screen') {
         document.getElementById('reportsView')?.classList.add('active');
         if (typeof renderActiveReport === 'function') renderActiveReport();
+    } else if (viewName === 'returns') {
+        document.getElementById('returnsView')?.classList.add('active');
+        document.getElementById('tabReturnsBtn')?.classList.add('active');
+        document.getElementById('mobileNavReturns')?.classList.add('active');
+        if (typeof goReturnsScreen1 === 'function') goReturnsScreen1();
     }
 }
 
@@ -183,15 +188,31 @@ function applyLanguage(lang) {
     if (tabInvBtn) {
         tabInvBtn.innerHTML = `<i class="fa-solid fa-receipt"></i> <span>${lang === 'ar' ? 'الفاتورة الضريبية' : 'Tax Invoice'}</span>`;
     }
+
+    const langArBtn = document.getElementById('langArBtn');
+    const langEnBtn = document.getElementById('langEnBtn');
+    if (langArBtn && langEnBtn) {
+        langArBtn.classList.toggle('active', lang === 'ar');
+        langEnBtn.classList.toggle('active', lang === 'en');
+    }
+
+    if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
+    if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
     if (typeof renderCategoriesRibbon === 'function') renderCategoriesRibbon();
     if (typeof renderProducts === 'function') renderProducts();
     if (typeof renderCart === 'function') renderCart();
     if (typeof updateOrderPanelMeta === 'function') updateOrderPanelMeta();
+    if (typeof updatePaymentModalUI === 'function' && typeof calculateCartTotals === 'function') {
+        const totals = calculateCartTotals();
+        updatePaymentModalUI(totals.grandTotal);
+    }
     if (typeof renderAdminOverview === 'function') renderAdminOverview();
     if (typeof renderAdminItems === 'function') renderAdminItems();
     if (typeof renderAdminCategories === 'function') renderAdminCategories();
     if (typeof renderAllOrdersTable === 'function') renderAllOrdersTable();
     if (typeof renderActiveReport === 'function') renderActiveReport();
+    if (typeof renderKdsScreen === 'function') renderKdsScreen();
+    if (typeof renderReturnsOrdersList === 'function') renderReturnsOrdersList();
     updatePosOrderBadge();
 }
 
