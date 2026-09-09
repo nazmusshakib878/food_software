@@ -2326,3 +2326,65 @@ html[data-theme="dark"] .kds-item-chef-note {
         font-size: 12px;
     }
 }
+
+
+/* Kiosk Footer Elements */
+.kiosk-lang-selector {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+}
+
+.kiosk-lang-selector button {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 20px;
+    padding: 8px 16px;
+    color: #1e293b;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.kiosk-lang-selector button:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.kiosk-about-app {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    text-align: left;
+    color: #1e293b;
+    font-family: 'Inter', sans-serif;
+}
+
+[dir="rtl"] .kiosk-lang-selector {
+    right: auto;
+    left: 30px;
+}
+
+[dir="rtl"] .kiosk-about-app {
+    left: auto;
+    right: 30px;
+    text-align: right;
+}
+
+.kiosk-about-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.kiosk-about-version {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}

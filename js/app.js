@@ -196,6 +196,11 @@ function applyLanguage(lang) {
         langEnBtn.classList.toggle('active', lang === 'en');
     }
 
+    const kioskLangText = document.getElementById('kioskLangText');
+    if (kioskLangText) {
+        kioskLangText.innerText = lang === 'ar' ? 'English' : 'العربية';
+    }
+
     if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
     if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
 
@@ -484,7 +489,7 @@ function kioskKeyPress(key) {
             kioskPinDigits.pop();
         }
     } else {
-        if (kioskPinDigits.length < 6) {
+        if (kioskPinDigits.length < 4) {
             kioskPinDigits.push(key);
         }
     }
@@ -492,7 +497,7 @@ function kioskKeyPress(key) {
 }
 
 function updateKioskPinDisplay() {
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 4; i++) {
         const box = document.getElementById('kioskPin' + i);
         if (box) {
             if (i < kioskPinDigits.length) {
@@ -508,12 +513,12 @@ function updateKioskPinDisplay() {
 
 function kioskSubmitLogin() {
     const pin = kioskPinDigits.join('');
-    if (pin.length !== 6) {
-        showToast(currentLang === 'ar' ? "يرجى إدخال 6 أرقام" : "Please enter 6 digits", "danger");
+    if (pin.length !== 4) {
+        showToast(currentLang === 'ar' ? "يرجى إدخال 4 أرقام" : "Please enter 4 digits", "danger");
         return;
     }
 
-    if (pin === (storeSettings.adminPin || "123456")) {
+    if (pin === (storeSettings.adminPin || "1234")) {
         currentUser = { role: 'admin', name: 'Nawaf Saeed (Manager)' };
         persistData();
         updateUserBadge();
