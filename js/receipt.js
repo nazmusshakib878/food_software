@@ -227,69 +227,7 @@ function getKitchenOrderTicketHtml(targetOrder) {
 
 
 
-function downloadReceiptPDF() {
-    const element = document.getElementById('thermalReceiptNode');
-    if (!element) return;
 
-    const orderId = (lastCompletedOrder ? (lastCompletedOrder.id || 'ORD-1013') : (document.getElementById('recOrderNum')?.innerText || 'ORD-1013')).replace(/^#/, '');
-    showToast(currentLang === 'ar' ? "جاري إنشاء وتحميل ملف PDF الفاتورة..." : "Generating PDF invoice...", "success");
-
-    // Remove box shadow and margin bleed temporarily during capture to prevent height overflow
-    const prevShadow = element.style.boxShadow;
-    const prevMargin = element.style.margin;
-    element.style.boxShadow = 'none';
-    element.style.margin = '0 auto';
-
-    // Measure exact element dimensions for dynamic single 80mm thermal roll page
-    const elemWidth = element.offsetWidth || 280;
-    const elemHeight = element.scrollHeight || element.offsetHeight || 500;
-    const printableWidth = 76; // 80mm roll with 2mm margins each side (80 - 4 = 76mm)
-    const contentHeightMm = printableWidth * (elemHeight / elemWidth);
-    // Generous height buffer so the receipt never spills into a 2nd page
-    const pageHeightMm = Math.max(140, Math.ceil(contentHeightMm + 18));
-
-    const opt = {
-        margin: [2, 2, 2, 2],
-        filename: `Receipt-${orderId}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-            scale: 2, 
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff'
-        },
-        jsPDF: { unit: 'mm', format: [80, pageHeightMm], orientation: 'portrait' },
-        pagebreak: { mode: 'avoid-all' }
-    };
-
-    const cleanup = () => {
-        element.style.boxShadow = prevShadow;
-        element.style.margin = prevMargin;
-    };
-
-    if (typeof html2pdf !== 'undefined') {
-        html2pdf().set(opt).from(element).toPdf().get('pdf').then((pdf) => {
-            // Strict 1-Page Guarantee: delete any trailing blank pages
-            const totalPages = pdf.internal.getNumberOfPages();
-            if (totalPages > 1) {
-                for (let p = totalPages; p > 1; p--) {
-                    pdf.deletePage(p);
-                }
-            }
-        }).save().then(() => {
-            cleanup();
-            showToast(currentLang === 'ar' ? "تم تحميل الفاتورة بنجاح!" : "Receipt PDF downloaded!", "success");
-        }).catch(err => {
-            cleanup();
-            console.error("PDF generation failed:", err);
-            showToast(currentLang === 'ar' ? "حدث خطأ أثناء تحميل PDF، جاري فتح الطباعة المباشرة" : "PDF failed. Opening direct print...", "danger");
-            window.print();
-        });
-    } else {
-        cleanup();
-        window.print();
-    }
-}
 
 function closeReceiptModal() {
     document.getElementById('receiptModal')?.classList.remove('open');
