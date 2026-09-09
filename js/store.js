@@ -31,11 +31,11 @@ var categories = (() => {
     }
 })();
 
-const MENU_SCHEMA_VERSION = 'v2026_09_08_exact24';
+const MENU_SCHEMA_VERSION = 'v2026_09_10_clean_codes_v1';
 var items;
 (() => {
     try {
-        const storedVer = localStorage.getItem('nurpos_menu_ver_v4');
+        const storedVer = localStorage.getItem('nurpos_menu_ver_v6');
         const raw = JSON.parse(localStorage.getItem('nurpos_items') || 'null');
         const isValid = storedVer === MENU_SCHEMA_VERSION && 
                         Array.isArray(raw) && 
@@ -43,17 +43,24 @@ var items;
                         raw[0].id === 'item_tikka_sauce';
         if (isValid) {
             items = raw;
-            // Inject default stock for demo if not present
-            let hasStock = items.some(i => i.stock !== undefined && i.stock !== null);
-            if (!hasStock) {
-                items.forEach(i => i.stock = 50);
-                localStorage.setItem('nurpos_items', JSON.stringify(items));
-            }
         } else {
             items = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
-            localStorage.setItem('nurpos_menu_ver_v4', MENU_SCHEMA_VERSION);
+            localStorage.setItem('nurpos_menu_ver_v6', MENU_SCHEMA_VERSION);
             localStorage.setItem('nurpos_items', JSON.stringify(items));
         }
+
+        // Auto-sanitize all product codes: Ensure 100% unique, positive, clean codes
+        let usedCodes = new Set();
+        let nextCode = 101;
+        items.forEach((item) => {
+            let c = String(item.code || '').trim();
+            if (!c || c.startsWith('-') || c === '0' || usedCodes.has(c)) {
+                while (usedCodes.has(String(nextCode))) nextCode++;
+                item.code = String(nextCode);
+            }
+            usedCodes.add(String(item.code));
+        });
+        localStorage.setItem('nurpos_items', JSON.stringify(items));
     } catch (e) {
         items = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
     }

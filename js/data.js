@@ -32,7 +32,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "صوص تيكا",
         subtitleEn: "Tikka sauce",
         price: 2.00, 
-        code: "0", 
+        code: "101", 
         available: true,
         image: "https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?auto=format&fit=crop&w=500&q=80"
     },
@@ -44,7 +44,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "وجبة برجر مشوي ع الفحم",
         subtitleEn: "Charcoal-grilled burger meal",
         price: 18.50, 
-        code: "0", 
+        code: "102", 
         available: true,
         image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80"
     },
@@ -56,7 +56,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "وجبة برجر لحم بقري",
         subtitleEn: "Beef burger meal",
         price: 19.50, 
-        code: "-165", 
+        code: "103", 
         available: true,
         image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=500&q=80"
     },
@@ -68,7 +68,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "وجبة برجر دجاج",
         subtitleEn: "Chicken burger meal",
         price: 18.50, 
-        code: "-670", 
+        code: "104", 
         available: true,
         image: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=500&q=80"
     },
@@ -80,7 +80,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "كباب لحم مشوي",
         subtitleEn: "Meat kebab",
         price: 9.50, 
-        code: "-10687", 
+        code: "105", 
         available: true,
         image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=500&q=80"
     },
@@ -92,7 +92,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "كباب دجاج مشوي",
         subtitleEn: "Chicken kebab",
         price: 9.50, 
-        code: "-102019", 
+        code: "106", 
         available: true,
         image: "https://images.unsplash.com/photo-1603360946369-dc9bb6258143?auto=format&fit=crop&w=500&q=80"
     },
@@ -104,7 +104,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "برجر لحم حاشي",
         subtitleEn: "camel burger",
         price: 18.50, 
-        code: "-970", 
+        code: "107", 
         available: true,
         image: "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=500&q=80"
     },
@@ -116,7 +116,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "كباب لحم حاشي",
         subtitleEn: "camel kebab",
         price: 11.50, 
-        code: "-3566", 
+        code: "108", 
         available: true,
         image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=500&q=80"
     },
@@ -128,7 +128,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "روبيان طازج",
         subtitleEn: "shrimp",
         price: 9.50, 
-        code: "-9237", 
+        code: "109", 
         available: true,
         image: "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=500&q=80"
     },
@@ -140,7 +140,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "دجاج تندوري متبل",
         subtitleEn: "Tandoori",
         price: 10.50, 
-        code: "-5148", 
+        code: "110", 
         available: true,
         image: "https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?auto=format&fit=crop&w=500&q=80"
     },
@@ -152,7 +152,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "سمك طازج",
         subtitleEn: "fish",
         price: 9.50, 
-        code: "-3291", 
+        code: "111", 
         available: true,
         image: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=500&q=80"
     },
@@ -164,7 +164,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "شيش طاووق مشوي",
         subtitleEn: "Shish Tawook",
         price: 9.50, 
-        code: "-19742", 
+        code: "112", 
         available: true,
         image: "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=500&q=80"
     },
@@ -176,7 +176,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "برجر مشوي ع الفحم",
         subtitleEn: "Charcoal-grilled burger",
         price: 12.50, 
-        code: "1", 
+        code: "113", 
         available: true,
         image: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=500&q=80"
     },
@@ -188,7 +188,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "برجر لحم بقري",
         subtitleEn: "beef burger",
         price: 13.50, 
-        code: "-3156", 
+        code: "114", 
         available: true,
         image: "https://images.unsplash.com/photo-1553979459-d2229ba7433b?auto=format&fit=crop&w=500&q=80"
     },
@@ -200,7 +200,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "شرائح برجر دجاج",
         subtitleEn: "Chicken burger slices",
         price: 12.50, 
-        code: "-9025", 
+        code: "115", 
         available: true,
         image: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=500&q=80"
     },
@@ -212,7 +212,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "سندوتش تيكا",
         subtitleEn: "Tikka sandwich",
         price: 10.50, 
-        code: "-6", 
+        code: "116", 
         available: true,
         image: "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=500&q=80"
     },
@@ -224,7 +224,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "جبن إضافي",
         subtitleEn: "cheese",
         price: 1.50, 
-        code: "-134064", 
+        code: "117", 
         available: true,
         image: "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=500&q=80"
     },
@@ -236,7 +236,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "صوص إضافي",
         subtitleEn: "sauce",
         price: 1.50, 
-        code: "-1312", 
+        code: "118", 
         available: true,
         image: "https://images.unsplash.com/photo-1472476443507-c7a5948772fc?auto=format&fit=crop&w=500&q=80"
     },
@@ -248,7 +248,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "بطاطس كبير",
         subtitleEn: "large potatoes",
         price: 6.00, 
-        code: "-842", 
+        code: "119", 
         available: true,
         image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=500&q=80"
     },
@@ -260,7 +260,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "بطاطس صغير",
         subtitleEn: "small potatoes",
         price: 4.00, 
-        code: "-6305", 
+        code: "120", 
         available: true,
         image: "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=500&q=80"
     },
@@ -272,7 +272,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "بيبسي علبة",
         subtitleEn: "Pepsi can",
         price: 3.50, 
-        code: "101", 
+        code: "121", 
         available: true,
         image: "https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=500&q=80"
     },
@@ -284,7 +284,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "مياه معدنية",
         subtitleEn: "mineral water",
         price: 1.50, 
-        code: "102", 
+        code: "122", 
         available: true,
         image: "https://images.unsplash.com/photo-1559839914-17aae19cec71?auto=format&fit=crop&w=500&q=80"
     },
@@ -296,7 +296,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "شاي عدني",
         subtitleEn: "Adeni tea",
         price: 4.00, 
-        code: "201", 
+        code: "123", 
         available: true,
         image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=500&q=80"
     },
@@ -308,7 +308,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "قهوة عربية",
         subtitleEn: "Arabic coffee",
         price: 6.00, 
-        code: "202", 
+        code: "124", 
         available: true,
         image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80"
     }
