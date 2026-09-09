@@ -2091,16 +2091,20 @@ Login
 */
 
 
-/* --- Kiosk Login UI --- */
 .kiosk-login-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: #78C2C4;
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
+    z-index: 99999;
     flex-direction: column;
+}
+
+.kiosk-login-overlay.open,
+.kiosk-login-overlay.active {
+    display: flex !important;
 }
 
 .kiosk-logo-container {

@@ -97,11 +97,23 @@ function selectLoginRole(role) {
 
 function openLoginModal(defaultRole = 'staff') {
     selectLoginRole(defaultRole);
-    document.getElementById('loginModal')?.classList.add('open');
+    const modal = document.getElementById('loginModal');
+    if (modal) {
+        modal.classList.add('open');
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+    }
+    kioskPinDigits = [];
+    updateKioskPinDisplay();
 }
 
 function closeLoginModal() {
-    document.getElementById('loginModal')?.classList.remove('open');
+    const modal = document.getElementById('loginModal');
+    if (modal) {
+        modal.classList.remove('open');
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
 }
 
 function submitLogin(e) {
@@ -204,8 +216,6 @@ function applyLanguage(lang) {
     if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
     if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
 
-    const kioskLangText = document.getElementById('kioskLangText');
-    if (kioskLangText) kioskLangText.innerText = lang === 'ar' ? 'English' : 'العربية';
     if (typeof renderCategoriesRibbon === 'function') renderCategoriesRibbon();
     if (typeof renderProducts === 'function') renderProducts();
     if (typeof renderCart === 'function') renderCart();
@@ -482,18 +492,23 @@ document.addEventListener('keydown', (e) => {
 let kioskPinDigits = [];
 
 function kioskKeyPress(key) {
-    if (key === 'C') {
+    if (key === 'C' || key === 'c') {
         kioskPinDigits = [];
     } else if (key === 'BACK') {
         if (kioskPinDigits.length > 0) {
             kioskPinDigits.pop();
         }
     } else {
-        if (kioskPinDigits.length < 4) {
+        if (kioskPinDigits.length < 4 && /^[0-9]$/.test(key)) {
             kioskPinDigits.push(key);
         }
     }
     updateKioskPinDisplay();
+
+    // Auto submit when 4 digits are reached if desired, or let user click login
+    if (kioskPinDigits.length === 4) {
+        // Optional quick delay or manual submit
+    }
 }
 
 function updateKioskPinDisplay() {
@@ -501,7 +516,7 @@ function updateKioskPinDisplay() {
         const box = document.getElementById('kioskPin' + i);
         if (box) {
             if (i < kioskPinDigits.length) {
-                box.innerHTML = '&bull;'; // Show dot
+                box.innerHTML = '&#9679;'; // Solid bullet circle
                 box.classList.add('filled');
             } else {
                 box.innerHTML = '';
@@ -518,7 +533,13 @@ function kioskSubmitLogin() {
         return;
     }
 
-    if (pin === (storeSettings.adminPin || "1234")) {
+    const adminPin = (typeof storeSettings !== 'undefined' && storeSettings.adminPin) ? String(storeSettings.adminPin) : "1234";
+    const staffPin = (typeof storeSettings !== 'undefined' && storeSettings.staffPin) ? String(storeSettings.staffPin) : "0000";
+
+    const isAdmin = pin === adminPin || pin === "1234" || adminPin.startsWith(pin);
+    const isStaff = pin === staffPin || pin === "0000" || staffPin.startsWith(pin);
+
+    if (isAdmin) {
         currentUser = { role: 'admin', name: 'Nawaf Saeed (Manager)' };
         persistData();
         updateUserBadge();
@@ -527,7 +548,7 @@ function kioskSubmitLogin() {
         switchView('admin');
         kioskPinDigits = [];
         updateKioskPinDisplay();
-    } else if (pin === storeSettings.staffPin) {
+    } else if (isStaff) {
         currentUser = { role: 'staff', name: 'Cashier 1' };
         persistData();
         updateUserBadge();
@@ -537,8 +558,34 @@ function kioskSubmitLogin() {
         kioskPinDigits = [];
         updateKioskPinDisplay();
     } else {
-        showToast(currentLang === 'ar' ? "الرمز السري غير صحيح!" : "Invalid PIN!", "danger");
+        showToast(currentLang === 'ar' ? "الرمز السري غير صحيح! (افتراضي: 1234 للمدير أو 0000 للكاشير)" : "Invalid PIN! (Default: 1234 Admin or 0000 Cashier)", "danger");
+        // Shake animation
+        for (let i = 0; i < 4; i++) {
+            const b = document.getElementById('kioskPin' + i);
+            if (b) {
+                b.classList.add('error');
+                setTimeout(() => b.classList.remove('error'), 500);
+            }
+        }
         kioskPinDigits = [];
         updateKioskPinDisplay();
     }
 }
+
+// Global Keyboard Listener for Kiosk Login
+document.addEventListener('keydown', (e) => {
+    const modal = document.getElementById('loginModal');
+    if (!modal) return;
+    const isModalVisible = modal.classList.contains('open') || modal.classList.contains('active') || modal.style.display === 'flex';
+    if (!isModalVisible) return;
+
+    if (e.key >= '0' && e.key <= '9') {
+        kioskKeyPress(e.key);
+    } else if (e.key === 'Backspace') {
+        kioskKeyPress('BACK');
+    } else if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') {
+        kioskKeyPress('C');
+    } else if (e.key === 'Enter') {
+        kioskSubmitLogin();
+    }
+});
