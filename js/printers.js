@@ -324,6 +324,7 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
             <html lang="${currentLang}" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
             <head>
                 <meta charset="UTF-8">
+                <base href="${window.location.origin}${window.location.pathname}">
                 <title>${escapeHtml(title)}</title>
                 ${stylesheets}
                 <style>
