@@ -535,12 +535,17 @@
                         <div class="kds-badge kds-count-new"><span id="kdsCountNew">0</span> <span data-i18n="kds_count_new_lbl">طلبات جديدة New</span></div>
                         <div class="kds-badge kds-count-prep"><span id="kdsCountPrep">0</span> <span data-i18n="kds_count_prep_lbl">قيد التجهيز Prep</span></div>
                         <div class="kds-badge kds-count-ready"><span id="kdsCountReady">0</span> <span data-i18n="kds_count_ready_lbl">جاهز Ready</span></div>
+                        <div class="kds-badge kds-stock-alert-badge" id="kdsStockAlertPill" onclick="openKitchenStockModal('out_of_stock')" style="display: none;" title="انقر لإعادة إتاحة الأصناف النافذة فوراً">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span id="kdsStockAlertCount">0</span>
+                            <span data-i18n="kds_items_out">أصناف نفذت (إعادة إتاحة)</span>
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="btn-primary" onclick="openKitchenStockModal()" style="padding: 7px 14px; font-size: 12px; background: var(--teal); border: none;">
-                            <i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="btn_manage_stock">إدارة المخزون</span>
+                    <div class="kds-topbar-actions">
+                        <button type="button" class="btn-primary kds-btn-stock" onclick="openKitchenStockModal()">
+                            <i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="btn_manage_stock">إدارة المخزون والتوافر</span>
                         </button>
-                        <button class="btn-secondary" onclick="renderKdsScreen()" style="padding: 7px 14px; font-size: 12px;">
+                        <button type="button" class="btn-secondary kds-btn-refresh" onclick="renderKdsScreen(); updateKdsStockAlert();">
                             <i class="fa-solid fa-rotate"></i> <span data-i18n="btn_refresh_kds">تحديث</span>
                         </button>
                     </div>
@@ -1434,21 +1439,53 @@
     </div>
 </div>
 
-<!-- MODAL 14: KITCHEN STOCK MODAL -->
+<!-- MODAL 14: KITCHEN STOCK & RESTOCK MODAL -->
 <div class="modal-overlay" id="kitchenStockModal">
-    <div class="modal-card" style="max-width: 600px;">
+    <div class="modal-card kds-stock-modal-card">
         <div class="modal-header" style="background: linear-gradient(135deg, var(--teal-dark), var(--teal));">
-            <h3><i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="kitchen_stock_title">إدارة المخزون اليومي</span></h3>
+            <div>
+                <h3><i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="kitchen_stock_title">إدارة مخزون وتوافر أطباق المطبخ</span></h3>
+                <p style="font-size: 11px; opacity: 0.85; margin-top: 2px;" data-i18n="kitchen_stock_subtitle">تحديد الكميات وإعادة إتاحة الأصناف النافذة فوراً للطلب</p>
+            </div>
             <button class="modal-close-btn" onclick="closeKitchenStockModal()"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
-            <div id="kitchenStockGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
+
+        <div class="kds-stock-modal-toolbar">
+            <div class="kds-stock-search-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="kitchenStockSearch" placeholder="بحث عن صنف بالاسم أو الكود..." oninput="filterKitchenStock()">
+            </div>
+            <div class="kds-stock-filter-chips">
+                <button type="button" class="kds-stock-filter-chip active" data-filter="all" onclick="setKitchenStockFilter('all')">
+                    الكل (<span id="kdsFilterTotalCount">0</span>)
+                </button>
+                <button type="button" class="kds-stock-filter-chip out" data-filter="out_of_stock" onclick="setKitchenStockFilter('out_of_stock')">
+                    <i class="fa-solid fa-circle-exclamation"></i> نفذت الكمية (<span id="kdsFilterOutCount">0</span>)
+                </button>
+                <button type="button" class="kds-stock-filter-chip low" data-filter="low_stock" onclick="setKitchenStockFilter('low_stock')">
+                    <i class="fa-solid fa-triangle-exclamation"></i> كمية قليلة (<span id="kdsFilterLowCount">0</span>)
+                </button>
+                <button type="button" class="kds-stock-filter-chip avail" data-filter="available" onclick="setKitchenStockFilter('available')">
+                    <i class="fa-solid fa-circle-check"></i> متوفر
+                </button>
+            </div>
+        </div>
+
+        <div class="modal-body kds-stock-modal-body">
+            <div id="kitchenStockGrid" class="kds-stock-grid">
                 <!-- Populated dynamically via renderKitchenStock() -->
             </div>
         </div>
-        <div class="modal-footer" style="justify-content: space-between;">
-            <button type="button" class="btn-primary" onclick="saveKitchenStock()"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save">حفظ الإعدادات</span></button>
-            <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeKitchenStockModal()"><span data-i18n="btn_cancel">إلغاء</span></button>
+
+        <div class="modal-footer kds-stock-modal-footer">
+            <div style="font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-circle-info" style="color: var(--teal);"></i>
+                <span data-i18n="kitchen_stock_instant_tip">أي تعديل في كمية الصنف أو إتاحته يُطبّق فوراً على شاشة الكاشير</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-primary" onclick="saveKitchenStock()"><i class="fa-solid fa-check"></i> <span data-i18n="btn_done">تم وحفظ</span></button>
+                <button type="button" class="btn-secondary" onclick="closeKitchenStockModal()"><span data-i18n="btn_close">إغلاق</span></button>
+            </div>
         </div>
     </div>
 </div>

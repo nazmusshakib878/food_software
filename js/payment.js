@@ -184,10 +184,14 @@ function completeOrderAndShowReceipt() {
         const product = items.find(i => i.id === cartItem.id);
         if (product && product.stock !== undefined && product.stock !== null) {
             product.stock = Math.max(0, product.stock - cartItem.qty);
+            if (product.stock <= 0) {
+                product.available = false;
+            }
         }
     });
 
     persistData();
+    if (typeof updateKdsStockAlert === 'function') updateKdsStockAlert();
     updatePosOrderBadge();
     soundSuccess();
 

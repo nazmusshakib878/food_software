@@ -289,6 +289,7 @@ function renderKdsScreen() {
     if (newBadge) newBadge.innerText = newCount;
     if (prepBadge) prepBadge.innerText = prepCount;
     if (readyBadge) readyBadge.innerText = readyCount;
+    if (typeof updateKdsStockAlert === 'function') updateKdsStockAlert();
 
     if (activeOrders.length === 0) {
         container.innerHTML = `
@@ -449,6 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAllOrdersTable();
     if (typeof populateCategoryDropdowns === 'function') populateCategoryDropdowns();
     if (typeof syncStoreSettingsForm === 'function') syncStoreSettingsForm();
+    if (typeof updateKdsStockAlert === 'function') updateKdsStockAlert();
 });
 
 // Dismiss Modals on Backdrop Click or Escape Key

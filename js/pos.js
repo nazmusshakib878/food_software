@@ -219,19 +219,22 @@ function renderProducts() {
         const inCartQty = currentCart.filter(c => c.id === item.id).reduce((sum, c) => sum + c.qty, 0);
         
         // Stock logic
+        let stockIndicatorHTML = '';
         let stockPillHTML = '';
         if (item.stock !== undefined && item.stock !== null) {
             if (item.stock <= 0) {
                 isAvailable = false;
             } else {
                 let remaining = item.stock - inCartQty;
-                let badgeColor = remaining > 10 ? 'rgba(16, 185, 129, 0.95)' : 'rgba(245, 158, 11, 0.95)';
-                let icon = remaining > 10 ? 'fa-box-open' : 'fa-triangle-exclamation';
+                let isLow = remaining <= 10;
+                let icon = isLow ? 'fa-triangle-exclamation' : 'fa-boxes-stacked';
                 let stockText = currentLang === 'ar' ? `باقي ${remaining}` : `${remaining} Left`;
+                
+                stockPillHTML = `<span class="product-stock-pill ${isLow ? 'low' : 'normal'}"><i class="fa-solid ${icon}"></i> ${stockText}</span>`;
+                
                 if (inCartQty > 0) {
-                    stockText = currentLang === 'ar' ? `المتبقي ${remaining}` : `${remaining} Left`;
+                    stockIndicatorHTML = `<div class="product-stock-hint"><span class="stock-rem">${remaining} ${currentLang === 'ar' ? 'متبقي' : 'left'}</span> <span class="stock-incart">(${inCartQty} ${currentLang === 'ar' ? 'بالسلة' : 'in cart'})</span></div>`;
                 }
-                stockPillHTML = `<span style="position: absolute; bottom: 6px; inset-inline-start: 6px; background: ${badgeColor}; color: #fff; font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 6px; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"><i class="fa-solid ${icon}"></i> ${stockText}</span>`;
             }
         }
 
@@ -243,7 +246,7 @@ function renderProducts() {
         const imgUrl = item.image || getCategoryFallbackImage(item.catId);
         const codePill = `<span class="code-pill">${escapeHtml(item.code !== undefined && item.code !== null ? String(item.code) : '0')}</span>`;
         const outOfStockBadge = !isAvailable 
-            ? `<span class="out-of-stock-badge"><i class="fa-solid fa-circle-exclamation"></i> ${currentLang === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>` 
+            ? `<span class="out-of-stock-badge"><i class="fa-solid fa-ban"></i> ${currentLang === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>` 
             : '';
 
         const cardClick = isAvailable 
@@ -268,6 +271,7 @@ function renderProducts() {
                     <div class="item-titles">
                         <h3 title="${escapeHtml(primaryName)}">${escapeHtml(primaryName)}</h3>
                         <p class="product-category-subtitle" title="${escapeHtml(subtitle)}">${escapeHtml(subtitle)}</p>
+                        ${stockIndicatorHTML}
                     </div>
                     <div class="card-footer">
                         <span class="card-price-value">${formatCurrency(item.price)}</span>
