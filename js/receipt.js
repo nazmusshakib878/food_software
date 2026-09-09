@@ -109,10 +109,12 @@ function renderReceipt(order) {
     document.getElementById('recSubtotal').innerText = (order.subtotal || 0).toFixed(2);
     document.getElementById('recTax').innerText = (order.tax || 0).toFixed(2);
     document.getElementById('recDiscount').innerText = (order.discount || 0).toFixed(2);
-    document.getElementById('recGrandTotal').innerText = `SAR ${(order.total || 0).toFixed(2)}`;
-    document.getElementById('recMethod').innerText = order.method || 'Cash';
-    document.getElementById('recPaid').innerText = (order.paid || order.total || 0).toFixed(2);
-    document.getElementById('recChange').innerText = (order.change || 0).toFixed(2);
+    // Support both order.grandTotal (from payment.js) and order.total fallback
+    const grandTotal = Number(order.grandTotal || order.total || 0);
+    document.getElementById('recGrandTotal').innerText = `SAR ${grandTotal.toFixed(2)}`;
+    document.getElementById('recMethod').innerText = order.method || order.paymentMethod || 'Cash';
+    document.getElementById('recPaid').innerText = Number(order.paid || order.amountPaid || order.grandTotal || order.total || 0).toFixed(2);
+    document.getElementById('recChange').innerText = Number(order.change || order.changeReturn || 0).toFixed(2);
 
     // Dynamic ZATCA-compliant QR Code generation
     const qrContainer = document.getElementById('receiptQr');
@@ -142,7 +144,6 @@ function renderReceipt(order) {
         }
     }
 
-    // Populate the Combined KOT Section
     // Populate the Combined KOT Section
     const kotSection = document.getElementById('receiptCombinedKotSection');
     const kotContent = document.getElementById('receiptCombinedKotContent');

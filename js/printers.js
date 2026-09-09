@@ -319,6 +319,7 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
         }
         const stylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).map(el => el.outerHTML).join('\n');
 
+        frameDoc.open();
         frameDoc.write(`
             <!DOCTYPE html>
             <html lang="${currentLang}" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">

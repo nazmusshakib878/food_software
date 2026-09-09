@@ -27,6 +27,7 @@
     --danger-soft: #fff1f2;
     --success: #10b981;
     --success-soft: #ecfdf5;
+    --surface-hover: #f1f5f9;
     --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
     --shadow-sm: 0 2px 6px -1px rgba(15, 23, 42, 0.08), 0 1px 4px -1px rgba(15, 23, 42, 0.04);
     --shadow-md: 0 10px 25px -3px rgba(15, 23, 42, 0.09), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
@@ -547,8 +548,15 @@ button, input, select, textarea {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    z-index: 999;
+    z-index: 1500;
     pointer-events: none;
+}
+
+/* Global Keyboard Focus Ring */
+:focus-visible {
+    outline: 2.5px solid var(--teal);
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
 .toast-pill {
@@ -584,6 +592,7 @@ html[data-theme="dark"] {
     --surface-2: #1f293d;
     --surface-3: #2a374e;
     --border: #334155;
+    --surface-hover: #1f293d;
     --border-focus: #14b8a6;
     --text: #f1f5f9;
     --muted: #94a3b8;

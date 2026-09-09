@@ -170,6 +170,7 @@ function completeOrderAndShowReceipt() {
         tax: totals.tax,
         discount: totals.discount,
         total: totals.grandTotal,
+        grandTotal: totals.grandTotal,
         paid: paid,
         change: Math.max(0, Math.round((paid - totals.grandTotal) * 100) / 100),
         method: selectedPayMethod

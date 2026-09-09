@@ -407,8 +407,8 @@
     }
 }
 
-/* Fallback for general screens <= 900px that are not landscape tablets */
-@media (max-width: 900px) and (not (orientation: landscape)) {
+/* Fallback for general portrait screens <= 900px */
+@media (max-width: 900px) and (orientation: portrait) {
     .pos-layout {
         flex-direction: column;
         padding: 8px;
@@ -860,5 +860,60 @@
 
     .pay-disp-card .big-num {
         font-size: 18px;
+    }
+}
+
+/* ==========================================================================
+   8. RETURNS SCREEN RESPONSIVE FIXES
+   ========================================================================== */
+@media (max-width: 600px) {
+    /* Fix returns order cards overflowing on small phones */
+    .returns-orders-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Clear mobile bottom nav bar */
+    .returns-screen-container {
+        padding-bottom: 90px;
+    }
+
+    /* Stack returns layout vertically */
+    .returns-layout-split {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .returns-sidebar {
+        width: 100%;
+        height: auto;
+    }
+
+    .security-panel {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* Make numpad keys larger on small phones */
+    .ret-numpad button {
+        width: 80px;
+        height: 60px;
+        font-size: 20px;
+    }
+
+    /* Toast above mobile bottom bar */
+    .toast-shelf {
+        bottom: 80px;
+        inset-inline-end: 12px;
+    }
+}
+
+@media (min-width: 601px) and (max-width: 900px) and (orientation: portrait) {
+    /* Tablet portrait returns grid: 2 columns */
+    .returns-orders-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .returns-screen-container {
+        padding-bottom: 90px;
     }
 }
