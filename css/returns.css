@@ -9,6 +9,7 @@
     color: var(--text);
     height: 100%;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* Sub Views */
@@ -27,11 +28,18 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 .returns-header h2 {
     margin: 0;
-    font-size: 24px;
+    font-size: 22px;
+    font-weight: 900;
     color: var(--text);
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 /* Screen 1: Order History Grid */
@@ -157,19 +165,22 @@
     flex-direction: column;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px;
+    border-radius: 16px;
+    padding: 20px;
     overflow-y: auto;
+    box-shadow: 0 4px 16px rgba(15,23,42,0.04);
 }
 .returns-sidebar {
     width: 300px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px;
+    border-radius: 16px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 16px;
+    box-shadow: 0 4px 16px rgba(15,23,42,0.04);
+    flex-shrink: 0;
 }
 .returns-sidebar h1 {
     font-size: 24px;
@@ -270,39 +281,57 @@
     background: var(--border);
 }
 .btn-return-big {
-    background: var(--teal);
+    background: linear-gradient(135deg, #0a5c53, var(--teal));
     color: #fff;
     border: none;
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 700;
+    padding: 13px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 800;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     align-items: center;
     gap: 8px;
+    box-shadow: 0 6px 18px rgba(13,148,136,0.3);
+    letter-spacing: 0.1px;
 }
 .btn-return-big:hover {
-    background: var(--teal-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(13,148,136,0.4);
+    filter: brightness(1.06);
 }
 .btn-back-big {
-    background: var(--muted);
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: none;
 }
 .btn-back-big:hover {
-    background: #475569;
+    background: var(--surface-3);
+    transform: translateY(-1px);
 }
 .btn-next {
-    background: var(--orange);
+    background: linear-gradient(135deg, #b45309, var(--orange));
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 14px rgba(234,88,12,0.28);
 }
 .btn-next:hover {
-    background: #e65c00;
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(234,88,12,0.38);
 }
 .btn-confirm {
-    background: var(--danger);
+    background: linear-gradient(135deg, #9f1239, var(--danger));
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 14px rgba(225,29,72,0.28);
 }
 .btn-confirm:hover {
-    background: #be123c;
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(225,29,72,0.38);
 }
 
 /* Security Panel (Screen 3) */
