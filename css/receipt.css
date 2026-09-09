@@ -325,34 +325,55 @@
 
 /* Native Print Stylesheet for POS Thermal Printers */
 @page {
-    size: 80mm auto;
     margin: 0;
+    size: 80mm auto;
 }
 
 @media print {
-    body * {
-        visibility: hidden;
+    /* Hide the main app wrapper to prevent blank pages */
+    body > :not(#receiptModal) {
+        display: none !important;
     }
-    #receiptModal.open,
-    #receiptModal.open .thermal-paper, 
-    #receiptModal.open .thermal-paper * {
-        visibility: visible;
+    
+    /* Ensure only the open modal is printed */
+    #receiptModal {
+        position: static !important;
+        display: block !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
-    #receiptModal.open .thermal-paper {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 100%;
-        max-width: 76mm;
-        box-shadow: none;
-        padding: 4mm 2mm;
-        margin: 0 auto;
-        box-sizing: border-box;
+    
+    #receiptModal:not(.open) {
+        display: none !important;
     }
-    .modal-overlay, .modal-card {
-        position: static;
-        background: none;
-        box-shadow: none;
-        padding: 0;
+
+    #receiptModal .modal-card {
+        position: static !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Hide UI elements from the printed paper */
+    #receiptModal .modal-header,
+    #receiptModal .modal-footer {
+        display: none !important;
+    }
+
+    /* Configure the thermal paper element for an 80mm roll */
+    #receiptModal .thermal-paper {
+        position: static !important;
+        width: 76mm !important; /* 80mm paper width minus printer margins */
+        max-width: 76mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        /* Ensure font renders sharply in black and white */
+        color: #000 !important;
+        background: #fff !important;
     }
 }
