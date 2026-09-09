@@ -225,49 +225,7 @@ function getKitchenOrderTicketHtml(targetOrder) {
     `;
 }
 
-/* Print Clean Thermal Kitchen Order Ticket (KOT) */
-function printKitchenOrderTicket(targetOrder) {
-    const order = targetOrder || lastCompletedOrder || (typeof orders !== 'undefined' ? orders[0] : null);
-    if (!order) {
-        showToast(currentLang === 'ar' ? "لا يوجد طلب نشط لطباعة بون المطبخ" : "No active order to print KOT", "danger");
-        return;
-    }
 
-    const kotHtml = getKitchenOrderTicketHtml(order);
-
-    if (typeof routePrintJob === 'function') {
-        routePrintJob('kitchen', kotHtml, `KOT - ${order.id}`);
-    } else {
-        const printWin = window.open('', '_blank', 'width=380,height=600');
-        if (!printWin) {
-            window.print();
-            return;
-        }
-        printWin.document.write(`
-            <!DOCTYPE html>
-            <html dir="rtl" lang="ar">
-            <head>
-                <meta charset="utf-8">
-                <title>KOT - ${order.id}</title>
-                <style>
-                    body { font-family: 'Courier New', monospace, sans-serif; padding: 12px; color: #000; font-size: 13px; }
-                    @media print { body { padding: 0; } }
-                </style>
-            </head>
-            <body>
-                ${kotHtml}
-                <script>
-                    window.onload = function() {
-                        window.print();
-                        setTimeout(function() { window.close(); }, 500);
-                    };
-                </script>
-            </body>
-            </html>
-        `);
-        printWin.document.close();
-    }
-}
 
 function downloadReceiptPDF() {
     const element = document.getElementById('thermalReceiptNode');
