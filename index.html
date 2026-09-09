@@ -451,25 +451,17 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="table-responsive">
-                            <table class="admin-table">
-                                <thead>
-                                    <tr>
-                                        <th data-i18n="th_order_id">رقم الطلب</th>
-                                        <th data-i18n="th_date_time">التاريخ والوقت</th>
-                                        <th data-i18n="th_type">نوع الطلب</th>
-                                        <th data-i18n="th_customer_col">العميل</th>
-                                        <th data-i18n="th_items_col">الأصناف</th>
-                                        <th data-i18n="th_total">المجموع</th>
-                                        <th data-i18n="th_payment_method">طريقة الدفع</th>
-                                        <th data-i18n="th_cashier">الكاشير</th>
-                                        <th data-i18n="th_actions">الإجراء</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="allOrdersTbody">
-                                    <!-- Injected dynamically -->
-                                </tbody>
-                            </table>
+                        <div class="orders-top-tabs" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; font-weight: 600; font-size: 14px;">
+                            <div class="order-tab active" onclick="setOrderTab('uncompleted', this)" data-i18n="tab_uncompleted" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; background: var(--teal); color: white;">Uncompleted</div>
+                            <div class="order-tab" onclick="setOrderTab('all', this)" data-i18n="tab_all" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">All</div>
+                            <div class="order-tab" onclick="setOrderTab('offline', this)" data-i18n="tab_offline" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Offline</div>
+                            <div class="order-tab" onclick="setOrderTab('outgoing', this)" data-i18n="tab_outgoing" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Outgoing</div>
+                            <div class="order-tab" onclick="setOrderTab('returned', this)" data-i18n="tab_returned" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Returned</div>
+                            <div class="order-tab" onclick="setOrderTab('active', this)" data-i18n="tab_active" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Active</div>
+                            <div class="order-tab" onclick="setOrderTab('done', this)" data-i18n="tab_done" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Done</div>
+                        </div>
+                        <div id="allOrdersContainer" style="display: flex; flex-direction: column; gap: 15px; max-height: calc(100vh - 250px); overflow-y: auto; padding-right: 5px;">
+                            <!-- Injected dynamically -->
                         </div>
                     </div>
                 </div>
@@ -510,11 +502,11 @@
                             <div class="form-row-2">
                                 <div class="form-group">
                                     <label data-i18n="lbl_admin_pin">رمز المدير PIN:</label>
-                                    <input type="password" class="form-control" id="setAdminPin" required>
+                                    <input type="password" class="form-control" id="setAdminPin" maxlength="6" required>
                                 </div>
                                 <div class="form-group">
                                     <label data-i18n="lbl_staff_pin">رمز الكاشير PIN:</label>
-                                    <input type="password" class="form-control" id="setStaffPin" required>
+                                    <input type="password" class="form-control" id="setStaffPin" maxlength="6" required>
                                 </div>
                             </div>
                             <button type="submit" class="btn-primary" style="margin-top: 10px; width: 100%; justify-content: center;">
@@ -768,35 +760,33 @@
 
 <!-- MODAL 1: AUTHENTICATION / ROLE LOGIN -->
 <div class="modal-overlay" id="loginModal">
-    <div class="modal-card" style="max-width: 380px;">
-        <div class="modal-header">
-            <h3><i class="fa-solid fa-lock"></i> <span data-i18n="login_modal_title">تسجيل الدخول للنظام</span></h3>
-            <button class="modal-close-btn" onclick="closeLoginModal()"><i class="fa-solid fa-xmark"></i></button>
+    <div class="modal-card modern-login-card" style="max-width: 420px; border-radius: 24px; padding: 10px; overflow: hidden; background: linear-gradient(145deg, #ffffff, #f8fafc); box-shadow: 0 20px 50px rgba(0,0,0,0.15);">
+        <div style="background: var(--teal); padding: 30px 20px; margin: -10px -10px 20px -10px; border-radius: 20px 20px 0 0; text-align: center; color: white;">
+            <i class="fa-solid fa-shield-halved" style="font-size: 42px; margin-bottom: 12px; opacity: 0.9;"></i>
+            <h3 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 0.5px;"><span data-i18n="login_modal_title">تسجيل الدخول للنظام</span></h3>
+            <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.8;" data-i18n="login_modal_subtitle">اختر نوع الحساب وأدخل الرمز السري</p>
+            <button type="button" class="modal-close-btn" onclick="closeLoginModal()" style="position: absolute; top: 15px; right: 15px; color: white; background: rgba(255,255,255,0.2); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: background 0.3s;"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <form onsubmit="submitLogin(event)">
-            <div class="modal-body">
-                <div style="text-align: center; margin-bottom: 14px;">
-                    <p style="font-size: 13px; color: var(--muted); font-weight: 600;" data-i18n="login_modal_subtitle">اختر نوع الحساب وأدخل الرمز (PIN)</p>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;">
-                    <button type="button" class="order-type-btn active" id="rolePickStaff" onclick="selectLoginRole('staff')">
-                        <i class="fa-solid fa-user"></i> <span data-i18n="login_role_staff">Staff / كاشير</span>
+        <form onsubmit="submitLogin(event)" style="padding: 0 15px 15px 15px;">
+            <div class="modal-body" style="padding: 0;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
+                    <button type="button" class="role-selector-btn active" id="rolePickStaff" onclick="selectLoginRole('staff')" style="padding: 15px; border-radius: 16px; border: 2px solid var(--teal); background: rgba(15,118,110,0.05); color: var(--teal); font-weight: 700; font-size: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: all 0.3s;">
+                        <i class="fa-solid fa-user" style="font-size: 24px;"></i> <span data-i18n="login_role_staff">Staff / كاشير</span>
                     </button>
-                    <button type="button" class="order-type-btn" id="rolePickAdmin" onclick="selectLoginRole('admin')">
-                        <i class="fa-solid fa-user-shield"></i> <span data-i18n="login_role_admin">Admin / مدير</span>
+                    <button type="button" class="role-selector-btn" id="rolePickAdmin" onclick="selectLoginRole('admin')" style="padding: 15px; border-radius: 16px; border: 2px solid transparent; background: #f1f5f9; color: #64748b; font-weight: 700; font-size: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: all 0.3s;">
+                        <i class="fa-solid fa-user-shield" style="font-size: 24px;"></i> <span data-i18n="login_role_admin">Admin / مدير</span>
                     </button>
                 </div>
 
-                <div class="form-group">
-                    <label data-i18n="login_pin_lbl">رمز المرور (PIN):</label>
-                    <input type="password" class="form-control" id="loginPinInput" maxlength="6" style="text-align: center; font-size: 20px; letter-spacing: 4px;" placeholder="****" required autofocus>
-                    <small style="display: block; text-align: center; margin-top: 6px; color: var(--muted); font-size: 11px;" data-i18n="login_hint">افتراضي: المدير (1234) | الكاشير (0000)</small>
+                <div class="form-group" style="margin-bottom: 25px;">
+                    <label style="display: block; text-align: center; font-weight: 700; color: #334155; margin-bottom: 12px; font-size: 15px;" data-i18n="login_pin_lbl">رمز المرور 6 أرقام (PIN):</label>
+                    <input type="password" class="form-control" id="loginPinInput" maxlength="6" style="text-align: center; font-size: 32px; letter-spacing: 16px; padding: 15px; border-radius: 16px; border: 2px solid #e2e8f0; background: #f8fafc; font-weight: 800; color: var(--teal); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); transition: all 0.3s;" placeholder="******" required autofocus>
+                    <small style="display: block; text-align: center; margin-top: 12px; color: #94a3b8; font-size: 12px; background: #f1f5f9; padding: 8px; border-radius: 8px;" data-i18n="login_hint">افتراضي: المدير (123456) | الكاشير (000000)</small>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
-                    <i class="fa-solid fa-arrow-right-to-bracket"></i> <span data-i18n="btn_login">دخول</span>
+            <div class="modal-footer" style="padding: 0; border-top: none; margin-top: 0;">
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 14px; font-size: 16px; border-radius: 14px; background: linear-gradient(135deg, var(--teal), #0d9488); box-shadow: 0 4px 15px rgba(13,148,136,0.3);">
+                    <i class="fa-solid fa-arrow-right-to-bracket" style="font-size: 18px;"></i> <span data-i18n="btn_login">تسجيل الدخول</span>
                 </button>
             </div>
         </form>

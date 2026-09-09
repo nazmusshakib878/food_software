@@ -68,61 +68,81 @@ function renderAdminOverview() {
     }).join('');
 }
 
+let currentOrderTab = 'uncompleted';
+
+window.setOrderTab = function(tabName, element) {
+    currentOrderTab = tabName;
+    document.querySelectorAll('.order-tab').forEach(el => {
+        el.style.background = 'transparent';
+        el.style.color = '#64748b';
+        el.classList.remove('active');
+    });
+    element.style.background = 'var(--teal)';
+    element.style.color = 'white';
+    element.classList.add('active');
+    filterAllOrders();
+};
+
 function renderAllOrdersTable(targetList) {
-    const tbody = document.getElementById('allOrdersTbody');
-    if (!tbody) return;
+    const container = document.getElementById('allOrdersContainer');
+    if (!container) return;
 
     const list = targetList || orders;
 
     if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--muted); padding: 24px;">${currentLang === 'ar' ? 'لا توجد طلبات مطابقة' : 'No matching orders'}</td></tr>`;
+        container.innerHTML = `<div style="text-align: center; color: var(--muted); padding: 24px;">${currentLang === 'ar' ? 'لا توجد طلبات مطابقة' : 'No matching orders'}</div>`;
         return;
     }
 
-    tbody.innerHTML = list.map(o => {
+    container.innerHTML = list.map(o => {
         const isCancelled = o.status === 'cancelled';
-        const totalStyle = isCancelled ? 'text-decoration: line-through; color: var(--danger);' : '';
+        const borderColor = isCancelled ? 'var(--danger)' : (o.status === 'served' ? 'var(--success)' : 'var(--teal)');
+        const invoiceId = o.id.replace('B.', '56226886') + Math.floor(Math.random() * 900 + 100); // Mock Invoice ID if not real
         
-        let statusBadge = `<span class="kds-badge" style="background: var(--teal-soft); color: var(--teal); font-size: 11px; padding: 2px 8px;">${currentLang === 'ar' ? 'جديد' : 'New'}</span>`;
-        if (isCancelled) {
-            statusBadge = `<span class="kds-badge" style="background: var(--danger-soft); color: var(--danger); font-size: 11px; padding: 2px 8px; font-weight: 800;">${currentLang === 'ar' ? 'ملغي' : 'Void'}</span>`;
-        } else if (o.status === 'served') {
-            statusBadge = `<span class="kds-badge" style="background: var(--success-soft); color: var(--success); font-size: 11px; padding: 2px 8px;">${currentLang === 'ar' ? 'مكتمل' : 'Served'}</span>`;
-        } else if (o.status === 'preparing') {
-            statusBadge = `<span class="kds-badge" style="background: var(--orange-soft); color: var(--orange); font-size: 11px; padding: 2px 8px;">${currentLang === 'ar' ? 'قيد التجهيز' : 'Cooking'}</span>`;
-        } else if (o.status === 'ready') {
-            statusBadge = `<span class="kds-badge" style="background: var(--success-soft); color: var(--success); font-size: 11px; padding: 2px 8px;">${currentLang === 'ar' ? 'جاهز' : 'Ready'}</span>`;
-        }
-
-        const voidBtn = !isCancelled
-            ? `<button class="btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="voidOrder('${escapeHtml(o.id)}')" title="${currentLang === 'ar' ? 'إلغاء الطلب' : 'Void Order'}"><i class="fa-solid fa-ban"></i> ${currentLang === 'ar' ? 'إلغاء' : 'Void'}</button>`
-            : '';
-
         return `
-            <tr>
-                <td><strong>${escapeHtml(o.id)}</strong></td>
-                <td>${escapeHtml(o.dateFormatted)}</td>
-                <td>${escapeHtml(formatOrderType(o.type, currentLang))}</td>
-                <td>${escapeHtml(o.table || '-')}</td>
-                <td><strong style="${totalStyle}">${formatCurrency(o.total)}</strong></td>
-                <td>${escapeHtml(formatPaymentMethod(o.method, currentLang))}</td>
-                <td>${statusBadge}</td>
-                <td>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <button class="btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="previewExistingOrderReceipt('${escapeHtml(o.id)}')">
-                            <i class="fa-solid fa-receipt"></i> ${currentLang === 'ar' ? 'فاتورة' : 'Receipt'}
-                        </button>
-                        ${voidBtn}
+            <div style="background: #f1f5f9; border-right: 4px solid ${borderColor}; padding: 0; display: flex; flex-direction: column; font-size: 14px; font-weight: 600; color: #334155; direction: ltr;">
+                <div style="padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: right; line-height: 1.6;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>${escapeHtml(o.dateFormatted || '')}</span>
+                        <span style="color: #64748b;">:Date</span>
                     </div>
-                </td>
-            </tr>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>${escapeHtml(o.id)}</span>
+                        <span style="color: #64748b;">:Order Number</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>${escapeHtml(formatPaymentMethod(o.method, currentLang))}/${escapeHtml(o.total)}</span>
+                        <span style="color: #64748b;">:Payment Types</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>${escapeHtml(o.total)}</span>
+                        <span style="color: #64748b;">:Total</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>${invoiceId}</span>
+                        <span style="color: #64748b;">:Invoice Id</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>${escapeHtml(o.cashier || (currentLang === 'ar' ? 'غير محدد' : 'Unknown'))}</span>
+                        <span style="color: #64748b;">:User Name</span>
+                    </div>
+                </div>
+                <div style="display: flex; width: 100%; text-align: center; font-weight: bold; font-size: 13px;">
+                    <div onclick="showToast('Delivered', 'success')" style="flex: 1; background: #8f2d56; color: white; padding: 10px 5px; cursor: pointer;">Order Delivered</div>
+                    <div onclick="voidOrder('${escapeHtml(o.id)}')" style="flex: 1; background: #2a9d8f; color: white; padding: 10px 5px; border-right: 1px solid rgba(255,255,255,0.2); cursor: pointer;">Return</div>
+                    <div onclick="printKitchen('${escapeHtml(o.id)}')" style="flex: 1; background: #2a9d8f; color: white; padding: 10px 5px; border-right: 1px solid rgba(255,255,255,0.2); cursor: pointer;">Kitchen Print</div>
+                    <div onclick="previewExistingOrderReceipt('${escapeHtml(o.id)}')" style="flex: 1; background: #2a9d8f; color: white; padding: 10px 5px; border-right: 1px solid rgba(255,255,255,0.2); cursor: pointer;">Print</div>
+                </div>
+            </div>
         `;
     }).join('');
 }
 
 function filterAllOrders() {
     const q = (document.getElementById('orderSearchInput')?.value || '').trim().toLowerCase();
-    const status = document.getElementById('orderStatusFilter')?.value || 'all';
+    
+    // Determine status from the new top tabs
+    let statusFilter = currentOrderTab; 
 
     const filtered = orders.filter(o => {
         const matchesQuery = !q || 
@@ -131,12 +151,30 @@ function filterAllOrders() {
             (o.table && o.table.toLowerCase().includes(q)) ||
             (o.method && o.method.toLowerCase().includes(q));
 
-        const matchesStatus = (status === 'all') || (o.status === status) || (status === 'active' && o.status !== 'cancelled');
+        let matchesStatus = true;
+        if (statusFilter === 'uncompleted') {
+            matchesStatus = ['new', 'preparing', 'ready'].includes(o.status);
+        } else if (statusFilter === 'active') {
+            matchesStatus = o.status !== 'cancelled' && o.status !== 'served';
+        } else if (statusFilter === 'done') {
+            matchesStatus = o.status === 'served';
+        } else if (statusFilter === 'returned') {
+            matchesStatus = o.status === 'cancelled';
+        } else if (statusFilter === 'offline' || statusFilter === 'outgoing') {
+            matchesStatus = false; // Mock functionality for these tabs if needed
+        }
+        
         return matchesQuery && matchesStatus;
     });
 
     renderAllOrdersTable(filtered);
 }
+
+window.printKitchen = function(orderId) {
+    if (typeof showToast === 'function') {
+        showToast('Kitchen Print Sent: ' + orderId, 'success');
+    }
+};
 
 function filterOrders() {
     filterAllOrders();
@@ -533,8 +571,8 @@ function syncStoreSettingsForm() {
     document.getElementById('setVatNumber').value = storeSettings.vatNumber || '';
     document.getElementById('setTaxRate').value = storeSettings.taxRate || 15;
     document.getElementById('setCurrency').value = storeSettings.currency || 'SAR';
-    document.getElementById('setAdminPin').value = storeSettings.adminPin || '1234';
-    document.getElementById('setStaffPin').value = storeSettings.staffPin || '0000';
+    document.getElementById('setAdminPin').value = storeSettings.adminPin || '123456';
+    document.getElementById('setStaffPin').value = storeSettings.staffPin || '000000';
 }
 
 function saveStoreSettings(e) {
