@@ -484,7 +484,7 @@ function kioskKeyPress(key) {
             kioskPinDigits.pop();
         }
     } else {
-        if (kioskPinDigits.length < 4) {
+        if (kioskPinDigits.length < 6) {
             kioskPinDigits.push(key);
         }
     }
@@ -492,7 +492,7 @@ function kioskKeyPress(key) {
 }
 
 function updateKioskPinDisplay() {
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
         const box = document.getElementById('kioskPin' + i);
         if (box) {
             if (i < kioskPinDigits.length) {
@@ -508,12 +508,12 @@ function updateKioskPinDisplay() {
 
 function kioskSubmitLogin() {
     const pin = kioskPinDigits.join('');
-    if (pin.length !== 4) {
-        showToast(currentLang === 'ar' ? "يرجى إدخال 4 أرقام" : "Please enter 4 digits", "danger");
+    if (pin.length !== 6) {
+        showToast(currentLang === 'ar' ? "يرجى إدخال 6 أرقام" : "Please enter 6 digits", "danger");
         return;
     }
 
-    if (pin === storeSettings.adminPin) {
+    if (pin === (storeSettings.adminPin || "123456")) {
         currentUser = { role: 'admin', name: 'Nawaf Saeed (Manager)' };
         persistData();
         updateUserBadge();
