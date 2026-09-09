@@ -143,14 +143,20 @@ function renderReceipt(order) {
     }
 
     // Populate the Combined KOT Section
+    // Populate the Combined KOT Section
     const kotSection = document.getElementById('receiptCombinedKotSection');
     const kotContent = document.getElementById('receiptCombinedKotContent');
     if (kotSection && kotContent) {
-        const kotHtml = getKitchenOrderTicketHtml(order);
-        if (kotHtml) {
-            kotContent.innerHTML = kotHtml;
-            kotSection.style.display = 'block';
-        } else {
+        try {
+            const kotHtml = getKitchenOrderTicketHtml(order);
+            if (kotHtml && kotHtml.trim() !== '') {
+                kotContent.innerHTML = kotHtml;
+                kotSection.style.display = 'block';
+            } else {
+                kotSection.style.display = 'none';
+            }
+        } catch (e) {
+            console.error("Error generating KOT HTML:", e);
             kotSection.style.display = 'none';
         }
     }
