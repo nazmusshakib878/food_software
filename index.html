@@ -1505,6 +1505,26 @@
 <!-- Toast Shelf -->
 <div class="toast-shelf" id="toastShelf"></div>
 
+<!-- POS Desktop/Tablet Bottom Navigation Bar -->
+<nav class="pos-bottom-nav-bar" id="posBottomNavBar">
+    <button type="button" class="bottom-nav-btn btn-main-screen" onclick="bottomNavMainScreen()">
+        <span data-i18n="bottom_nav_main">Main Screen</span>
+        <i class="fas fa-home"></i>
+    </button>
+    <button type="button" class="bottom-nav-btn" onclick="bottomNavTables()">
+        <span data-i18n="bottom_nav_tables">Tables</span>
+        <i class="fas fa-border-all"></i>
+    </button>
+    <button type="button" class="bottom-nav-btn" onclick="bottomNavOrders()">
+        <span data-i18n="bottom_nav_orders">Orders</span>
+        <i class="fas fa-layer-group"></i>
+    </button>
+    <button type="button" class="bottom-nav-btn btn-new-order" onclick="bottomNavNewOrder()">
+        <span data-i18n="bottom_nav_new">New</span>
+        <i class="far fa-file-alt"></i>
+    </button>
+</nav>
+
 <!-- Responsive Mobile Bottom Navigation Bar -->
 <nav class="mobile-bottom-bar" id="mobileBottomBar">
     <button type="button" class="mobile-nav-btn active" id="mobileNavPos" onclick="switchView('pos')">

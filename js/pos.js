@@ -916,3 +916,43 @@ function loadSampleInvoiceOrder() {
     updatePosOrderBadge();
     showToast(currentLang === 'ar' ? 'تم تحميل طلب الفاتورة النموذجية ORD-1013 بنجاح' : 'Loaded sample invoice order ORD-1013 successfully', 'success');
 }
+
+// Bottom Navigation Actions
+function bottomNavNewOrder() {
+    safeCancelOrder();
+    currentCustomerId = 'walkin';
+    currentOrderTypeId = 'takeaway';
+    const select = document.getElementById('tableSelect');
+    if (select) select.value = 'Table 1';
+    if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
+    if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
+    
+    if (typeof showToast === 'function') {
+        showToast(currentLang === 'ar' ? 'تم بدء طلب جديد' : 'New Order Started', 'success');
+    }
+}
+
+function bottomNavOrders() {
+    switchView('admin');
+    const adminTabs = document.querySelectorAll('.admin-nav-item');
+    if (adminTabs.length > 3) {
+        switchAdminTab('orders', adminTabs[3]);
+    }
+}
+
+function bottomNavTables() {
+    currentOrderTypeId = 'local';
+    if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
+    if (typeof showToast === 'function') {
+        showToast(currentLang === 'ar' ? 'الرجاء اختيار الطاولة من القائمة العلوية' : 'Please select a table from the top menu', 'info');
+    }
+    const tablePicker = document.getElementById('tablePickerRow');
+    if (tablePicker) {
+        tablePicker.style.display = 'flex';
+        tablePicker.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function bottomNavMainScreen() {
+    switchView('pos');
+}
