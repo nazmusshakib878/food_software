@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Nur Foodes - Welcome</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: #f5f5f7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Prevent scrolling for splash screen */
+        }
+
+        /* Container to simulate mobile view on larger screens */
+        .mobile-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            max-height: 850px;
+            background-color: #ffffff;
+            border-radius: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Adjustments for smaller devices so the card fits nicely with some outer background */
+        @media (max-width: 480px) {
+            .mobile-container {
+                height: 96%;
+                width: 92%;
+            }
+        }
+
+        .splash-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 30px;
+            margin-top: -60px; /* Slight optical adjustment to center perfectly */
+        }
+
+        /* Logo Section */
+        .logo-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .brand-nur {
+            font-family: 'Caveat', cursive;
+            font-size: 72px;
+            font-weight: 700;
+            color: #1a2536;
+            line-height: 1;
+            margin-bottom: -5px; /* Pull "foodes" closer */
+        }
+
+        .brand-foodes {
+            font-family: 'Inter', sans-serif;
+            font-size: 32px;
+            font-weight: 500;
+            color: #1a2536;
+            letter-spacing: -0.5px;
+        }
+
+        /* Greeting Section */
+        .greeting-line {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 60px;
+            color: #4a4a4a;
+        }
+
+        .greeting-en {
+            font-family: 'Inter', sans-serif;
+            font-size: 22px;
+            font-weight: 400;
+        }
+
+        .greeting-ar {
+            font-family: 'Noto Sans Arabic', sans-serif;
+            font-size: 22px;
+            font-weight: 500;
+            direction: rtl;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px 24px;
+            background-color: #ffffff;
+            border: 1px solid #eaeaea;
+            border-radius: 16px;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            color: #1a2536;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+
+        .btn:hover {
+            background-color: #f8f9fa;
+            border-color: #e0e0e0;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+            background-color: #f1f3f5;
+        }
+
+        /* Add a subtle bottom indicator pill like modern iOS devices */
+        .home-indicator {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 134px;
+            height: 5px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="mobile-container">
+        <div class="splash-content">
+            <!-- Logo Section -->
+            <div class="logo-section">
+                <div class="brand-nur">Nur</div>
+                <div class="brand-foodes">foodes</div>
+            </div>
+
+            <!-- Greeting Line -->
+            <div class="greeting-line">
+                <span class="greeting-en">Hello,</span>
+                <span class="greeting-ar">محمد نور</span>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button type="button" class="btn">Start Selling</button>
+                <button type="button" class="btn">Log Out</button>
+            </div>
+        </div>
+        
+        <!-- Home indicator -->
+        <div class="home-indicator"></div>
+    </div>
+
+</body>
+</html>
