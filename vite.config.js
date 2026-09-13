@@ -30,6 +30,16 @@ export default defineConfig({
         if (fs.existsSync(srcManifest)) {
           fs.copyFileSync(srcManifest, destManifest);
         }
+
+        // Copy standalone entry pages used by the cashier flow.
+        const pages = ['dashboard.html', 'new_shift.html', 'splash.html'];
+        for (const page of pages) {
+          const srcPage = resolve(__dirname, page);
+          const destPage = resolve(__dirname, 'dist', page);
+          if (fs.existsSync(srcPage)) {
+            fs.copyFileSync(srcPage, destPage);
+          }
+        }
       }
     }
   ]
