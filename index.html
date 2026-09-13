@@ -1615,6 +1615,31 @@
 <script src="js/returns.js?v=2"></script>
 <script src="js/app.js?v=20260910_05"></script>
 <script src="js/kitchen_stock.js?v=2"></script>
+<script>
+    (() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('shift') !== 'started') return;
+
+        try {
+            const shift = JSON.parse(localStorage.getItem('nurpos_current_shift') || 'null');
+            if (!shift || Number(shift.openingCash) <= 0) return;
+
+            currentUser = {
+                role: 'staff',
+                name: shift.englishName || shift.name || 'Cashier 1',
+                nameEn: shift.englishName || shift.name || 'Cashier 1',
+                nameAr: shift.name || 'محمد نور'
+            };
+            persistData();
+            updateUserBadge();
+            closeLoginModal();
+            switchView('pos');
+            window.history.replaceState({}, document.title, 'index.html');
+        } catch (error) {
+            console.error('Unable to resume the new shift:', error);
+        }
+    })();
+</script>
 
 </body>
 </html>
