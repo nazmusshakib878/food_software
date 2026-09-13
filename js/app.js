@@ -550,7 +550,7 @@ function kioskSubmitLogin() {
         updateUserBadge();
         closeLoginModal();
         showToast(currentLang === 'ar' ? "مرحباً بك كمدير للنظام" : "Welcome Admin", "success");
-        switchView('admin');
+        window.location.href = 'dashboard.html';
         kioskPinDigits = [];
         updateKioskPinDisplay();
     } else if (isStaff) {
