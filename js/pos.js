@@ -919,9 +919,11 @@ function loadSampleInvoiceOrder() {
 
 // Bottom Navigation Actions
 function bottomNavNewOrder() {
+    switchView('pos');
     safeCancelOrder();
-    currentCustomerId = 'walkin';
-    currentOrderTypeId = 'takeaway';
+    currentCustomerId = 'cash';
+    currentOrderTypeId = 'receive';
+    currentOrderType = 'receive';
     const select = document.getElementById('tableSelect');
     if (select) select.value = 'Table 1';
     if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
@@ -941,6 +943,7 @@ function bottomNavOrders() {
 }
 
 function bottomNavTables() {
+    switchView('pos');
     currentOrderTypeId = 'local';
     if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
     if (typeof showToast === 'function') {
