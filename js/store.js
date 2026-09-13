@@ -31,7 +31,7 @@ var categories = (() => {
     }
 })();
 
-const MENU_SCHEMA_VERSION = 'v2026_09_10_clean_codes_v1';
+const MENU_SCHEMA_VERSION = 'v2026_09_13_catalog_codes_v2';
 var items;
 (() => {
     try {
@@ -49,17 +49,6 @@ var items;
             localStorage.setItem('nurpos_items', JSON.stringify(items));
         }
 
-        // Auto-sanitize all product codes: Ensure 100% unique, positive, clean codes
-        let usedCodes = new Set();
-        let nextCode = 101;
-        items.forEach((item) => {
-            let c = String(item.code || '').trim();
-            if (!c || c.startsWith('-') || c === '0' || usedCodes.has(c)) {
-                while (usedCodes.has(String(nextCode))) nextCode++;
-                item.code = String(nextCode);
-            }
-            usedCodes.add(String(item.code));
-        });
         localStorage.setItem('nurpos_items', JSON.stringify(items));
     } catch (e) {
         items = JSON.parse(JSON.stringify(DEFAULT_ITEMS));

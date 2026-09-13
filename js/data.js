@@ -32,7 +32,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "صوص تيكا",
         subtitleEn: "Tikka sauce",
         price: 2.00, 
-        code: "101", 
+        code: "0",
         available: true,
         image: "https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?auto=format&fit=crop&w=500&q=80"
     },
@@ -44,7 +44,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "وجبة برجر مشوي ع الفحم",
         subtitleEn: "Charcoal-grilled burger meal",
         price: 18.50, 
-        code: "102", 
+        code: "0",
         available: true,
         image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80"
     },
@@ -56,7 +56,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "وجبة برجر لحم بقري",
         subtitleEn: "Beef burger meal",
         price: 19.50, 
-        code: "103", 
+        code: "-165",
         available: true,
         image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=500&q=80"
     },
@@ -68,7 +68,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "وجبة برجر دجاج",
         subtitleEn: "Chicken burger meal",
         price: 18.50, 
-        code: "104", 
+        code: "-670",
         available: true,
         image: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=500&q=80"
     },
@@ -188,7 +188,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "برجر لحم بقري",
         subtitleEn: "beef burger",
         price: 13.50, 
-        code: "114", 
+        code: "-3156",
         available: true,
         image: "https://images.unsplash.com/photo-1553979459-d2229ba7433b?auto=format&fit=crop&w=500&q=80"
     },
@@ -308,7 +308,7 @@ const DEFAULT_ITEMS = [
         subtitleAr: "قهوة عربية",
         subtitleEn: "Arabic coffee",
         price: 6.00, 
-        code: "124", 
+        code: "202",
         available: true,
         image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80"
     }
