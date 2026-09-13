@@ -177,9 +177,9 @@
 
     <script>
         function handleLogout() {
-            // Placeholder logic for logging out
-            alert("Logging out...");
-            // e.g. window.location.href = 'login.html';
+            localStorage.removeItem('nurpos_user');
+            localStorage.removeItem('nurpos_current_shift');
+            window.location.href = 'index.html';
         }
     </script>
 </body>

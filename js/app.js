@@ -125,10 +125,7 @@ function submitLogin(e) {
         if (pin === storeSettings.adminPin) {
             currentUser = { role: 'admin', name: 'Nawaf Saeed (Manager)' };
             persistData();
-            updateUserBadge();
-            closeLoginModal();
-            showToast(currentLang === 'ar' ? "مرحباً بك كمدير للنظام" : "Welcome Admin", "success");
-            switchView('admin');
+            window.location.href = 'dashboard.html';
         } else {
             showToast(currentLang === 'ar' ? `رمز المدير غير صحيح! (افتراضي: ${storeSettings.adminPin})` : "Invalid Admin PIN!", "danger");
         }
@@ -136,10 +133,7 @@ function submitLogin(e) {
         if (pin === storeSettings.staffPin) {
             currentUser = { role: 'staff', name: 'Cashier 1' };
             persistData();
-            updateUserBadge();
-            closeLoginModal();
-            showToast(currentLang === 'ar' ? "تم تسجيل الدخول ككاشير" : "Logged in as Cashier", "success");
-            switchView('pos');
+            window.location.href = 'dashboard.html';
         } else {
             showToast(currentLang === 'ar' ? `رمز الكاشير غير صحيح! (افتراضي: ${storeSettings.staffPin})` : "Invalid Staff PIN!", "danger");
         }
