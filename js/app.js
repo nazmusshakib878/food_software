@@ -559,7 +559,7 @@ function kioskSubmitLogin() {
         updateUserBadge();
         closeLoginModal();
         showToast(currentLang === 'ar' ? "تم تسجيل الدخول ككاشير" : "Logged in as Cashier", "success");
-        switchView('pos');
+        window.location.href = 'dashboard.html';
         kioskPinDigits = [];
         updateKioskPinDisplay();
     } else {
