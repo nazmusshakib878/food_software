@@ -148,6 +148,11 @@ function renderPrintingDevicesModal() {
                     </div>
                 </div>
                 <div class="printer-actions-row">
+                    ${p.role === 'kitchen' ? `
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="openKitchenMenuSettings('${p.id}')">
+                        <i class="fa-solid fa-list-check"></i> ${currentLang === 'ar' ? 'فئات الطباعة' : 'Menu Printing'}
+                    </button>
+                    ` : ''}
                     <button type="button" class="btn btn-sm btn-outline-info" onclick="testPrinterDevice('${p.id}')">
                         <i class="fa-solid fa-paper-plane"></i> ${currentLang === 'ar' ? 'اختبار' : 'Test'}
                     </button>
@@ -264,6 +269,118 @@ function savePrintingDevicesSettings() {
     if (typeof showToast === 'function') {
         showToast(currentLang === 'ar' ? 'تم حفظ إعدادات الطابعات بنجاح' : 'Printer settings saved successfully', 'success');
     }
+}
+
+// Kitchen Printer Menu Settings Logic
+let currentEditingKitchenPrinterId = null;
+
+function openKitchenMenuSettings(printerId) {
+    currentEditingKitchenPrinterId = printerId;
+    
+    // Localization
+    const titleSpan = document.getElementById('kitchenMenuModalTitleSpan');
+    const allLabel = document.getElementById('kitchenMenuModalAllLabel');
+    const saveBtnLabel = document.getElementById('kitchenMenuModalSaveLabel');
+    const cancelBtnLabel = document.getElementById('kitchenMenuModalCancelLabel');
+    
+    if (titleSpan) titleSpan.textContent = currentLang === 'ar' ? 'إعدادات طباعة فئات المطبخ' : 'Kitchen Printer – Menu Printing';
+    if (allLabel) allLabel.textContent = currentLang === 'ar' ? 'جميع الفئات' : 'All Categories';
+    if (saveBtnLabel) saveBtnLabel.textContent = currentLang === 'ar' ? 'حفظ' : 'Save';
+    if (cancelBtnLabel) cancelBtnLabel.textContent = currentLang === 'ar' ? 'إلغاء' : 'Cancel';
+    
+    renderKitchenMenuSettings(printerId);
+    
+    const modal = document.getElementById('kitchenPrinterMenuModal');
+    if (modal) modal.classList.add('open');
+}
+
+function closeKitchenMenuSettings() {
+    const modal = document.getElementById('kitchenPrinterMenuModal');
+    if (modal) modal.classList.remove('open');
+    currentEditingKitchenPrinterId = null;
+}
+
+function renderKitchenMenuSettings(printerId) {
+    const listEl = document.getElementById('kitchenMenuCategoriesList');
+    if (!listEl) return;
+    
+    const p = printers.find(x => x.id === printerId);
+    if (!p) return;
+    
+    // Check if printer has a disabledCategories array. If not, default is all ON (empty array).
+    const disabledCategories = Array.isArray(p.disabledCategories) ? p.disabledCategories : [];
+    
+    let allOn = true;
+    let someOn = false;
+    
+    listEl.innerHTML = categories.map(cat => {
+        const isOff = disabledCategories.includes(cat.id);
+        const isOn = !isOff;
+        
+        if (isOn) someOn = true;
+        if (isOff) allOn = false;
+        
+        const catName = currentLang === 'ar' ? (cat.categoryAr || cat.category) : (cat.categoryEn || cat.category);
+        
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--border-color);">
+                <label for="kpc_${cat.id}" style="font-size: 14px; margin-bottom: 0; cursor: pointer; flex: 1;">${escapeHtml(catName)}</label>
+                <input type="checkbox" class="kitchen-cat-toggle" id="kpc_${cat.id}" data-catid="${escapeHtml(cat.id)}" style="width: 18px; height: 18px; cursor: pointer;" ${isOn ? 'checked' : ''} onchange="updateKitchenMenuAllToggleState()">
+            </div>
+        `;
+    }).join('');
+    
+    const allToggle = document.getElementById('kitchenMenuAllToggle');
+    if (allToggle) {
+        allToggle.checked = allOn;
+        allToggle.indeterminate = (!allOn && someOn);
+    }
+}
+
+function updateKitchenMenuAllToggleState() {
+    const allToggle = document.getElementById('kitchenMenuAllToggle');
+    if (!allToggle) return;
+    
+    const toggles = Array.from(document.querySelectorAll('.kitchen-cat-toggle'));
+    if (toggles.length === 0) return;
+    
+    const allOn = toggles.every(t => t.checked);
+    const someOn = toggles.some(t => t.checked);
+    
+    allToggle.checked = allOn;
+    allToggle.indeterminate = (!allOn && someOn);
+}
+
+function toggleAllKitchenMenuCategories(checked) {
+    const toggles = document.querySelectorAll('.kitchen-cat-toggle');
+    toggles.forEach(t => {
+        t.checked = checked;
+    });
+}
+
+function saveKitchenMenuSettings() {
+    if (!currentEditingKitchenPrinterId) return;
+    
+    const p = printers.find(x => x.id === currentEditingKitchenPrinterId);
+    if (!p) return;
+    
+    const toggles = Array.from(document.querySelectorAll('.kitchen-cat-toggle'));
+    const disabledIds = [];
+    
+    toggles.forEach(t => {
+        if (!t.checked) {
+            disabledIds.push(t.dataset.catid);
+        }
+    });
+    
+    p.disabledCategories = disabledIds;
+    persistData();
+    
+    if (typeof showToast === 'function') {
+        showToast(currentLang === 'ar' ? 'تم حفظ إعدادات طباعة الفئات بنجاح' : 'Menu printing settings saved successfully', 'success');
+    }
+    
+    closeKitchenMenuSettings();
 }
 
 // Sync Printers Action (from More panel)

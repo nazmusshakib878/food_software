@@ -2,10 +2,37 @@
    PAYMENT.JS - Numpad, Payment Calculation & Checkout Engine
    ========================================================= */
 
+// --- Centralized Policy Service ---
+function getOrderChannelPolicy(channelId) {
+    const onlinePartners = ['hungerstation', 'jahiz', 'ninja', 'keeta', 'mrsool', 'toyou', 'thechefz'];
+    if (onlinePartners.includes(channelId)) return 'ONLINE_PARTNER';
+    if (channelId === 'management') return 'STAFF_EXPENSE';
+    return 'NORMAL';
+}
+
+function getAllowedPaymentMethods(channelPolicy) {
+    if (channelPolicy === 'ONLINE_PARTNER') return ['Ajel']; // Only Ajel / Credit allowed
+    return ['Cash', 'Bank 236', 'Bank 237', 'Bank 238', 'Bank 239', 'Ajel']; // Normal methods
+}
+
+function getCheckoutDestination(channelPolicy) {
+    if (channelPolicy === 'STAFF_EXPENSE') return 'STAFF_EXPENSE_SCREEN';
+    return 'PAYMENT_SCREEN';
+}
+// ------------------------------------
+
 function openPaymentModal() {
     if (currentCart.length === 0) {
         soundWarning();
-        showToast(currentLang === 'ar' ? "يرجى إضافة أصناف إلى الطلب أولاً" : "Add items to order first", "danger");
+        showToast(currentLang === 'ar' ? "أضف عناصر للطلب أولاً" : "Add items to order first", "danger");
+        return;
+    }
+
+    const policy = getOrderChannelPolicy(currentCustomerId);
+    const dest = getCheckoutDestination(policy);
+
+    if (dest === 'STAFF_EXPENSE_SCREEN') {
+        openStaffMealExpenseModal();
         return;
     }
 
@@ -14,6 +41,47 @@ function openPaymentModal() {
     
     document.getElementById('payModalTotal').innerText = formatCurrency(totals.grandTotal);
     updatePaymentModalUI(totals.grandTotal);
+    
+    // Disable invalid payment methods
+    const allowedMethods = getAllowedPaymentMethods(policy);
+    const methodRadios = document.querySelectorAll('.pay-method-radio');
+    
+    // Auto-select the first allowed method if current isn't allowed
+    let isCurrentMethodAllowed = false;
+
+    methodRadios.forEach(r => {
+        const method = r.getAttribute('data-method');
+        if (!allowedMethods.includes(method)) {
+            r.classList.add('disabled');
+            r.style.opacity = '0.5';
+            r.style.pointerEvents = 'none'; // Visual disable
+            if (r.classList.contains('active')) {
+                r.classList.remove('active');
+                const dot = r.querySelector('.radio-dot');
+                if (dot) dot.className = 'radio-dot fa-regular fa-circle';
+            }
+        } else {
+            r.classList.remove('disabled');
+            r.style.opacity = '1';
+            r.style.pointerEvents = 'auto';
+            if (r.classList.contains('active')) {
+                isCurrentMethodAllowed = true;
+                selectedPayMethod = method;
+            }
+        }
+    });
+
+    if (!isCurrentMethodAllowed && allowedMethods.length > 0) {
+        // Automatically click the first allowed method
+        const firstAllowed = document.querySelector(`.pay-method-radio[data-method="${allowedMethods[0]}"]`);
+        if (firstAllowed) {
+            selectPayMethod(allowedMethods[0], firstAllowed);
+        }
+    } else {
+        // Just ensure UI reference is consistent
+        toggleAjelReferenceField(selectedPayMethod);
+    }
+
     document.getElementById('paymentModal').classList.add('open');
 }
 
@@ -21,7 +89,17 @@ function closePaymentModal() {
     document.getElementById('paymentModal').classList.remove('open');
 }
 
+function toggleAjelReferenceField(method) {
+    const container = document.getElementById('ajelReferenceContainer');
+    if (container) {
+        container.style.display = (method === 'Ajel') ? 'block' : 'none';
+    }
+}
+
 function selectPayMethod(method, el) {
+    // Prevent selection if disabled
+    if (el.classList.contains('disabled')) return;
+
     selectedPayMethod = method;
     document.querySelectorAll('.pay-method-radio').forEach(r => {
         r.classList.remove('active');
@@ -40,7 +118,76 @@ function selectPayMethod(method, el) {
         // Reset to allow cash typing if exact
         paymentInput = '';
     }
+    
+    toggleAjelReferenceField(method);
     updatePaymentModalUI(totals.grandTotal);
+}
+
+// --- STAFF MEAL EXPENSE LOGIC ---
+function openStaffMealExpenseModal() {
+    const totals = calculateCartTotals();
+    document.getElementById('staffMealRemaining').innerText = formatCurrency(totals.grandTotal);
+    document.getElementById('staffManagementMeals').value = '';
+    document.getElementById('staffOwnerMeals').value = '';
+    document.getElementById('staffHospitality').value = '';
+    document.getElementById('staffEmployeeMeals').value = '';
+    calculateStaffMealRemaining();
+    document.getElementById('staffMealExpenseModal').classList.add('open');
+}
+
+function closeStaffMealExpenseModal() {
+    document.getElementById('staffMealExpenseModal').classList.remove('open');
+}
+
+function calculateStaffMealRemaining() {
+    const totals = calculateCartTotals();
+    const mgmt = parseFloat(document.getElementById('staffManagementMeals').value) || 0;
+    const owner = parseFloat(document.getElementById('staffOwnerMeals').value) || 0;
+    const hosp = parseFloat(document.getElementById('staffHospitality').value) || 0;
+    const emp = parseFloat(document.getElementById('staffEmployeeMeals').value) || 0;
+    
+    const allocated = mgmt + owner + hosp + emp;
+    const remaining = totals.grandTotal - allocated;
+    
+    const remainingEl = document.getElementById('staffMealRemaining');
+    if (remainingEl) {
+        remainingEl.innerText = formatCurrency(remaining);
+        if (Math.abs(remaining) < 0.01) {
+            remainingEl.style.color = "var(--success)";
+        } else {
+            remainingEl.style.color = "var(--danger)";
+        }
+    }
+}
+
+function confirmStaffMealExpense() {
+    const totals = calculateCartTotals();
+    const mgmt = parseFloat(document.getElementById('staffManagementMeals').value) || 0;
+    const owner = parseFloat(document.getElementById('staffOwnerMeals').value) || 0;
+    const hosp = parseFloat(document.getElementById('staffHospitality').value) || 0;
+    const emp = parseFloat(document.getElementById('staffEmployeeMeals').value) || 0;
+    
+    const allocated = mgmt + owner + hosp + emp;
+    
+    if (Math.abs(allocated - totals.grandTotal) > 0.01) {
+        soundWarning();
+        showToast(currentLang === 'ar' ? 'يجب أن يساوي مجموع التخصيص الإجمالي' : 'Total allocated must equal order total', 'danger');
+        return;
+    }
+
+    const staffAllocation = {
+        management: mgmt,
+        owner: owner,
+        hospitality: hosp,
+        employee: emp
+    };
+    
+    // Set paid amounts for the backend to consider it paid exactly
+    paymentInput = totals.grandTotal.toFixed(2);
+    selectedPayMethod = 'Staff Expense';
+    
+    closeStaffMealExpenseModal();
+    completeOrderAndShowReceipt(staffAllocation);
 }
 
 function pressNumpad(key) {
@@ -111,7 +258,7 @@ function updatePaymentModalUI(grandTotal) {
     }
 }
 
-function completeOrderAndShowReceipt() {
+function completeOrderAndShowReceipt(staffAllocation) {
     const totals = calculateCartTotals();
     if (currentCart.length === 0) {
         soundWarning();
@@ -125,8 +272,33 @@ function completeOrderAndShowReceipt() {
     // Floating-point safe comparison
     if (Math.round(paid * 100) < Math.round(totals.grandTotal * 100)) {
         soundWarning();
-        showToast(currentLang === 'ar' ? "المبلغ المدفوع أقل من إجمالي الفاتورة!" : "Paid amount is less than total!", "danger");
+        showToast(currentLang === 'ar' ? "المبلغ المدفوع أقل من الإجمالي!" : "Paid amount is less than total!", "danger");
         return;
+    }
+
+    // Backend-style policy validation
+    const policy = getOrderChannelPolicy(currentCustomerId);
+    const allowedMethods = getAllowedPaymentMethods(policy);
+    
+    // If not staff allocation, ensure the selected method is allowed
+    if (!staffAllocation) {
+        if (!allowedMethods.includes(selectedPayMethod)) {
+            soundWarning();
+            showToast(currentLang === 'ar' ? "طريقة الدفع غير مسموحة لهذه القناة!" : "Payment method not allowed for this channel!", "danger");
+            return;
+        }
+    }
+
+    // Ajel reference validation
+    let onlinePartnerReference = null;
+    if (selectedPayMethod === 'Ajel') {
+        const refInput = document.getElementById('ajelReferenceInput');
+        if (refInput && refInput.value.trim() === '') {
+            soundWarning();
+            showToast(currentLang === 'ar' ? "الرجاء إدخال رقم المرجع للشريك!" : "Please enter partner reference number!", "danger");
+            return;
+        }
+        onlinePartnerReference = refInput ? refInput.value.trim() : '';
     }
 
     // Determine table: Dine-in has table; Takeaway & Delivery have '-'
@@ -173,7 +345,9 @@ function completeOrderAndShowReceipt() {
         grandTotal: totals.grandTotal,
         paid: paid,
         change: Math.max(0, Math.round((paid - totals.grandTotal) * 100) / 100),
-        method: selectedPayMethod
+        method: selectedPayMethod,
+        staffAllocation: staffAllocation || null,
+        onlinePartnerReference: onlinePartnerReference || null
     };
 
     orders.unshift(orderRecord);

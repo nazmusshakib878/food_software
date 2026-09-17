@@ -212,7 +212,13 @@ function getKitchenOrderTicketHtml(targetOrder) {
         ? (currentLang === 'ar' ? `محلي - طاولة ${order.table && order.table !== '-' ? order.table : '1'}` : `Dine-in - Table ${order.table && order.table !== '-' ? order.table : '1'}`)
         : (order.type === 'takeaway' ? (currentLang === 'ar' ? 'سفري' : 'Takeaway') : (currentLang === 'ar' ? 'توصيل' : 'Delivery'));
 
-    const itemsHtml = (order.items || []).map(item => {
+    const kitchenPrinter = printers.find(p => p.role === 'kitchen');
+    const disabledCategories = kitchenPrinter && Array.isArray(kitchenPrinter.disabledCategories) ? kitchenPrinter.disabledCategories : [];
+    const filteredItems = (order.items || []).filter(item => !disabledCategories.includes(item.catId));
+
+    if (filteredItems.length === 0) return '';
+
+    const itemsHtml = filteredItems.map(item => {
         const addonsHtml = (item.addons && item.addons.length)
             ? `<div style="font-size: 13px; font-weight: bold; margin-top: 2px;">+ ${item.addons.map(a => escapeHtml(currentLang === 'ar' ? (a.nameAr || a.nameEn) : (a.nameEn || a.nameAr))).join(', ')}</div>`
             : '';

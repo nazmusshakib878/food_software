@@ -46,13 +46,27 @@ function renderCustomerSelector() {
 
 function onPosCustomerChange(newId) {
     currentCustomerId = newId;
+    
     const cust = customers.find(c => c.id === newId);
     if (cust) {
-        // If delivery app is selected, suggest delivery order type
-        if (['hungerstation', 'jahiz', 'ninja', 'keeta', 'mrsool', 'toyou', 'thechefz'].includes(newId)) {
+        // Evaluate central policy for background order type assignment
+        const policy = (typeof getOrderChannelPolicy === 'function') ? getOrderChannelPolicy(newId) : 'NORMAL';
+        if (policy === 'ONLINE_PARTNER') {
             currentOrderTypeId = 'delivery';
-            renderOrderTypeSelector();
+            currentOrderType = 'delivery';
+        } else {
+            currentOrderTypeId = 'local';
+            currentOrderType = 'local';
         }
+
+        renderOrderTypeSelector(); // This will re-render options and sync table picker
+        
+        // Sync Dropdown 1 value in case this function was called from Dropdown 2
+        const select1 = document.getElementById('posCustomerSelect');
+        if (select1 && select1.value !== newId) {
+            select1.value = newId;
+        }
+
         if (typeof showToast === 'function') {
             const name = currentLang === 'ar' ? cust.nameAr : cust.nameEn;
             showToast(currentLang === 'ar' ? `العميل المحدد: ${name}` : `Customer selected: ${name}`, 'info');
@@ -61,9 +75,9 @@ function onPosCustomerChange(newId) {
 }
 
 function promptAddCustomer() {
-    const nameAr = prompt(currentLang === 'ar' ? "اسم العميل بالعربي:" : "Customer Name (Arabic):", "");
+    const nameAr = prompt(currentLang === 'ar' ? "اسم العميل الجديد:" : "Customer Name (Arabic):", "");
     if (!nameAr) return;
-    const nameEn = prompt(currentLang === 'ar' ? "الاسم بالإنجليزي:" : "Customer Name (English):", nameAr);
+    const nameEn = prompt(currentLang === 'ar' ? "اسم العميل بالإنجليزي:" : "Customer Name (English):", nameAr);
     
     const newCust = {
         id: "cust_" + Date.now(),
@@ -74,20 +88,22 @@ function promptAddCustomer() {
     currentCustomerId = newCust.id;
     persistData();
     renderCustomerSelector();
+    renderOrderTypeSelector();
     if (typeof showToast === 'function') {
-        showToast(currentLang === 'ar' ? 'تمت إضافة العميل' : 'Customer added', 'success');
+        showToast(currentLang === 'ar' ? 'تمت إضافة عميل' : 'Customer added', 'success');
     }
 }
 
-// 2. Dynamic Order Type Selector
+// 2. Dynamic Order Type Selector (Repurposed as Secondary Order Channel Selector)
 function renderOrderTypeSelector() {
     const select = document.getElementById('posOrderTypeSelect');
     if (!select) return;
 
-    select.innerHTML = orderTypes.map(ot => {
-        const name = currentLang === 'ar' ? ot.nameAr : ot.nameEn;
-        const selected = (ot.id === currentOrderTypeId) ? 'selected' : '';
-        return `<option value="${escapeHtml(ot.id)}" ${selected}>${escapeHtml(name)}</option>`;
+    // Repurposed to mirror customers array instead of orderTypes
+    select.innerHTML = customers.map(c => {
+        const name = currentLang === 'ar' ? c.nameAr : c.nameEn;
+        const selected = (c.id === currentCustomerId) ? 'selected' : '';
+        return `<option value="${escapeHtml(c.id)}" ${selected}>${escapeHtml(name)}</option>`;
     }).join('');
 
     const tablePicker = document.getElementById('tablePickerRow');
@@ -97,19 +113,8 @@ function renderOrderTypeSelector() {
 }
 
 function onPosOrderTypeChange(newId) {
-    currentOrderTypeId = newId;
-    currentOrderType = newId;
-    const ot = orderTypes.find(t => t.id === newId);
-    if (ot) {
-        const tablePicker = document.getElementById('tablePickerRow');
-        if (tablePicker) {
-            tablePicker.style.display = (newId === 'local') ? 'flex' : 'none';
-        }
-        if (typeof showToast === 'function') {
-            const name = currentLang === 'ar' ? ot.nameAr : ot.nameEn;
-            showToast(currentLang === 'ar' ? `نوع الطلب: ${name}` : `Order type: ${name}`, 'info');
-        }
-    }
+    // Simply route to the central customer change handler to maintain single source of truth
+    onPosCustomerChange(newId);
 }
 
 function promptAddOrderType() {
