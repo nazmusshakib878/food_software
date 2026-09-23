@@ -1088,6 +1088,31 @@ function updateActiveItemNote(note) {
 }
 
 function getModifiersForProduct(product) {
+    const rawGroups = getRawModifiersForProduct(product);
+    
+    const GLOBAL_BASIC_ADDITIONS = {
+        type: 'basic', 
+        titleAr: 'إضافات أساسية', 
+        titleEn: 'Basic Additions', 
+        items: [
+            { code: 'ba_full', labelAr: 'Full كل', labelEn: 'Full كل' },
+            { code: 'ba_s_minus', labelAr: 'شطة خفيف S - -', labelEn: 'شطة خفيف S - -' },
+            { code: 'ba_dkh', labelAr: 'دبل خبز | DKH', labelEn: 'دبل خبز | DKH' },
+            { code: 'ba_1x2', labelAr: 'تدبيل سيخ (1*2)', labelEn: 'تدبيل سيخ (1*2)' },
+            { code: 'ba_s', labelAr: 'شطة S', labelEn: 'شطة S' },
+            { code: 'ba_c', labelAr: 'صوص C', labelEn: 'صوص C' },
+            { code: 'ba_sa', labelAr: 'سادة SA', labelEn: 'سادة SA' },
+            { code: 'ba_bp', labelAr: 'بطاطس فقط BP', labelEn: 'بطاطس فقط BP' }
+        ]
+    };
+
+    // Prevent duplicates if rawGroups already contains a basic additions group
+    const filteredRawGroups = rawGroups.filter(g => g.type !== 'basic' && g.titleEn !== 'Basic Additions');
+
+    return [GLOBAL_BASIC_ADDITIONS, ...filteredRawGroups];
+}
+
+function getRawModifiersForProduct(product) {
     const nameEn = (product.enName || '').toLowerCase();
     const nameAr = (product.arName || '').toLowerCase();
     
@@ -1106,8 +1131,15 @@ function getModifiersForProduct(product) {
                 { code: 'ex_pom', labelAr: 'دبس رمان', labelEn: 'Pomegranate Molasses' }
             ]},
             { type: 'only', titleAr: 'فقط', titleEn: 'Only', items: [
-                { code: 'on_meat', labelAr: 'لحم فقط', labelEn: 'Only Meat' },
-                { code: 'on_chk', labelAr: 'دجاج فقط', labelEn: 'Only Chicken' }
+                { code: 'on_fp', labelAr: 'ف فقط FP', labelEn: 'ف فقط FP' },
+                { code: 'on_bp', labelAr: 'بطاطس فقط BP', labelEn: 'بطاطس فقط BP' },
+                { code: 'on_tp', labelAr: 'طماطم فقط TP', labelEn: 'طماطم فقط TP' },
+                { code: 'on_bsp', labelAr: 'بصل فقط BSP', labelEn: 'بصل فقط BSP' },
+                { code: 'on_cp', labelAr: 'صوص فقط CP', labelEn: 'صوص فقط CP' },
+                { code: 'on_hp', labelAr: 'خس فقط HP', labelEn: 'خس فقط HP' },
+                { code: 'on_mp', labelAr: 'مايونيز فقط MP', labelEn: 'مايونيز فقط MP' },
+                { code: 'on_sp', labelAr: 'شطة فقط SP', labelEn: 'شطة فقط SP' },
+                { code: 'on_k', labelAr: 'كاتشب +K', labelEn: 'كاتشب +K' }
             ]},
             { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
                 { code: 'no_onion', labelAr: 'بصل', labelEn: 'Onion' },

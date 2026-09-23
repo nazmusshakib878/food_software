@@ -231,7 +231,7 @@ function getKitchenOrderTicketHtml(targetOrder) {
             : '';
         const notePrefix = currentLang === 'ar' ? '** ملاحظة: ' : '** Note: ';
         const noteHtml = item.note
-            ? `<div style="font-size: 13px; font-weight: 900; background: #000; color: #fff; padding: 2px 6px; display: inline-block; margin-top: 4px; border-radius: 3px;">${notePrefix}${escapeHtml(item.note)} **</div>`
+            ? `<div style="font-size: 13px; font-weight: 900; background: #000; color: #fff; padding: 2px 6px; display: inline-block; margin-top: 4px; border-radius: 3px; white-space: pre-wrap;">${notePrefix}${escapeHtml(item.note)} **</div>`
             : '';
 
         return `

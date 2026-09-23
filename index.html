@@ -307,7 +307,7 @@
                         
                         <div class="form-group" style="margin-bottom: 20px;">
                             <label><i class="fa-regular fa-comment-dots"></i> ملاحظات خاصة بالصنف:</label>
-                            <input type="text" id="modifierPanelItemNote" class="form-control-pos" placeholder="أضف ملاحظة لهذا الصنف فقط..." oninput="updateActiveItemNote(this.value)">
+                            <textarea id="modifierPanelItemNote" class="form-control-pos item-special-notes" placeholder="أضف ملاحظة لهذا الصنف فقط..." oninput="updateActiveItemNote(this.value)" rows="5" wrap="soft" autocomplete="off" onkeydown="if(event.key==='Enter') event.stopPropagation();"></textarea>
                         </div>
 
                         <div id="modifierPanelGroups"></div>
@@ -1262,7 +1262,7 @@
 
                 <div class="form-group" style="margin-top: 14px;">
                     <label data-i18n="kitchen_notes_label">ملاحظات وتوجيهات المطبخ:</label>
-                    <input type="text" class="form-control" id="customizerItemNote" data-i18n-placeholder="notes_placeholder" placeholder="مثال: بدون بصل، زيادة صوص...">
+                    <textarea class="form-control item-special-notes" id="customizerItemNote" data-i18n-placeholder="notes_placeholder" placeholder="مثال: بدون بصل، زيادة صوص..." rows="5" wrap="soft" autocomplete="off" onkeydown="if(event.key==='Enter') event.stopPropagation();"></textarea>
                     <div class="quick-note-chips" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
                         <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون بصل')"><span data-i18n="quick_no_onion">بدون بصل</span> 🧅</button>
                         <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون مخلل')"><span data-i18n="quick_no_pickles">بدون مخلل</span> 🥒</button>

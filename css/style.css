@@ -1119,6 +1119,19 @@ html[data-theme="dark"] .mobile-bottom-bar {
     padding-inline-start: 32px;
 }
 
+.item-special-notes {
+    width: 100%;
+    min-height: 120px;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    resize: vertical;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    line-height: 1.45;
+    font-size: 16px;
+    border-radius: 8px;
+}
+
 .kds-item-chef-note {
     font-size: 11px;
     font-weight: 700;
@@ -1132,6 +1145,7 @@ html[data-theme="dark"] .mobile-bottom-bar {
     gap: 4px;
     margin-inline-start: 32px;
     width: fit-content;
+    white-space: pre-wrap;
 }
 
 html[data-theme="dark"] .kds-item-chef-note {
@@ -2202,4 +2216,13 @@ html[dir="rtl"] .kiosk-about-app,
         padding: 8px 4px;
         font-size: 12px;
     }
+}
+
+.cart-note-text {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+    white-space: pre-wrap;
+    margin-top: 4px;
 }

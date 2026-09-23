@@ -196,6 +196,7 @@
     font-weight: 700;
     font-style: italic;
     margin-top: 1px;
+    white-space: pre-wrap;
 }
 
 /* Totals Box */

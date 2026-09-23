@@ -399,6 +399,7 @@
     font-size: 10px;
     color: var(--muted);
     font-style: italic;
+    white-space: pre-wrap;
 }
 
 .cart-qty-ctrls {

@@ -604,6 +604,7 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
                     .rec-note-line {
                         font-size: 10px !important;
                         font-style: italic !important;
+                        white-space: pre-wrap !important;
                     }
                     .receipt-totals {
                         margin: 8px 0 !important;
