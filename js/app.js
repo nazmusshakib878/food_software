@@ -338,6 +338,9 @@ function renderKdsScreen() {
             const addonsHtml = (item.addons && item.addons.length)
                 ? `<div class="kds-item-modifiers">+ ${item.addons.map(a => escapeHtml(currentLang === 'ar' ? a.nameAr : a.nameEn)).join(', ')}</div>`
                 : '';
+            const modifiersHtml = (item.modifiers && item.modifiers.length)
+                ? `<div class="kds-item-modifiers" style="color: #ffffbb;">* ${item.modifiers.map(m => `${m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '*')} ${escapeHtml(currentLang === 'ar' ? m.labelAr : m.labelEn)}`).join(', ')}</div>`
+                : '';
             const noteHtml = item.note
                 ? `<div class="kds-item-chef-note"><i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(item.note)}</div>`
                 : '';
@@ -349,6 +352,7 @@ function renderKdsScreen() {
                         <span class="kds-item-title">${escapeHtml(currentLang === 'ar' ? item.arName : item.enName)}</span>
                     </div>
                     ${addonsHtml}
+                    ${modifiersHtml}
                     ${noteHtml}
                 </div>
             `;

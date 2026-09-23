@@ -82,6 +82,9 @@ function renderReceipt(order) {
             const addonsHtml = (item.addons && item.addons.length)
                 ? `<div class="rec-addon-line">+ ${item.addons.map(a => `${escapeHtml(a.nameAr || a.nameEn)} (+${Number(a.price).toFixed(2)})`).join(', ')}</div>`
                 : '';
+            const modifiersHtml = (item.modifiers && item.modifiers.length)
+                ? `<div class="rec-addon-line" style="color: #555;">* ${item.modifiers.map(m => `${m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '*')} ${escapeHtml(currentLang === 'ar' ? m.labelAr : m.labelEn)}`).join(', ')}</div>`
+                : '';
             const noteHtml = item.note
                 ? `<div class="rec-note-line">* ${escapeHtml(item.note)}</div>`
                 : '';
@@ -97,6 +100,7 @@ function renderReceipt(order) {
                             <span class="rec-en">${escapeHtml(enText)}</span>
                         </div>
                         ${addonsHtml}
+                        ${modifiersHtml}
                         ${noteHtml}
                     </td>
                     <td class="col-qty">${item.qty}</td>
@@ -222,6 +226,9 @@ function getKitchenOrderTicketHtml(targetOrder) {
         const addonsHtml = (item.addons && item.addons.length)
             ? `<div style="font-size: 13px; font-weight: bold; margin-top: 2px;">+ ${item.addons.map(a => escapeHtml(currentLang === 'ar' ? (a.nameAr || a.nameEn) : (a.nameEn || a.nameAr))).join(', ')}</div>`
             : '';
+        const modifiersHtml = (item.modifiers && item.modifiers.length)
+            ? `<div style="font-size: 13px; font-weight: bold; margin-top: 2px; color: #444;">* ${item.modifiers.map(m => `${m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '*')} ${escapeHtml(currentLang === 'ar' ? m.labelAr : m.labelEn)}`).join(', ')}</div>`
+            : '';
         const notePrefix = currentLang === 'ar' ? '** ملاحظة: ' : '** Note: ';
         const noteHtml = item.note
             ? `<div style="font-size: 13px; font-weight: 900; background: #000; color: #fff; padding: 2px 6px; display: inline-block; margin-top: 4px; border-radius: 3px;">${notePrefix}${escapeHtml(item.note)} **</div>`
@@ -236,6 +243,7 @@ function getKitchenOrderTicketHtml(targetOrder) {
                     <div style="font-size: 16px; font-weight: 900;">${escapeHtml(currentLang === 'ar' ? item.arName : item.enName)}</div>
                     <div style="font-size: 13px; font-weight: 700; color: #444;">${escapeHtml(currentLang === 'ar' ? item.enName : item.arName)}</div>
                     ${addonsHtml}
+                    ${modifiersHtml}
                     ${noteHtml}
                 </div>
             </div>

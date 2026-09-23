@@ -172,6 +172,7 @@ var currentLang = (() => {
 })();
 var activeCategory = 'all';
 var currentCart = [];
+var selectedCartItemIndex = null; // Used for item modifier panel
 var currentOrderType = 'local';
 var currentOrderTypeId = 'local';
 var currentTable = 'Table 1';
@@ -316,6 +317,8 @@ function safeStartNewOrder() {
     discountType = 'fixed';
     currentCustomerId = 'cash';
     currentOrderTypeId = 'local';
+    if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
+    if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
     if (typeof renderCart === 'function') renderCart();
     if (typeof updateOrderPanelMeta === 'function') updateOrderPanelMeta();
     if (typeof showToast === 'function') {
@@ -342,6 +345,9 @@ function safeCancelOrder() {
         customDiscount = 0;
         discountValue = 0;
         discountType = 'fixed';
+        currentCustomerId = 'cash';
+        if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
+        if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
         if (typeof renderCart === 'function') renderCart();
         if (typeof updateOrderPanelMeta === 'function') updateOrderPanelMeta();
         soundTrash();

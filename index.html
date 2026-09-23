@@ -220,7 +220,7 @@
                 <main class="pos-catalog-panel">
                     
                     <!-- 4 MAIN POS ACTION BUTTONS (Cancel, Discounts, Notes, More) -->
-                    <div class="pos-top-actions-bar">
+                    <div id="globalActionBar" class="pos-top-actions-bar">
                         <button type="button" class="pos-action-btn btn-cancel" onclick="safeCancelOrder()" title="إلغاء الطلب الحالي" data-i18n-title="btn_cancel">
                             <i class="fa-solid fa-ban"></i>
                             <span data-i18n="btn_cancel">إلغاء</span>
@@ -239,6 +239,27 @@
                         </button>
                     </div>
 
+                    <!-- ITEM LEVEL ACTION BAR -->
+                    <div id="itemActionBar" class="pos-top-actions-bar" style="display: none;">
+                        <button type="button" class="pos-action-btn btn-cancel" onclick="deleteActiveCartItem()" title="حذف الصنف">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span data-i18n="btn_delete">حذف</span>
+                        </button>
+                        <button type="button" class="pos-action-btn btn-discounts" onclick="changeActiveCartQty(-1)" title="تقليل الكمية">
+                            <i class="fa-solid fa-minus"></i>
+                            <span>تقليل</span>
+                        </button>
+                        <button type="button" class="pos-action-btn btn-notes" onclick="changeActiveCartQty(1)" title="زيادة الكمية">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>زيادة</span>
+                        </button>
+                        <button type="button" class="pos-action-btn btn-more" onclick="closeItemModifierPanel()" title="تم" style="background: var(--success); color: white; border: none;">
+                            <i class="fa-solid fa-check"></i>
+                            <span data-i18n="btn_done">تم</span>
+                        </button>
+                    </div>
+
+                    <div id="catalogViewsContainer" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
                     <!-- Search & Controls -->
                     <!-- Catalog Mode & Quick Actions Toolbar (Image 1 & Image 2 Alignment) -->
                     <div class="pos-catalog-header-bar">
@@ -277,6 +298,19 @@
                         <div class="products-grid" id="productsGrid">
                             <!-- Rendered dynamically via js/pos.js -->
                         </div>
+                    </div>
+                    </div> <!-- /catalogViewsContainer -->
+
+                    <!-- ITEM MODIFIER PANEL -->
+                    <div id="itemModifierPanel" style="display: none; flex: 1; flex-direction: column; padding: 15px; background: var(--bg-color); min-height: 0; overflow-y: auto;">
+                        <h3 id="modifierPanelItemName" style="margin-top: 0; margin-bottom: 15px; font-weight: 800; font-size: 1.2rem; color: var(--primary);"></h3>
+                        
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label><i class="fa-regular fa-comment-dots"></i> ملاحظات خاصة بالصنف:</label>
+                            <input type="text" id="modifierPanelItemNote" class="form-control-pos" placeholder="أضف ملاحظة لهذا الصنف فقط..." oninput="updateActiveItemNote(this.value)">
+                        </div>
+
+                        <div id="modifierPanelGroups"></div>
                     </div>
 
                 </main>
@@ -1309,9 +1343,12 @@
                 <label><i class="fa-solid fa-phone"></i> <span data-i18n="phone_label">رقم هاتف العميل</span>:</label>
                 <input type="tel" class="form-control" id="clientPhoneInput" data-i18n-placeholder="phone_placeholder" placeholder="05xxxxxxxx..." dir="ltr" style="text-align: start;">
             </div>
-            <div class="form-group">
+            <div class="form-group" style="position: relative;">
                 <label><i class="fa-regular fa-comment-dots"></i> <span data-i18n="notes_label">تعليمات وتجهيز الطلب</span>:</label>
-                <textarea class="form-control" id="orderNotesInput" rows="4" data-i18n-placeholder="notes_placeholder" placeholder="اكتب أي تعليمات خاصة للشيف هنا..."></textarea>
+                <button type="button" id="telephoneQuickChip" onclick="insertTelephoneNote()" style="display: none; position: absolute; top: 32px; right: 10px; background: var(--teal); color: #fff; border: none; border-radius: 12px; padding: 4px 10px; font-size: 12px; font-weight: bold; cursor: pointer; z-index: 10; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-phone"></i> Telephone / هاتف
+                </button>
+                <textarea class="form-control" id="orderNotesInput" rows="4" data-i18n-placeholder="notes_placeholder" placeholder="اكتب أي تعليمات خاصة للشيف هنا..." style="padding-top: 36px;"></textarea>
             </div>
         </div>
         <div class="modal-footer" style="justify-content: space-between;">

@@ -394,6 +394,9 @@ function completeOrderAndShowReceipt(staffAllocation) {
     currentClientPhone = '';
     customDiscount = 0;
     paymentInput = '';
+    currentCustomerId = 'cash';
+    if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
+    if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
     renderCart();
     renderProducts();
 

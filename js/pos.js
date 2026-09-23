@@ -71,6 +71,17 @@ function onPosCustomerChange(newId) {
             const name = currentLang === 'ar' ? cust.nameAr : cust.nameEn;
             showToast(currentLang === 'ar' ? `العميل المحدد: ${name}` : `Customer selected: ${name}`, 'info');
         }
+
+        // Auto-open Notes for Special Channels
+        const autoNoteChannels = [
+            'hungerstation', 'jahiz', 'ninja', 'management', 'keeta', 'mrsool', 'toyou', 'thechefz', 'mosque'
+        ];
+        if (autoNoteChannels.includes(newId)) {
+            const modal = document.getElementById('notesModal');
+            if (!modal || !modal.classList.contains('open')) {
+                openNotesModal();
+            }
+        }
     }
 }
 
@@ -313,14 +324,16 @@ function addToCart(itemId) {
         return;
     }
 
-    const existing = currentCart.find(c => c.id === itemId && (!c.addons || c.addons.length === 0) && !c.note);
+    const existing = currentCart.find(c => c.id === itemId && (!c.addons || c.addons.length === 0) && (!c.modifiers || c.modifiers.length === 0) && !c.note);
+    let targetIndex = -1;
     if (existing) {
         existing.qty += 1;
         existing.price = item.price;
         existing.arName = item.arName;
         existing.enName = item.enName;
+        targetIndex = currentCart.indexOf(existing);
     } else {
-        currentCart.push({
+        const newItem = {
             id: item.id,
             arName: item.arName,
             enName: item.enName,
@@ -329,9 +342,15 @@ function addToCart(itemId) {
             catId: item.catId,
             qty: 1,
             addons: [],
+            modifiers: [],
             note: ''
-        });
+        };
+        currentCart.push(newItem);
+        targetIndex = currentCart.length - 1;
     }
+    
+    // Auto-select for Fast Order Entry Customization
+    selectCartItem(targetIndex);
 
     // Respect Stay at Selected Category Preference
     if (posPreferences.stayAtCategory === 'exit' && activeCategory !== 'all') {
@@ -445,8 +464,12 @@ function renderCart() {
                             ? `<span class="cart-note-text"><i class="fa-regular fa-comment-dots"></i> ${escapeHtml(item.note)}</span>` 
                             : '';
 
+                        const modifiersHtml = (isDetailed && item.modifiers && item.modifiers.length)
+                            ? item.modifiers.map(m => `<div class="cart-modifier-line" style="font-size: 11px; color: var(--muted); padding-right: 5px;">${m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '*')} ${escapeHtml(currentLang === 'ar' ? m.labelAr : m.labelEn)}</div>`).join('')
+                            : '';
+
                         return `
-                            <tr>
+                            <tr onclick="selectCartItem(${idx})" class="cart-row ${selectedCartItemIndex === idx ? 'active-row' : ''}" style="cursor: pointer;">
                                 <td class="cart-item-num">${idx + 1}</td>
                                 <td class="cart-item-cell-name">
                                     <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -456,6 +479,7 @@ function renderCart() {
                                         </button>
                                     </div>
                                     ${addonsHtml}
+                                    ${modifiersHtml}
                                     ${noteHtml}
                                 </td>
                                 <td class="col-qty">
@@ -644,11 +668,38 @@ function openNotesModal() {
     const modal = document.getElementById('notesModal');
     const notesInput = document.getElementById('orderNotesInput');
     const phoneInput = document.getElementById('clientPhoneInput');
+    const quickChip = document.getElementById('telephoneQuickChip');
 
     if (notesInput) notesInput.value = currentOrderNotes || '';
     if (phoneInput) phoneInput.value = currentClientPhone || '';
 
+    if (quickChip) {
+        if (currentCustomerId === 'cash') {
+            quickChip.style.display = 'flex';
+        } else {
+            quickChip.style.display = 'none';
+        }
+    }
+
     if (modal) modal.classList.add('open');
+}
+
+function insertTelephoneNote() {
+    const notesInput = document.getElementById('orderNotesInput');
+    if (!notesInput) return;
+    const textToInsert = "Telephone / هاتف";
+    const currentVal = notesInput.value;
+    
+    if (currentVal.includes(textToInsert)) {
+        return;
+    }
+    
+    if (currentVal.trim() === '') {
+        notesInput.value = textToInsert;
+    } else {
+        notesInput.value = currentVal.trim() + "\n" + textToInsert;
+    }
+    notesInput.focus();
 }
 
 function closeNotesModal() {
@@ -963,4 +1014,246 @@ function bottomNavTables() {
 
 function bottomNavMainScreen() {
     switchView('pos');
+}
+
+// -----------------------------------------------------------------------------
+// Fast Order Entry - Item Modifier / Ingredient System
+// -----------------------------------------------------------------------------
+
+function selectCartItem(index) {
+    if (selectedCartItemIndex === index) {
+        closeItemModifierPanel();
+        return;
+    }
+    selectedCartItemIndex = index;
+    renderCart();
+    
+    // Show modifier panel UI
+    const globalActionBar = document.getElementById('globalActionBar');
+    const itemActionBar = document.getElementById('itemActionBar');
+    const catalogViewsContainer = document.getElementById('catalogViewsContainer');
+    const itemModifierPanel = document.getElementById('itemModifierPanel');
+    
+    if (globalActionBar) globalActionBar.style.display = 'none';
+    if (itemActionBar) itemActionBar.style.display = 'flex';
+    if (catalogViewsContainer) catalogViewsContainer.style.display = 'none';
+    if (itemModifierPanel) itemModifierPanel.style.display = 'flex';
+    
+    const cartItem = currentCart[index];
+    if (!cartItem) return;
+    
+    // Set item name and note
+    document.getElementById('modifierPanelItemName').innerText = currentLang === 'ar' ? cartItem.arName : cartItem.enName;
+    document.getElementById('modifierPanelItemNote').value = cartItem.note || '';
+    
+    // Generate and render groups
+    const product = items.find(i => i.id === cartItem.id) || cartItem;
+    const modifierGroups = getModifiersForProduct(product);
+    renderModifierGroups(modifierGroups, cartItem.modifiers || []);
+}
+
+function closeItemModifierPanel() {
+    selectedCartItemIndex = null;
+    renderCart();
+    
+    const globalActionBar = document.getElementById('globalActionBar');
+    const itemActionBar = document.getElementById('itemActionBar');
+    const catalogViewsContainer = document.getElementById('catalogViewsContainer');
+    const itemModifierPanel = document.getElementById('itemModifierPanel');
+    
+    if (globalActionBar) globalActionBar.style.display = 'flex';
+    if (itemActionBar) itemActionBar.style.display = 'none';
+    if (catalogViewsContainer) catalogViewsContainer.style.display = 'flex';
+    if (itemModifierPanel) itemModifierPanel.style.display = 'none';
+}
+
+function changeActiveCartQty(delta) {
+    if (selectedCartItemIndex !== null) {
+        changeCartQty(selectedCartItemIndex, delta);
+    }
+}
+
+function deleteActiveCartItem() {
+    if (selectedCartItemIndex !== null) {
+        removeCartItem(selectedCartItemIndex);
+        closeItemModifierPanel();
+    }
+}
+
+function updateActiveItemNote(note) {
+    if (selectedCartItemIndex !== null && currentCart[selectedCartItemIndex]) {
+        currentCart[selectedCartItemIndex].note = note;
+        renderCart();
+    }
+}
+
+function getModifiersForProduct(product) {
+    const nameEn = (product.enName || '').toLowerCase();
+    const nameAr = (product.arName || '').toLowerCase();
+    
+    const isKebab = nameEn.includes('kebab') || nameAr.includes('كباب');
+    const isMeatBurger = (nameEn.includes('burger') && nameEn.includes('meat')) || (nameAr.includes('برجر') && nameAr.includes('لحم'));
+    const isHashi = nameEn.includes('hashi') || nameAr.includes('حاشي');
+    const isChicken = nameEn.includes('chicken') || nameAr.includes('دجاج') || nameAr.includes('زنجر');
+    const isFries = nameEn.includes('fries') || nameAr.includes('بطاطس');
+
+    if (isKebab) {
+        return [
+            { type: 'extra', titleAr: 'إضافة (بدون تكلفة)', titleEn: 'Extra (Free)', items: [
+                { code: 'ex_garlic', labelAr: 'ثوم', labelEn: 'Garlic' },
+                { code: 'ex_spicy', labelAr: 'حار', labelEn: 'Spicy' },
+                { code: 'ex_tahini', labelAr: 'طحينة', labelEn: 'Tahini' },
+                { code: 'ex_pom', labelAr: 'دبس رمان', labelEn: 'Pomegranate Molasses' }
+            ]},
+            { type: 'only', titleAr: 'فقط', titleEn: 'Only', items: [
+                { code: 'on_meat', labelAr: 'لحم فقط', labelEn: 'Only Meat' },
+                { code: 'on_chk', labelAr: 'دجاج فقط', labelEn: 'Only Chicken' }
+            ]},
+            { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
+                { code: 'no_onion', labelAr: 'بصل', labelEn: 'Onion' },
+                { code: 'no_tom', labelAr: 'طماطم', labelEn: 'Tomato' },
+                { code: 'no_pars', labelAr: 'بقدونس', labelEn: 'Parsley' }
+            ]}
+        ];
+    } else if (isMeatBurger) {
+        return [
+            { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
+                { code: 'no_onion', labelAr: 'بصل', labelEn: 'Onion' },
+                { code: 'no_tom', labelAr: 'طماطم', labelEn: 'Tomato' },
+                { code: 'no_pick', labelAr: 'مخلل', labelEn: 'Pickle' },
+                { code: 'no_chs', labelAr: 'جبن', labelEn: 'Cheese' },
+                { code: 'no_sauce', labelAr: 'صوص', labelEn: 'Sauce' }
+            ]},
+            { type: 'extra', titleAr: 'إضافة (بدون تكلفة)', titleEn: 'Extra (Free)', items: [
+                { code: 'ex_chs', labelAr: 'جبن', labelEn: 'Cheese' },
+                { code: 'ex_sauce', labelAr: 'صوص', labelEn: 'Sauce' }
+            ]}
+        ];
+    } else if (isHashi) {
+        return [
+            { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
+                { code: 'no_onion', labelAr: 'بصل', labelEn: 'Onion' },
+                { code: 'no_tom', labelAr: 'طماطم', labelEn: 'Tomato' },
+                { code: 'no_pick', labelAr: 'مخلل', labelEn: 'Pickle' },
+                { code: 'no_chs', labelAr: 'جبن', labelEn: 'Cheese' },
+                { code: 'no_sauce', labelAr: 'صوص', labelEn: 'Sauce' }
+            ]},
+            { type: 'extra', titleAr: 'إضافة (بدون تكلفة)', titleEn: 'Extra (Free)', items: [
+                { code: 'ex_chs', labelAr: 'جبن', labelEn: 'Cheese' },
+                { code: 'ex_sauce', labelAr: 'صوص', labelEn: 'Sauce' },
+                { code: 'ex_spicy', labelAr: 'حار', labelEn: 'Spicy' }
+            ]}
+        ];
+    } else if (isChicken) {
+        return [
+            { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
+                { code: 'no_let', labelAr: 'خس', labelEn: 'Lettuce' },
+                { code: 'no_pick', labelAr: 'مخلل', labelEn: 'Pickle' },
+                { code: 'no_chs', labelAr: 'جبن', labelEn: 'Cheese' },
+                { code: 'no_sauce', labelAr: 'صوص', labelEn: 'Sauce' }
+            ]},
+            { type: 'extra', titleAr: 'إضافة (بدون تكلفة)', titleEn: 'Extra (Free)', items: [
+                { code: 'ex_chs', labelAr: 'جبن', labelEn: 'Cheese' },
+                { code: 'ex_sauce', labelAr: 'صوص', labelEn: 'Sauce' }
+            ]}
+        ];
+    } else if (isFries) {
+        return [
+            { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
+                { code: 'no_salt', labelAr: 'ملح', labelEn: 'Salt' },
+                { code: 'no_spice', labelAr: 'بهارات', labelEn: 'Spices' }
+            ]},
+            { type: 'extra', titleAr: 'إضافة (بدون تكلفة)', titleEn: 'Extra (Free)', items: [
+                { code: 'ex_chs', labelAr: 'جبن', labelEn: 'Cheese' },
+                { code: 'ex_sauce', labelAr: 'صوص', labelEn: 'Sauce' }
+            ]}
+        ];
+    }
+    
+    // Fallback default modifiers
+    return [
+        { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
+            { code: 'no_onion', labelAr: 'بصل', labelEn: 'Onion' },
+            { code: 'no_tom', labelAr: 'طماطم', labelEn: 'Tomato' }
+        ]},
+        { type: 'extra', titleAr: 'إضافة (بدون تكلفة)', titleEn: 'Extra (Free)', items: [
+            { code: 'ex_sauce', labelAr: 'صوص زيادة', labelEn: 'Extra Sauce' }
+        ]}
+    ];
+}
+
+function renderModifierGroups(groups, activeModifiers) {
+    const container = document.getElementById('modifierPanelGroups');
+    if (!container) return;
+    
+    const activeCodes = activeModifiers.map(m => m.code);
+    
+    container.innerHTML = groups.map(g => {
+        const title = currentLang === 'ar' ? g.titleAr : g.titleEn;
+        let colorTheme = 'var(--primary)';
+        if (g.type === 'without') colorTheme = 'var(--danger)';
+        if (g.type === 'extra') colorTheme = 'var(--success)';
+        
+        return `
+            <div style="margin-bottom: 20px;">
+                <h4 style="margin-bottom: 10px; font-size: 13px; color: ${colorTheme}; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">${title}</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    ${g.items.map(item => {
+                        const isSelected = activeCodes.includes(item.code);
+                        const label = currentLang === 'ar' ? item.labelAr : item.labelEn;
+                        return `
+                            <button type="button" 
+                                onclick="toggleModifier('${item.code}', '${escapeHtml(item.labelEn)}', '${escapeHtml(item.labelAr)}', '${g.type}')" 
+                                style="padding: 8px 12px; border: 1px solid ${isSelected ? colorTheme : 'var(--border-color)'}; 
+                                       background: ${isSelected ? colorTheme : 'var(--bg-color)'}; 
+                                       color: ${isSelected ? '#fff' : 'var(--text-color)'}; 
+                                       border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: ${isSelected ? '700' : '500'};">
+                                ${isSelected ? '<i class="fa-solid fa-check"></i> ' : ''}${label}
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleModifier(code, labelEn, labelAr, type) {
+    if (selectedCartItemIndex === null) return;
+    const cartItem = currentCart[selectedCartItemIndex];
+    if (!cartItem) return;
+    
+    if (!cartItem.modifiers) cartItem.modifiers = [];
+    
+    const existingIndex = cartItem.modifiers.findIndex(m => m.code === code);
+    if (existingIndex > -1) {
+        // Remove it
+        cartItem.modifiers.splice(existingIndex, 1);
+    } else {
+        // Add it. Also, conflict resolution (e.g. if adding "without onion", remove "extra onion")
+        const baseName = code.split('_')[1]; // e.g., 'onion' from 'no_onion'
+        if (baseName) {
+            cartItem.modifiers = cartItem.modifiers.filter(m => {
+                const mBaseName = m.code.split('_')[1];
+                // Remove if it affects the same ingredient but different type (e.g. 'no_onion' vs 'ex_onion')
+                if (mBaseName === baseName && m.type !== type) {
+                    return false; 
+                }
+                return true;
+            });
+        }
+        
+        cartItem.modifiers.push({
+            code: code,
+            labelEn: labelEn,
+            labelAr: labelAr,
+            actionType: type,
+            priceDelta: 0
+        });
+    }
+    
+    renderCart(); // Re-render cart to show modifier lines
+    // Re-render modifier panel
+    const product = items.find(i => i.id === cartItem.id) || cartItem;
+    renderModifierGroups(getModifiersForProduct(product), cartItem.modifiers);
 }
