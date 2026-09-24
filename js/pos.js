@@ -1113,105 +1113,52 @@ function getModifiersForProduct(product) {
 }
 
 function getRawModifiersForProduct(product) {
-    const nameEn = (product.enName || '').toLowerCase();
-    const nameAr = (product.arName || '').toLowerCase();
-    
-    const isKebab = nameEn.includes('kebab') || nameAr.includes('كباب');
-    const isMeatBurger = (nameEn.includes('burger') && nameEn.includes('meat')) || (nameAr.includes('برجر') && nameAr.includes('لحم'));
-    const isHashi = nameEn.includes('hashi') || nameAr.includes('حاشي');
-    const isChicken = nameEn.includes('chicken') || nameAr.includes('دجاج') || nameAr.includes('زنجر');
-    const isFries = nameEn.includes('fries') || nameAr.includes('بطاطس');
+    const GLOBAL_ONLY = {
+        type: 'only', titleAr: 'فقط', titleEn: 'Only', items: [
+            { code: 'on_fp', labelAr: 'ف فقط FP', labelEn: 'ف فقط FP' },
+            { code: 'on_bp', labelAr: 'بطاطس فقط BP', labelEn: 'بطاطس فقط BP' },
+            { code: 'on_tp', labelAr: 'طماطم فقط TP', labelEn: 'طماطم فقط TP' },
+            { code: 'on_bsp', labelAr: 'بصل فقط BSP', labelEn: 'بصل فقط BSP' },
+            { code: 'on_cp', labelAr: 'صوص فقط CP', labelEn: 'صوص فقط CP' },
+            { code: 'on_hp', labelAr: 'خس فقط HP', labelEn: 'خس فقط HP' },
+            { code: 'on_mp', labelAr: 'مايونيز فقط MP', labelEn: 'مايونيز فقط MP' },
+            { code: 'on_sp', labelAr: 'شطة فقط SP', labelEn: 'شطة فقط SP' },
+            { code: 'on_k', labelAr: 'كاتشب +K', labelEn: 'كاتشب +K' }
+        ]
+    };
 
-    if (isKebab) {
-        return [
-            { type: 'extra', titleAr: 'إضافة (بدون تكلفة)', titleEn: 'Extra (Free)', items: [
-                { code: 'ex_garlic', labelAr: 'ثوم', labelEn: 'Garlic' },
-                { code: 'ex_spicy', labelAr: 'حار', labelEn: 'Spicy' },
-                { code: 'ex_tahini', labelAr: 'طحينة', labelEn: 'Tahini' },
-                { code: 'ex_pom', labelAr: 'دبس رمان', labelEn: 'Pomegranate Molasses' }
-            ]},
-            { type: 'only', titleAr: 'فقط', titleEn: 'Only', items: [
-                { code: 'on_fp', labelAr: 'ف فقط FP', labelEn: 'ف فقط FP' },
-                { code: 'on_bp', labelAr: 'بطاطس فقط BP', labelEn: 'بطاطس فقط BP' },
-                { code: 'on_tp', labelAr: 'طماطم فقط TP', labelEn: 'طماطم فقط TP' },
-                { code: 'on_bsp', labelAr: 'بصل فقط BSP', labelEn: 'بصل فقط BSP' },
-                { code: 'on_cp', labelAr: 'صوص فقط CP', labelEn: 'صوص فقط CP' },
-                { code: 'on_hp', labelAr: 'خس فقط HP', labelEn: 'خس فقط HP' },
-                { code: 'on_mp', labelAr: 'مايونيز فقط MP', labelEn: 'مايونيز فقط MP' },
-                { code: 'on_sp', labelAr: 'شطة فقط SP', labelEn: 'شطة فقط SP' },
-                { code: 'on_k', labelAr: 'كاتشب +K', labelEn: 'كاتشب +K' }
-            ]},
-            { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
-                { code: 'no_onion', labelAr: 'بصل', labelEn: 'Onion' },
-                { code: 'no_tom', labelAr: 'طماطم', labelEn: 'Tomato' },
-                { code: 'no_pars', labelAr: 'بقدونس', labelEn: 'Parsley' }
-            ]}
-        ];
-    } else if (isMeatBurger) {
-        return [
-            { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
-                { code: 'no_onion', labelAr: 'بصل', labelEn: 'Onion' },
-                { code: 'no_tom', labelAr: 'طماطم', labelEn: 'Tomato' },
-                { code: 'no_pick', labelAr: 'مخلل', labelEn: 'Pickle' },
-                { code: 'no_chs', labelAr: 'جبن', labelEn: 'Cheese' },
-                { code: 'no_sauce', labelAr: 'صوص', labelEn: 'Sauce' }
-            ]},
-            { type: 'extra', titleAr: 'إضافة (بدون تكلفة)', titleEn: 'Extra (Free)', items: [
-                { code: 'ex_chs', labelAr: 'جبن', labelEn: 'Cheese' },
-                { code: 'ex_sauce', labelAr: 'صوص', labelEn: 'Sauce' }
-            ]}
-        ];
-    } else if (isHashi) {
-        return [
-            { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
-                { code: 'no_onion', labelAr: 'بصل', labelEn: 'Onion' },
-                { code: 'no_tom', labelAr: 'طماطم', labelEn: 'Tomato' },
-                { code: 'no_pick', labelAr: 'مخلل', labelEn: 'Pickle' },
-                { code: 'no_chs', labelAr: 'جبن', labelEn: 'Cheese' },
-                { code: 'no_sauce', labelAr: 'صوص', labelEn: 'Sauce' }
-            ]},
-            { type: 'extra', titleAr: 'إضافة (بدون تكلفة)', titleEn: 'Extra (Free)', items: [
-                { code: 'ex_chs', labelAr: 'جبن', labelEn: 'Cheese' },
-                { code: 'ex_sauce', labelAr: 'صوص', labelEn: 'Sauce' },
-                { code: 'ex_spicy', labelAr: 'حار', labelEn: 'Spicy' }
-            ]}
-        ];
-    } else if (isChicken) {
-        return [
-            { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
-                { code: 'no_let', labelAr: 'خس', labelEn: 'Lettuce' },
-                { code: 'no_pick', labelAr: 'مخلل', labelEn: 'Pickle' },
-                { code: 'no_chs', labelAr: 'جبن', labelEn: 'Cheese' },
-                { code: 'no_sauce', labelAr: 'صوص', labelEn: 'Sauce' }
-            ]},
-            { type: 'extra', titleAr: 'إضافة (بدون تكلفة)', titleEn: 'Extra (Free)', items: [
-                { code: 'ex_chs', labelAr: 'جبن', labelEn: 'Cheese' },
-                { code: 'ex_sauce', labelAr: 'صوص', labelEn: 'Sauce' }
-            ]}
-        ];
-    } else if (isFries) {
-        return [
-            { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
-                { code: 'no_salt', labelAr: 'ملح', labelEn: 'Salt' },
-                { code: 'no_spice', labelAr: 'بهارات', labelEn: 'Spices' }
-            ]},
-            { type: 'extra', titleAr: 'إضافة (بدون تكلفة)', titleEn: 'Extra (Free)', items: [
-                { code: 'ex_chs', labelAr: 'جبن', labelEn: 'Cheese' },
-                { code: 'ex_sauce', labelAr: 'صوص', labelEn: 'Sauce' }
-            ]}
-        ];
-    }
-    
-    // Fallback default modifiers
-    return [
-        { type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
-            { code: 'no_onion', labelAr: 'بصل', labelEn: 'Onion' },
-            { code: 'no_tom', labelAr: 'طماطم', labelEn: 'Tomato' }
-        ]},
-        { type: 'extra', titleAr: 'إضافة (بدون تكلفة)', titleEn: 'Extra (Free)', items: [
-            { code: 'ex_sauce', labelAr: 'صوص زيادة', labelEn: 'Extra Sauce' }
-        ]}
-    ];
+    const GLOBAL_WITHOUT = {
+        type: 'without', titleAr: 'بدون', titleEn: 'Without', items: [
+            { code: 'no_wbkh', labelAr: 'بدون خبز BKH', labelEn: 'بدون خبز BKH' },
+            { code: 'no_wbb', labelAr: 'بدون بطاطس BB', labelEn: 'بدون بطاطس BB' },
+            { code: 'no_wbbs', labelAr: 'بدون بصل BBS', labelEn: 'بدون بصل BBS' },
+            { code: 'no_wbf', labelAr: 'بدون ف BF', labelEn: 'بدون ف BF' },
+            { code: 'no_wbh', labelAr: 'بدون خس BH', labelEn: 'بدون خس BH' },
+            { code: 'no_wbt', labelAr: 'بدون طماط BT', labelEn: 'بدون طماط BT' },
+            { code: 'no_wbc', labelAr: 'بدون صوص BC', labelEn: 'بدون صوص BC' },
+            { code: 'no_wbs', labelAr: 'بدون شطة BS', labelEn: 'بدون شطة BS' },
+            { code: 'no_wbk', labelAr: 'بدون كتشب BK', labelEn: 'بدون كتشب BK' },
+            { code: 'no_wbm', labelAr: 'بدون مايونيز BM', labelEn: 'بدون مايونيز BM' }
+        ]
+    };
+
+    const GLOBAL_TOPPING = {
+        type: 'extra', titleAr: 'Topping Options ++', titleEn: 'Topping Options ++', items: [
+            { code: 'top_tm', labelAr: 'مايونيز + M', labelEn: 'مايونيز + M' },
+            { code: 'top_tk', labelAr: 'كاتشب +K', labelEn: 'كاتشب +K' },
+            { code: 'top_tb', labelAr: 'بطاطس +B', labelEn: 'بطاطس +B' },
+            { code: 'top_th', labelAr: 'خس زيادة +H', labelEn: 'خس زيادة +H' },
+            { code: 'top_ts', labelAr: 'شطة +S', labelEn: 'شطة +S' },
+            { code: 'top_tc', labelAr: 'صوص +C', labelEn: 'صوص +C' },
+            { code: 'top_tbs', labelAr: 'بصل + BS', labelEn: 'بصل + BS' },
+            { code: 'top_tt', labelAr: 'طماطم + T', labelEn: 'طماطم + T' },
+            { code: 'top_tf', labelAr: 'ف +F', labelEn: 'ف +F' },
+            { code: 'top_tkm', labelAr: 'K&M++', labelEn: 'K&M++' },
+            { code: 'top_thm', labelAr: 'H&M++', labelEn: 'H&M++' }
+        ]
+    };
+
+    return [GLOBAL_ONLY, GLOBAL_WITHOUT, GLOBAL_TOPPING];
 }
 
 function renderModifierGroups(groups, activeModifiers) {
