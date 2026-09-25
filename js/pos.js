@@ -1236,3 +1236,92 @@ function toggleModifier(code, labelEn, labelAr, type) {
     const product = items.find(i => i.id === cartItem.id) || cartItem;
     renderModifierGroups(getModifiersForProduct(product), cartItem.modifiers);
 }
+
+/* =========================================================
+   QUANTITY MODAL LOGIC
+   ========================================================= */
+
+let tempQuantityInput = "";
+
+function openQuantityModal() {
+    tempQuantityInput = "";
+    const inputEl = document.getElementById('quantityModalInput');
+    if (inputEl) inputEl.value = tempQuantityInput;
+    const modal = document.getElementById('quantityModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function appendQuantityDigit(digit) {
+    if (tempQuantityInput === "0") {
+        tempQuantityInput = digit;
+    } else {
+        tempQuantityInput += digit;
+    }
+    const inputEl = document.getElementById('quantityModalInput');
+    if (inputEl) inputEl.value = tempQuantityInput;
+}
+
+function clearQuantityInput() {
+    tempQuantityInput = "";
+    const inputEl = document.getElementById('quantityModalInput');
+    if (inputEl) inputEl.value = tempQuantityInput;
+}
+
+function backspaceQuantityInput() {
+    if (tempQuantityInput.length > 0) {
+        tempQuantityInput = tempQuantityInput.slice(0, -1);
+        const inputEl = document.getElementById('quantityModalInput');
+        if (inputEl) inputEl.value = tempQuantityInput;
+    }
+}
+
+function closeQuantityModal() {
+    const modal = document.getElementById('quantityModal');
+    if (modal) modal.style.display = 'none';
+    tempQuantityInput = "";
+}
+
+function confirmQuantityModal() {
+    if (selectedCartItemIndex !== null) {
+        let newQty = parseInt(tempQuantityInput, 10);
+        if (isNaN(newQty) || newQty <= 0) {
+            // Invalid, don't apply
+            return;
+        }
+
+        const cartItem = currentCart[selectedCartItemIndex];
+        if (!cartItem) return;
+
+        // Check stock limitation if applicable
+        const item = items.find(i => i.id === cartItem.id);
+        if (item && item.stock !== undefined && item.stock !== null) {
+            const otherItemsInCart = currentCart.filter((c, i) => c.id === item.id && i !== selectedCartItemIndex).reduce((sum, c) => sum + c.qty, 0);
+            if (otherItemsInCart + newQty > item.stock) {
+                showToast(currentLang === 'ar' ? `لقد وصلت للحد الأقصى للكمية المتوفرة بالمطبخ (${item.stock})` : `Max kitchen stock limit reached (${item.stock})`, 'warning');
+                soundWarning();
+                return;
+            }
+        }
+
+        cartItem.qty = newQty;
+        soundBeep();
+        renderCart();
+        renderProducts();
+        closeQuantityModal();
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    const qtyModal = document.getElementById('quantityModal');
+    if (qtyModal && qtyModal.style.display === 'flex') {
+        if (e.key >= '0' && e.key <= '9') {
+            appendQuantityDigit(e.key);
+        } else if (e.key === 'Backspace') {
+            backspaceQuantityInput();
+        } else if (e.key === 'Enter') {
+            confirmQuantityModal();
+        } else if (e.key === 'Escape') {
+            closeQuantityModal();
+        }
+    }
+});

@@ -187,28 +187,26 @@
                         <!-- Totals Breakdown Lines -->
                         <div class="totals-breakdown">
                             <div class="row">
-                                <span><i class="fa-solid fa-puzzle-piece"></i> <span data-i18n="additions">الإضافات</span></span>
+                                <span><i class="fa-solid fa-plus"></i> addition</span>
                                 <span id="cartAddonsTotal">0.00</span>
                             </div>
                             <div class="row">
-                                <span><i class="fa-solid fa-calculator"></i> <span data-i18n="subtotal">المجموع الفرعي</span></span>
-                                <span id="cartSubtotal">0.00</span>
-                            </div>
-                            <div class="row">
-                                <span><i class="fa-solid fa-percent"></i> <span data-i18n="discount">الخصم</span></span>
+                                <span><i class="fa-solid fa-percent"></i> Discounts</span>
                                 <span id="cartDiscount" style="color: var(--danger);">0.00</span>
                             </div>
                             <div class="row">
-                                <span><i class="fa-solid fa-receipt"></i> <span data-i18n="tax_vat">ضريبة القيمة المضافة</span></span>
+                                <span><i class="fa-solid fa-receipt"></i> texes</span>
                                 <span id="cartTax">0.00</span>
+                            </div>
+                            <div class="row" style="font-weight: bold; font-size: 1.15em;">
+                                <span><i class="fa-solid fa-credit-card"></i> Total</span>
+                                <span id="cartGrandTotal" class="grand-val">SAR 0.00</span>
                             </div>
                         </div>
 
                         <!-- Grand Total & Pay CTA Bar -->
-                        <div class="pay-cta-banner">
-                            <span class="lbl" data-i18n="total_due_label">Total Due / الإجمالي المطلوب</span>
-                            <span class="grand-val" id="cartGrandTotal">SAR 0.00</span>
-                            <button type="button" class="btn-pay-cta" onclick="openPaymentModal()">
+                        <div class="pay-cta-banner" style="margin-top: 5px;">
+                            <button type="button" class="btn-pay-cta" onclick="openPaymentModal()" style="width: 100%; justify-content: center;">
                                 <i class="fa-solid fa-credit-card"></i> <span data-i18n="pay_action">دفع الحساب</span>
                             </button>
                         </div>
@@ -241,21 +239,20 @@
 
                     <!-- ITEM LEVEL ACTION BAR -->
                     <div id="itemActionBar" class="pos-top-actions-bar" style="display: none;">
-                        <button type="button" class="pos-action-btn btn-cancel" onclick="deleteActiveCartItem()" title="حذف الصنف">
+                        <button type="button" class="pos-action-btn btn-cancel" onclick="deleteActiveCartItem()" style="background: #e83e8c; color: white; border: none;" title="حذف الصنف">
                             <i class="fa-solid fa-trash-can"></i>
                             <span data-i18n="btn_delete">حذف</span>
                         </button>
-                        <button type="button" class="pos-action-btn btn-discounts" onclick="changeActiveCartQty(-1)" title="تقليل الكمية">
+                        <button type="button" class="pos-action-btn btn-quantity" onclick="openQuantityModal()" style="background: #007bff; color: white; border: none;" title="Quantity">
+                            <span>Quantity</span>
+                        </button>
+                        <button type="button" class="pos-action-btn btn-discounts" onclick="changeActiveCartQty(-1)" style="background: #6f42c1; color: white; border: none;" title="تقليل الكمية">
                             <i class="fa-solid fa-minus"></i>
                             <span>تقليل</span>
                         </button>
-                        <button type="button" class="pos-action-btn btn-notes" onclick="changeActiveCartQty(1)" title="زيادة الكمية">
+                        <button type="button" class="pos-action-btn btn-notes" onclick="changeActiveCartQty(1)" style="background: #17a2b8; color: white; border: none;" title="زيادة الكمية">
                             <i class="fa-solid fa-plus"></i>
                             <span>زيادة</span>
-                        </button>
-                        <button type="button" class="pos-action-btn btn-more" onclick="closeItemModifierPanel()" title="تم" style="background: var(--success); color: white; border: none;">
-                            <i class="fa-solid fa-check"></i>
-                            <span data-i18n="btn_done">تم</span>
                         </button>
                     </div>
 
@@ -310,7 +307,12 @@
                             <textarea id="modifierPanelItemNote" class="form-control-pos item-special-notes" placeholder="أضف ملاحظة لهذا الصنف فقط..." oninput="updateActiveItemNote(this.value)" rows="5" wrap="soft" autocomplete="off" onkeydown="if(event.key==='Enter') event.stopPropagation();"></textarea>
                         </div>
 
-                        <div id="modifierPanelGroups"></div>
+                        <div id="modifierPanelGroups" style="flex: 1;"></div>
+                        
+                        <button type="button" class="pos-action-btn btn-more" onclick="closeItemModifierPanel()" title="Done" style="background: #28a745; color: white; border: none; width: 100%; margin-top: 15px; padding: 15px; font-size: 1.2rem; border-radius: 8px; justify-content: center; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Done</span>
+                        </button>
                     </div>
 
                 </main>
@@ -1641,6 +1643,42 @@
             <div style="display: flex; gap: 8px;">
                 <button type="button" class="btn-primary" onclick="saveKitchenStock()"><i class="fa-solid fa-check"></i> <span data-i18n="btn_done">تم وحفظ</span></button>
                 <button type="button" class="btn-secondary" onclick="closeKitchenStockModal()"><span data-i18n="btn_close">إغلاق</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QUANTITY MODAL -->
+<div class="modal-overlay" id="quantityModal" style="display: none; align-items: center; justify-content: center; z-index: 9999; background: rgba(0,0,0,0.5);">
+    <div class="modal-card quantity-modal-card" style="background: white; border-radius: 12px; width: 320px; max-width: 90vw; overflow: hidden; display: flex; flex-direction: column;">
+        <div class="modal-header" style="background: #f8f0f8; color: #800080; padding: 15px; text-align: center; border-bottom: 1px solid #eee;">
+            <h3 style="margin: 0; font-weight: bold; font-size: 1.4rem;">Quantity</h3>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold; text-align: left;">Quantity:</label>
+            <input type="text" id="quantityModalInput" readonly style="width: 100%; padding: 15px; font-size: 1.5rem; text-align: center; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; background: #fafafa; color: #333;">
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('1')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">1</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('2')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">2</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('3')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">3</button>
+                
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('4')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">4</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('5')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">5</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('6')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">6</button>
+                
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('7')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">7</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('8')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">8</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('9')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">9</button>
+                
+                <button type="button" class="qty-btn" onclick="clearQuantityInput()" style="padding: 15px; font-size: 1.2rem; border: none; background: #555; color: white; border-radius: 8px; cursor: pointer;">C</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('0')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">0</button>
+                <button type="button" class="qty-btn" onclick="backspaceQuantityInput()" style="padding: 15px; font-size: 1.2rem; border: none; background: #555; color: white; border-radius: 8px; cursor: pointer;">⌫</button>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="confirmQuantityModal()" style="flex: 1; padding: 15px; font-size: 1.1rem; font-weight: bold; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer;">Ok</button>
+                <button type="button" onclick="closeQuantityModal()" style="flex: 1; padding: 15px; font-size: 1.1rem; font-weight: bold; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer;">Back</button>
             </div>
         </div>
     </div>
