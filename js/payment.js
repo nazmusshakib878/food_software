@@ -96,6 +96,21 @@ function toggleAjelReferenceField(method) {
     }
 }
 
+let selectedBankSubOption = '';
+
+function selectBankSubOption(subOption) {
+    selectedBankSubOption = subOption;
+    document.getElementById('btnVisa').style.opacity = subOption === 'VISA' ? '1' : '0.5';
+    document.getElementById('btnMada').style.opacity = subOption === 'Mada' ? '1' : '0.5';
+}
+
+function fillRemainingAmount(subOption) {
+    selectBankSubOption(subOption);
+    const totals = calculateCartTotals();
+    paymentInput = totals.grandTotal.toString();
+    updatePaymentModalUI(totals.grandTotal);
+}
+
 function selectPayMethod(method, el) {
     // Prevent selection if disabled
     if (el.classList.contains('disabled')) return;
@@ -120,6 +135,22 @@ function selectPayMethod(method, el) {
     }
     
     toggleAjelReferenceField(method);
+    
+    const bankSub = document.getElementById('bankSubOptionsContainer');
+    if (bankSub) {
+        if (method.startsWith('Bank ')) {
+            bankSub.style.display = 'flex';
+            const bankNum = method.split(' ')[1];
+            document.querySelectorAll('.bank-num-label').forEach(span => {
+                span.innerText = bankNum;
+            });
+            // Auto-select VISA on new bank selection if none selected
+            selectBankSubOption('VISA');
+        } else {
+            bankSub.style.display = 'none';
+        }
+    }
+    
     updatePaymentModalUI(totals.grandTotal);
 }
 

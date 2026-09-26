@@ -318,20 +318,7 @@
                 </main>
             </div>
             
-            <!-- Floating Cart Pill for 8-Column Catalog Mode -->
-            <div class="catalog-floating-cart" id="catalogFloatingCart" onclick="setPosCatalogMode('split')" style="display: none;">
-                <div class="floating-cart-icon">
-                    <i class="fa-solid fa-bag-shopping"></i>
-                    <span class="floating-badge" id="floatCartBadge">0</span>
-                </div>
-                <div class="floating-cart-info">
-                    <span id="floatCartTotalText">Total: SAR 0.00</span>
-                    <small id="floatCartSubText">Click to view ticket & pay</small>
-                </div>
-                <button type="button" class="floating-checkout-btn">
-                    <span data-i18n="review_order_btn">Review Order</span> <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </div>
+            
         </div>
 
         <!-- ================= VIEW 2: ADMIN DASHBOARD VIEW ================= -->
@@ -944,14 +931,35 @@
                             <span><i class="fa-solid fa-money-bill-1-wave"></i> <span data-i18n="pay_method_cash">نقدي (Cash)</span></span>
                             <i class="radio-dot fa-solid fa-circle-check"></i>
                         </div>
-                        <div class="pay-method-radio" onclick="selectPayMethod('Mada / Card', this)">
-                            <span><i class="fa-solid fa-credit-card"></i> <span data-i18n="pay_method_card">بطاقة مدى / Card</span></span>
+                        <div class="pay-method-radio" data-method="Bank 236" onclick="selectPayMethod('Bank 236', this)">
+                            <span><i class="fa-solid fa-building-columns"></i> Bank 236</span>
                             <i class="radio-dot fa-regular fa-circle"></i>
                         </div>
-                        <div class="pay-method-radio" onclick="selectPayMethod('Online / Transfer', this)">
-                            <span><i class="fa-solid fa-globe"></i> <span data-i18n="pay_method_online">تطبيق / تحويل</span></span>
+                        <div class="pay-method-radio" data-method="Bank 237" onclick="selectPayMethod('Bank 237', this)">
+                            <span><i class="fa-solid fa-building-columns"></i> Bank 237</span>
                             <i class="radio-dot fa-regular fa-circle"></i>
                         </div>
+                        <div class="pay-method-radio" data-method="Bank 238" onclick="selectPayMethod('Bank 238', this)">
+                            <span><i class="fa-solid fa-building-columns"></i> Bank 238</span>
+                            <i class="radio-dot fa-regular fa-circle"></i>
+                        </div>
+                        <div class="pay-method-radio" data-method="Bank 239" onclick="selectPayMethod('Bank 239', this)">
+                            <span><i class="fa-solid fa-building-columns"></i> Bank 239</span>
+                            <i class="radio-dot fa-regular fa-circle"></i>
+                        </div>
+                        <div class="pay-method-radio" data-method="Ajel" onclick="selectPayMethod('Ajel', this)">
+                            <span><i class="fa-solid fa-clock-rotate-left"></i> أجل (Ajel)</span>
+                            <i class="radio-dot fa-regular fa-circle"></i>
+                        </div>
+                    </div>
+                    
+                    <div id="bankSubOptionsContainer" style="display:none; margin-top: 10px; flex-direction: row; gap: 10px;">
+                        <button type="button" id="btnVisa" class="btn-primary" style="flex:1; padding:10px; background:#1a1f36; opacity:0.5;" ondblclick="fillRemainingAmount('VISA')" onclick="selectBankSubOption('VISA')">
+                            <i class="fa-brands fa-cc-visa"></i> VISA <span class="bank-num-label"></span>
+                        </button>
+                        <button type="button" id="btnMada" class="btn-primary" style="flex:1; padding:10px; background:#28a745; opacity:0.5;" ondblclick="fillRemainingAmount('Mada')" onclick="selectBankSubOption('Mada')">
+                            <i class="fa-solid fa-credit-card"></i> Mada <span class="bank-num-label"></span>
+                        </button>
                     </div>
                 </div>
 
@@ -1684,17 +1692,7 @@
     </div>
 </div>
 
-<!-- Floating Mobile Cart Bar -->
-<div class="mobile-cart-floater" id="mobileCartFloater" onclick="openMobileCart()">
-    <div class="left-info">
-        <span class="badge-count" id="mobileCartCount">0</span>
-        <span class="total-price" id="mobileCartTotal">SAR 0.00</span>
-    </div>
-    <div class="right-action">
-        <span data-i18n="view_order">عرض الطلب</span>
-        <i class="fa-solid fa-arrow-left" id="mobileCartArrow"></i>
-    </div>
-</div>
+
 
 <!-- Toast Shelf -->
 <div class="toast-shelf" id="toastShelf"></div>

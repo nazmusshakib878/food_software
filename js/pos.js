@@ -440,9 +440,8 @@ function renderCart() {
             <table class="pos-cart-table">
                 <thead>
                     <tr>
-                        <th class="col-num">${currentLang === 'ar' ? '#' : '#'}</th>
+                        <th class="col-num">${currentLang === 'ar' ? 'الكمية' : 'Qty'}</th>
                         <th>${currentLang === 'ar' ? 'الصنف' : 'Name'}</th>
-                        <th class="col-qty">${currentLang === 'ar' ? 'الكمية' : 'Qty'}</th>
                         <th class="col-price">${currentLang === 'ar' ? 'السعر' : 'Price'}</th>
                         <th class="col-total">${currentLang === 'ar' ? 'المجموع' : 'Total'}</th>
                         <th class="col-del"></th>
@@ -470,24 +469,14 @@ function renderCart() {
 
                         return `
                             <tr onclick="selectCartItem(${idx})" class="cart-row ${selectedCartItemIndex === idx ? 'active-row' : ''}" style="cursor: pointer;">
-                                <td class="cart-item-num">${idx + 1}</td>
+                                <td class="cart-item-num">${item.qty}</td>
                                 <td class="cart-item-cell-name">
                                     <div style="display: flex; align-items: center; justify-content: space-between;">
                                         <span style="font-weight: 700;">${escapeHtml(displayName)}</span>
-                                        <button type="button" class="btn-item-customize" onclick="openItemCustomizer(${idx})" title="${currentLang === 'ar' ? 'تخصيص' : 'Customize'}">
-                                            <i class="fa-solid fa-sliders"></i>
-                                        </button>
                                     </div>
                                     ${addonsHtml}
                                     ${modifiersHtml}
                                     ${noteHtml}
-                                </td>
-                                <td class="col-qty">
-                                    <div class="cart-qty-ctrls">
-                                        <button type="button" class="cart-qty-btn" onclick="changeCartQty(${idx}, -1)">−</button>
-                                        <span class="cart-qty-val">${item.qty}</span>
-                                        <button type="button" class="cart-qty-btn" onclick="changeCartQty(${idx}, 1)">+</button>
-                                    </div>
                                 </td>
                                 <td class="col-price" style="text-align: center;">${unitPrice.toFixed(2)}</td>
                                 <td class="col-total" style="text-align: end; font-weight: 800;">${lineTotal.toFixed(2)}</td>
@@ -534,11 +523,7 @@ function renderCart() {
     if (floatBadge) floatBadge.innerText = totalCount;
     if (floatTotal) floatTotal.innerText = `${currentLang === 'ar' ? 'الإجمالي: ' : 'Total: '}${formatCurrency(totals.grandTotal)}`;
     if (floatWidget) {
-        if (catalogViewMode === 'grid8' && totalCount > 0) {
-            floatWidget.style.display = 'flex';
-        } else if (catalogViewMode !== 'grid8') {
-            floatWidget.style.display = 'none';
-        }
+        floatWidget.style.display = 'none';
     }
 
     // Mobile floater update
@@ -551,7 +536,7 @@ function renderCart() {
     if (mobileCountEl) mobileCountEl.innerText = totalQty;
     if (mobileTotalEl) mobileTotalEl.innerText = formatCurrency(totals.grandTotal);
     if (mobileFloaterEl) {
-        mobileFloaterEl.style.display = (totalQty > 0) ? 'flex' : 'none';
+        mobileFloaterEl.style.display = 'none';
     }
     if (mobileArrowEl) {
         mobileArrowEl.className = (currentLang === 'ar') ? 'fa-solid fa-arrow-left' : 'fa-solid fa-arrow-right';
@@ -1158,7 +1143,57 @@ function getRawModifiersForProduct(product) {
         ]
     };
 
-    return [GLOBAL_ONLY, GLOBAL_WITHOUT, GLOBAL_TOPPING];
+    let modifiers = [GLOBAL_ONLY, GLOBAL_WITHOUT, GLOBAL_TOPPING];
+
+    const prodName = ((product.arName || '') + ' ' + (product.enName || '')).toLowerCase();
+
+    if (prodName.includes('كباب') || prodName.includes('kebab')) {
+        modifiers.unshift({
+            type: 'without', titleAr: 'Kebab modifier options', titleEn: 'Kebab modifier options', items: [
+                { code: 'k_no_onion', labelAr: 'بدون بصل', labelEn: 'بدون بصل' },
+                { code: 'k_no_parsley', labelAr: 'بدون بقدونس', labelEn: 'بدون بقدونس' },
+                { code: 'k_no_tomato', labelAr: 'بدون طماطم', labelEn: 'بدون طماطم' },
+                { code: 'k_burnt', labelAr: 'محروق', labelEn: 'محروق' },
+                { code: 'k_extra_fat', labelAr: 'زيادة شحم', labelEn: 'زيادة شحم' }
+            ]
+        });
+    }
+
+    if (prodName.includes('لحم') || prodName.includes('meat') || prodName.includes('beef')) {
+        modifiers.unshift({
+            type: 'without', titleAr: 'Meat Burger modifier options', titleEn: 'Meat Burger modifier options', items: [
+                { code: 'mb_no_onion', labelAr: 'بدون بصل', labelEn: 'بدون بصل' },
+                { code: 'mb_no_lettuce', labelAr: 'بدون خس', labelEn: 'بدون خس' },
+                { code: 'mb_no_tomato', labelAr: 'بدون طماطم', labelEn: 'بدون طماطم' },
+                { code: 'mb_no_sauce', labelAr: 'بدون صوص', labelEn: 'بدون صوص' },
+                { code: 'mb_no_pickle', labelAr: 'بدون مخلل', labelEn: 'بدون مخلل' }
+            ]
+        });
+    }
+
+    if (prodName.includes('حاشي') || prodName.includes('hashi')) {
+        modifiers.unshift({
+            type: 'without', titleAr: 'Hashi Burger modifier options', titleEn: 'Hashi Burger modifier options', items: [
+                { code: 'hb_no_onion', labelAr: 'بدون بصل', labelEn: 'بدون بصل' },
+                { code: 'hb_no_lettuce', labelAr: 'بدون خس', labelEn: 'بدون خس' },
+                { code: 'hb_no_tomato', labelAr: 'بدون طماطم', labelEn: 'بدون طماطم' },
+                { code: 'hb_no_sauce', labelAr: 'بدون صوص', labelEn: 'بدون صوص' },
+                { code: 'hb_no_pickle', labelAr: 'بدون مخلل', labelEn: 'بدون مخلل' }
+            ]
+        });
+    }
+
+    if (prodName.includes('دجاج') || prodName.includes('chicken') || prodName.includes('طاووق') || prodName.includes('tawooq')) {
+        modifiers.unshift({
+            type: 'without', titleAr: 'Chicken modifier options', titleEn: 'Chicken modifier options', items: [
+                { code: 'ch_no_garlic', labelAr: 'بدون ثوم', labelEn: 'بدون ثوم' },
+                { code: 'ch_burnt', labelAr: 'محروق', labelEn: 'محروق' },
+                { code: 'ch_no_fries', labelAr: 'بدون بطاطس', labelEn: 'بدون بطاطس' }
+            ]
+        });
+    }
+
+    return modifiers;
 }
 
 function renderModifierGroups(groups, activeModifiers) {
