@@ -266,8 +266,8 @@ function pressNumpadQuick(val) {
 }
 
 function updatePaymentModalUI(grandTotal) {
-    const isExactDefault = paymentInput === '';
-    const paid = isExactDefault ? grandTotal : (parseFloat(paymentInput) || 0);
+    // For UI display, if no input, paid is 0 so remaining shows full amount
+    const paid = (parseFloat(paymentInput) || 0);
     const change = Math.round((paid - grandTotal) * 100) / 100;
 
     const paidEl = document.getElementById('payModalPaid');

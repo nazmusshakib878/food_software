@@ -198,17 +198,10 @@
                                 <span><i class="fa-solid fa-receipt"></i> texes</span>
                                 <span id="cartTax">0.00</span>
                             </div>
-                            <div class="row" style="font-weight: bold; font-size: 1.15em;">
+                            <div class="row" onclick="openPaymentModal()" style="font-weight: bold; font-size: 1.15em; cursor: pointer; background: var(--teal); color: white; padding: 12px; border-radius: 8px; margin-top: 5px; box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.4);">
                                 <span><i class="fa-solid fa-credit-card"></i> Total</span>
                                 <span id="cartGrandTotal" class="grand-val">SAR 0.00</span>
                             </div>
-                        </div>
-
-                        <!-- Grand Total & Pay CTA Bar -->
-                        <div class="pay-cta-banner" style="margin-top: 5px;">
-                            <button type="button" class="btn-pay-cta" onclick="openPaymentModal()" style="width: 100%; justify-content: center;">
-                                <i class="fa-solid fa-credit-card"></i> <span data-i18n="pay_action">دفع الحساب</span>
-                            </button>
                         </div>
 
                     </div>
