@@ -1148,19 +1148,77 @@ html[dir="rtl"] .pos-bottom-nav-bar {
     box-shadow: 0 -4px 12px rgba(0,0,0,0.02);
 }
 
-.totals-breakdown {
+.totals-breakdown.order-summary-card {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
     font-size: 13.5px;
-    font-weight: 700;
-    color: #64748b;
+    font-weight: 600;
+    color: #475569;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.totals-breakdown .row {
+.totals-breakdown.order-summary-card .row {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.totals-breakdown.order-summary-card .row:nth-last-child(2),
+.totals-breakdown.order-summary-card .row:last-child {
+    border-bottom: none;
+}
+
+.totals-breakdown.order-summary-card .row .lbl {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.totals-breakdown.order-summary-card .row .lbl i {
+    width: 16px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.totals-breakdown.order-summary-card .row span[id^="cart"] {
+    white-space: nowrap;
+}
+
+.totals-breakdown.order-summary-card .total-row {
+    border-top: 2px solid #e2e8f0;
+    font-size: 1.15em;
+    font-weight: 700;
+    color: #0f172a;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.totals-breakdown.order-summary-card .total-row:hover {
+    background-color: #f8fafc;
+}
+
+.totals-breakdown.order-summary-card .total-row:active {
+    background-color: #f1f5f9;
+}
+
+.totals-breakdown.order-summary-card .total-row .lbl {
+    color: #0f172a;
+}
+
+.totals-breakdown.order-summary-card .total-row .lbl i {
+    color: #0f172a;
+}
+
+.totals-breakdown.order-summary-card .total-row .grand-val {
+    color: #0f172a;
+    white-space: nowrap;
 }
 
 .pay-cta-banner {

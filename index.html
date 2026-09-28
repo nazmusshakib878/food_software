@@ -185,21 +185,21 @@
                     <div class="pos-cart-footer">
                         
                         <!-- Totals Breakdown Lines -->
-                        <div class="totals-breakdown">
+                        <div class="totals-breakdown order-summary-card">
                             <div class="row">
-                                <span>+ Additions</span>
+                                <span class="lbl"><i class="fa-solid fa-plus"></i> Additions</span>
                                 <span id="cartAddonsTotal">SAR 0.00</span>
                             </div>
                             <div class="row">
-                                <span>% Discounts</span>
-                                <span id="cartDiscount" style="color: var(--danger);">SAR 0.00</span>
+                                <span class="lbl"><i class="fa-solid fa-percent"></i> Discounts</span>
+                                <span id="cartDiscount">SAR 0.00</span>
                             </div>
                             <div class="row">
-                                <span>Taxes</span>
+                                <span class="lbl"><i class="fa-solid fa-file-invoice"></i> Taxes</span>
                                 <span id="cartTax">SAR 0.00</span>
                             </div>
-                            <div class="row" onclick="openPaymentModal()" style="font-weight: bold; font-size: 1.15em; cursor: pointer; background: var(--teal); color: white; padding: 12px; border-radius: 8px; margin-top: 5px; box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.4);">
-                                <span>Total</span>
+                            <div class="row total-row" onclick="openPaymentModal()">
+                                <span class="lbl"><i class="fa-solid fa-wallet"></i> Total</span>
                                 <span id="cartGrandTotal" class="grand-val">SAR 0.00</span>
                             </div>
                         </div>
