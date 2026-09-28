@@ -382,6 +382,7 @@
         flex: none;
         width: 100%;
         height: 100%;
+        padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
         border-radius: 0;
         z-index: 150;
     }
@@ -435,6 +436,7 @@
         flex: none;
         width: 100%;
         height: 100%;
+        padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
         border-radius: 0;
         z-index: 150;
     }
@@ -620,6 +622,7 @@
         width: 100vw;
         height: 100vh;
         height: 100dvh;
+        padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
         border-radius: 0;
         z-index: 200;
         background: var(--surface);
