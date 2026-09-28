@@ -1131,6 +1131,7 @@ html[dir="rtl"] .pos-bottom-nav-bar {
 
 .pos-cart-table-wrapper {
     flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     background: #f8fafc;
     padding: 10px;
