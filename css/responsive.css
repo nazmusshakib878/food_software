@@ -244,6 +244,7 @@
         padding: 8px;
         gap: 8px;
         height: calc(100vh - 52px);
+        height: calc(100dvh - 52px);
     }
 
     /* Keep Cart Docked on the Left */
