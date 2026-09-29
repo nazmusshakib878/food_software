@@ -185,7 +185,7 @@
                     <div class="pos-cart-footer">
                         
                         <!-- Totals Breakdown Lines -->
-                        <div class="totals-breakdown order-summary-card">
+                        <div class="totals-breakdown order-summary-card" style="display: flex; flex-direction: column; width: 100%;">
                             <div class="row">
                                 <span class="lbl"><i class="fa-solid fa-plus"></i> Additions</span>
                                 <span id="cartAddonsTotal">SAR 0.00</span>
@@ -198,9 +198,10 @@
                                 <span class="lbl"><i class="fa-solid fa-file-invoice"></i> Taxes</span>
                                 <span id="cartTax">SAR 0.00</span>
                             </div>
-                            <div class="row total-row" onclick="openPaymentModal()">
-                                <span class="lbl"><i class="fa-solid fa-wallet"></i> Total</span>
-                                <span id="cartGrandTotal" class="grand-val">SAR 0.00</span>
+                            <!-- Grand Total triggers existing payment modal -->
+                            <div class="row total-row" onclick="openPaymentModal()" style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 16px 14px; border-top: 3px solid #cbd5e1; cursor: pointer; user-select: none;">
+                                <span class="lbl" style="font-size: 1.15em; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-wallet"></i> Grand Total</span>
+                                <span id="cartGrandTotal" class="grand-val" style="font-size: 1.15em; font-weight: 800; color: #0f172a;">SAR 0.00</span>
                             </div>
                         </div>
 
