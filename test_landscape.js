@@ -15,7 +15,7 @@ const puppeteer = require('puppeteer');
         }));
     });
     
-    await page.setViewport({ width: 360, height: 640 });
+    await page.setViewport({ width: 640, height: 360 });
     await page.goto('file:///c:/Users/User/Desktop/APP/index.html?shift=started', { waitUntil: 'networkidle2' });
     
     // Check for login modal and close it if it's there
@@ -47,7 +47,7 @@ const puppeteer = require('puppeteer');
             if(panel) panel.classList.add('mobile-open');
         });
         await new Promise(r => setTimeout(r, 1000));
-        await page.screenshot({ path: 'local_mobile_cart.png' });
+        await page.screenshot({ path: 'local_landscape_cart.png' });
     } catch(e) {}
 
     

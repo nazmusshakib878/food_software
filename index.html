@@ -49,6 +49,7 @@
     <link rel="stylesheet" href="css/reports.css?v=20260909_06">
     <link rel="stylesheet" href="css/returns.css?v=1">
     <link rel="stylesheet" href="css/responsive.css?v=20260909_06">
+    <link rel="stylesheet" href="css/checkout.css?v=1">
 
     <!-- Core Vendor Libraries (PDF, QR Code & Confetti) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -883,98 +884,158 @@
 
 <!-- MODAL 2: CASHIER PAYMENT & NUMPAD -->
 <div class="modal-overlay" id="paymentModal">
-    <div class="modal-card" style="max-width: 560px;">
-        <div class="modal-header">
-            <h3><i class="fa-solid fa-money-bill-wave"></i> <span data-i18n="pay_modal_title">تأكيد السداد وإصدار الفاتورة</span></h3>
-            <button class="modal-close-btn" onclick="closePaymentModal()"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="modal-body">
-            <div class="pay-modal-grid">
-                
-                <!-- Numpad -->
-                <div>
-                    <div class="numpad-matrix">
-                        <div class="numpad-key" onclick="pressNumpad('1')">1</div>
-                        <div class="numpad-key" onclick="pressNumpad('2')">2</div>
-                        <div class="numpad-key" onclick="pressNumpad('3')">3</div>
-                        <div class="numpad-key" onclick="pressNumpad('4')">4</div>
-                        <div class="numpad-key" onclick="pressNumpad('5')">5</div>
-                        <div class="numpad-key" onclick="pressNumpad('6')">6</div>
-                        <div class="numpad-key" onclick="pressNumpad('7')">7</div>
-                        <div class="numpad-key" onclick="pressNumpad('8')">8</div>
-                        <div class="numpad-key" onclick="pressNumpad('9')">9</div>
-                        <div class="numpad-key" onclick="pressNumpad('.')">.</div>
-                        <div class="numpad-key" onclick="pressNumpad('0')">0</div>
-                        <div class="numpad-key" onclick="pressNumpad('BACK')"><i class="fa-solid fa-delete-left"></i></div>
-                        <div class="numpad-key accent" onclick="pressNumpadQuick('EXACT')" style="font-size: 11px; font-weight: 800;"><span data-i18n="numpad_exact">EXACT</span></div>
-                        <div class="numpad-key accent" onclick="pressNumpadQuick(50)">50</div>
-                        <div class="numpad-key accent" onclick="pressNumpadQuick(100)">100</div>
-                        <div class="numpad-key accent" onclick="pressNumpadQuick(200)">200</div>
-                        <div class="numpad-key accent" onclick="pressNumpadQuick(500)">500</div>
-                        <div class="numpad-key accent" onclick="pressNumpad('CLEAR')">C</div>
-                    </div>
-                </div>
-
-                <!-- Summary & Payment Methods -->
-                <div class="pay-right-box">
-                    <div class="pay-disp-card">
-                        <small data-i18n="th_total">إجمالي المطلوب</small>
-                        <div class="big-num" id="payModalTotal">SAR 0.00</div>
-                    </div>
-
-                    <div class="pay-disp-card">
-                        <small data-i18n="paid_amount">المبلغ المدفوع</small>
-                        <div class="big-num" style="color: var(--teal);" id="payModalPaid">SAR 0.00</div>
-                    </div>
-
-                    <div class="pay-disp-card" style="background: var(--orange-soft);">
-                        <small style="color: var(--orange);" id="changeLabel" data-i18n="change_return">المتبقي / الباقي للعميل</small>
-                        <div class="big-num" style="color: var(--orange);" id="payModalChange">0.00</div>
-                    </div>
-
-                    <div class="pay-methods-selector" id="paymentMethodsContainer">
-                        <div class="pay-method-radio active" data-method="Cash" id="payBtn_Cash" onclick="selectPayMethod('Cash', this)">
-                            <span><i class="fa-solid fa-money-bill-1-wave"></i> <span data-i18n="pay_method_cash">نقدي (Cash)</span></span>
-                            <i class="radio-dot fa-solid fa-circle-check"></i>
-                        </div>
-                        <div class="pay-method-radio" data-method="Bank 236" onclick="selectPayMethod('Bank 236', this)">
-                            <span><i class="fa-solid fa-building-columns"></i> Bank 236</span>
-                            <i class="radio-dot fa-regular fa-circle"></i>
-                        </div>
-                        <div class="pay-method-radio" data-method="Bank 237" onclick="selectPayMethod('Bank 237', this)">
-                            <span><i class="fa-solid fa-building-columns"></i> Bank 237</span>
-                            <i class="radio-dot fa-regular fa-circle"></i>
-                        </div>
-                        <div class="pay-method-radio" data-method="Bank 238" onclick="selectPayMethod('Bank 238', this)">
-                            <span><i class="fa-solid fa-building-columns"></i> Bank 238</span>
-                            <i class="radio-dot fa-regular fa-circle"></i>
-                        </div>
-                        <div class="pay-method-radio" data-method="Bank 239" onclick="selectPayMethod('Bank 239', this)">
-                            <span><i class="fa-solid fa-building-columns"></i> Bank 239</span>
-                            <i class="radio-dot fa-regular fa-circle"></i>
-                        </div>
-                        <div class="pay-method-radio" data-method="Ajel" onclick="selectPayMethod('Ajel', this)">
-                            <span><i class="fa-solid fa-clock-rotate-left"></i> أجل (Ajel)</span>
-                            <i class="radio-dot fa-regular fa-circle"></i>
-                        </div>
-                    </div>
-                    
-                    <div id="bankSubOptionsContainer" style="display:none; margin-top: 10px; flex-direction: row; gap: 10px;">
-                        <button type="button" id="btnVisa" class="btn-primary" style="flex:1; padding:10px; background:#1a1f36; opacity:0.5;" ondblclick="fillRemainingAmount('VISA')" onclick="selectBankSubOption('VISA')">
-                            <i class="fa-brands fa-cc-visa"></i> VISA <span class="bank-num-label"></span>
-                        </button>
-                        <button type="button" id="btnMada" class="btn-primary" style="flex:1; padding:10px; background:#28a745; opacity:0.5;" ondblclick="fillRemainingAmount('Mada')" onclick="selectBankSubOption('Mada')">
-                            <i class="fa-solid fa-credit-card"></i> Mada <span class="bank-num-label"></span>
-                        </button>
-                    </div>
-                </div>
-
+    <div class="modal-card checkout-screen">
+        <div class="checkout-header">
+            <button class="checkout-back-btn" onclick="closePaymentModal()">Back</button>
+            <div class="checkout-remaining">
+                <span id="payModalRemaining">0.00</span> <span>:Remaining</span>
             </div>
         </div>
-        <div class="modal-footer">
-            <button class="btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 15px;" onclick="completeOrderAndShowReceipt()">
-                <i class="fa-solid fa-check"></i> <span data-i18n="btn_complete_order">إتمام الطلب وطباعة الفاتورة</span>
-            </button>
+        
+        <div class="checkout-body">
+            <!-- Left Numpad -->
+            <div class="checkout-numpad">
+                <div class="numpad-key" onclick="pressNumpad('1')">1</div>
+                <div class="numpad-key" onclick="pressNumpad('2')">2</div>
+                <div class="numpad-key" onclick="pressNumpad('3')">3</div>
+                
+                <div class="numpad-key" onclick="pressNumpad('4')">4</div>
+                <div class="numpad-key" onclick="pressNumpad('5')">5</div>
+                <div class="numpad-key" onclick="pressNumpad('6')">6</div>
+                
+                <div class="numpad-key" onclick="pressNumpad('7')">7</div>
+                <div class="numpad-key" onclick="pressNumpad('8')">8</div>
+                <div class="numpad-key" onclick="pressNumpad('9')">9</div>
+                
+                <div class="numpad-key" onclick="pressNumpad('0')">0</div>
+                <div class="numpad-key accent" onclick="pressNumpadQuick('50')">50</div>
+                <div class="numpad-key accent" onclick="pressNumpadQuick('100')">100</div>
+                
+                <div class="numpad-key accent" onclick="pressNumpadQuick('200')">200</div>
+                <div class="numpad-key accent" onclick="pressNumpadQuick('500')">500</div>
+                <div class="numpad-key" onclick="pressNumpad('.')">.</div>
+                
+                <div class="numpad-key numpad-action" onclick="pressNumpad('BACK')">⌫</div>
+                <div class="numpad-key numpad-action" onclick="pressNumpad('CLEAR')">C</div>
+            </div>
+            
+            <div class="checkout-divider"></div>
+            
+            <!-- Right Accordion -->
+            <div class="checkout-methods">
+                <!-- Cash -->
+                <div class="pay-accordion" id="acc_cash">
+                    <div class="pay-accordion-header" onclick="toggleAccordion('cash')">
+                        <span class="pay-accordion-title">Cash</span>
+                        <i class="fa-solid fa-money-bill-1-wave"></i>
+                    </div>
+                    <div class="pay-accordion-body">
+                        <div class="pay-input-row">
+                            <input type="text" id="input_cash" readonly onclick="handleInputTap('cash')" ondblclick="fillRemaining('cash')" placeholder="0.00">
+                            <span>: Cash</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bank 236 -->
+                <div class="pay-accordion" id="acc_bank236">
+                    <div class="pay-accordion-header" onclick="toggleAccordion('bank236')">
+                        <span class="pay-accordion-title">Bank 236</span>
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div class="pay-accordion-body">
+                        <div class="pay-input-split">
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank236_visa" readonly onclick="handleInputTap('bank236_visa')" ondblclick="fillRemaining('bank236_visa')" placeholder="0.00">
+                                <span>: VISA236</span>
+                            </div>
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank236_mada" readonly onclick="handleInputTap('bank236_mada')" ondblclick="fillRemaining('bank236_mada')" placeholder="0.00">
+                                <span>: Mada236</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bank 237 -->
+                <div class="pay-accordion" id="acc_bank237">
+                    <div class="pay-accordion-header" onclick="toggleAccordion('bank237')">
+                        <span class="pay-accordion-title">Bank 237</span>
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div class="pay-accordion-body">
+                        <div class="pay-input-split">
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank237_visa" readonly onclick="handleInputTap('bank237_visa')" ondblclick="fillRemaining('bank237_visa')" placeholder="0.00">
+                                <span>: VISA237</span>
+                            </div>
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank237_mada" readonly onclick="handleInputTap('bank237_mada')" ondblclick="fillRemaining('bank237_mada')" placeholder="0.00">
+                                <span>: Mada237</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bank 238 -->
+                <div class="pay-accordion" id="acc_bank238">
+                    <div class="pay-accordion-header" onclick="toggleAccordion('bank238')">
+                        <span class="pay-accordion-title">Bank 238</span>
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div class="pay-accordion-body">
+                        <div class="pay-input-split">
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank238_visa" readonly onclick="handleInputTap('bank238_visa')" ondblclick="fillRemaining('bank238_visa')" placeholder="0.00">
+                                <span>: VISA238</span>
+                            </div>
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank238_mada" readonly onclick="handleInputTap('bank238_mada')" ondblclick="fillRemaining('bank238_mada')" placeholder="0.00">
+                                <span>: Mada238</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bank 239 -->
+                <div class="pay-accordion" id="acc_bank239">
+                    <div class="pay-accordion-header" onclick="toggleAccordion('bank239')">
+                        <span class="pay-accordion-title">Bank 239</span>
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div class="pay-accordion-body">
+                        <div class="pay-input-split">
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank239_visa" readonly onclick="handleInputTap('bank239_visa')" ondblclick="fillRemaining('bank239_visa')" placeholder="0.00">
+                                <span>: VISA239</span>
+                            </div>
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank239_mada" readonly onclick="handleInputTap('bank239_mada')" ondblclick="fillRemaining('bank239_mada')" placeholder="0.00">
+                                <span>: Mada239</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ajel -->
+                <div class="pay-accordion" id="acc_credit">
+                    <div class="pay-accordion-header" onclick="toggleAccordion('credit')">
+                        <span class="pay-accordion-title">أجل</span>
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <div class="pay-accordion-body">
+                        <div class="pay-input-row">
+                            <input type="text" id="input_credit" readonly onclick="handleInputTap('credit')" ondblclick="fillRemaining('credit')" placeholder="0.00">
+                            <span>: أجل</span>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <div class="checkout-footer">
+            <button class="checkout-pay-btn" onclick="processCheckoutPay()">Pay  $</button>
         </div>
     </div>
 </div>
