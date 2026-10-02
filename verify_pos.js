@@ -251,7 +251,7 @@ selectedPayMethod = 'Cash';
 paymentInput = '206.43';
 currentUser.name = 'Nawaf Saeed';
 
-completeOrderAndShowReceipt();
+completeOrderAndShowReceipt(null, 'Cash', {}, 206.43);
 renderReceipt(lastCompletedOrder);
 
 assert("Receipt store name is NUR FOODES", elements['recStoreName'].innerText === 'NUR FOODES');

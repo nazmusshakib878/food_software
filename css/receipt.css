@@ -5,9 +5,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: #1e293b; /* Dark PDF Reader background matching WhatsApp Web PDF viewer */
-    padding: 18px 10px;
-    border-radius: 12px;
+    background: #f1f5f9;
+    padding: 14px 8px;
+    border-radius: 10px;
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
@@ -16,10 +16,10 @@
 
 .thermal-paper {
     width: 100%;
-    max-width: 300px;
+    max-width: 310px;
     background: #ffffff;
-    padding: 16px 14px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.16);
+    padding: 14px 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     font-family: 'Courier Prime', 'Courier New', 'Cairo', Courier, monospace, sans-serif;
     color: #000000;
     line-height: 1.35;
@@ -28,6 +28,7 @@
     box-sizing: border-box;
     margin: 0 auto;
     overflow: hidden;
+    border: none;
 }
 
 /* Header */
@@ -324,7 +325,120 @@
     color: #000;
 }
 
-/* Native Print Stylesheet for POS Thermal Printers & Virtual PDF Printers */
+/* Kitchen Paper Styling (KOT) */
+.kitchen-paper {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+}
+
+.kitchen-paper .kot-header {
+    text-align: center;
+    border-bottom: 2px solid #000000;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+.kitchen-paper .kot-title {
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.kitchen-paper .kot-order-num {
+    font-size: 26px;
+    font-weight: 900;
+    margin: 4px 0;
+    letter-spacing: 1px;
+}
+
+.kitchen-paper .kot-type-badge {
+    display: inline-block;
+    border: 2px solid #000000;
+    padding: 3px 12px;
+    font-size: 13px;
+    font-weight: 900;
+    border-radius: 4px;
+    margin: 3px 0;
+}
+
+.kitchen-paper .kot-meta-row {
+    font-size: 11px;
+    margin-top: 3px;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4px;
+}
+
+.kitchen-paper .kot-item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #000000;
+    padding-bottom: 8px;
+}
+
+.kitchen-paper .kot-qty-badge {
+    font-size: 18px;
+    font-weight: 900;
+    border: 2px solid #000000;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1.1;
+    min-width: 34px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.kitchen-paper .kot-item-details {
+    flex: 1;
+}
+
+.kitchen-paper .kot-item-name {
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+.kitchen-paper .kot-item-subname {
+    font-size: 12px;
+    font-weight: 700;
+    color: #333333;
+}
+
+.kitchen-paper .kot-addon-line {
+    font-size: 12px;
+    font-weight: 800;
+    margin-top: 2px;
+    color: #000000;
+}
+
+.kitchen-paper .kot-note-line {
+    font-size: 12px;
+    font-weight: 900;
+    border: 1px solid #000000;
+    padding: 2px 6px;
+    display: inline-block;
+    margin-top: 4px;
+    white-space: pre-wrap;
+    background: #000000;
+    color: #ffffff;
+    border-radius: 3px;
+}
+
+.kitchen-paper .kot-footer {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 11px;
+    font-weight: 800;
+    border-top: 1px dashed #000000;
+    padding-top: 6px;
+}
+
+/* Native Print Stylesheet for POS Thermal Printers (RawBT, ESC/POS, Virtual PDF) */
 @page {
     margin: 0;
     size: auto;
@@ -336,6 +450,8 @@
         print-color-adjust: exact !important;
         animation: none !important;
         transition: none !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
         opacity: 1 !important;
     }
 
@@ -343,33 +459,43 @@
         margin: 0 !important;
         padding: 0 !important;
         background: #ffffff !important;
+        background-color: #ffffff !important;
         color: #000000 !important;
         width: 100% !important;
         height: auto !important;
     }
 
-    /* Hide the main app wrapper to prevent blank pages when printing from main window */
-    body > :not(#receiptModal) {
+    /* Hide the entire application DOM except the active print target */
+    body > :not(#receiptModal):not(#kitchenTicketModal):not(#posSilentPrintFrame) {
         display: none !important;
-    }
-    
-    /* Ensure only the open modal is printed */
-    #receiptModal {
-        position: static !important;
-        display: block !important;
-        background: transparent !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        overflow: visible !important;
     }
     
     #receiptModal:not(.open) {
         display: none !important;
     }
 
-    #receiptModal .modal-card {
+    #kitchenTicketModal:not(.open) {
+        display: none !important;
+    }
+
+    /* Modal wrappers in print: completely flat, pure white, borderless, zero margins */
+    #receiptModal,
+    #kitchenTicketModal {
+        position: static !important;
+        display: block !important;
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    #receiptModal .modal-card,
+    #kitchenTicketModal .modal-card {
         position: static !important;
         box-shadow: none !important;
         border: none !important;
@@ -379,45 +505,76 @@
         max-width: 100% !important;
         max-height: none !important;
         overflow: visible !important;
-        background: transparent !important;
+        background: #ffffff !important;
+        background-color: #ffffff !important;
     }
 
-    #receiptModal .modal-body {
+    #receiptModal .modal-body,
+    #kitchenTicketModal .modal-body {
         overflow: visible !important;
         max-height: none !important;
         padding: 0 !important;
         margin: 0 !important;
+        background: #ffffff !important;
+        background-color: #ffffff !important;
     }
 
-    #receiptModal .receipt-container {
+    /* Pure white receipt container: ELIMINATES ALL BLACK BARS */
+    .receipt-container,
+    #receiptModal .receipt-container,
+    #kitchenTicketModal .receipt-container {
         padding: 0 !important;
-        margin: 0 !important;
+        margin: 0 auto !important;
         overflow: visible !important;
         display: block !important;
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
 
-    /* Hide UI elements from the printed paper */
+    /* Hide UI controls from the printed thermal paper */
     #receiptModal .modal-header,
     #receiptModal .modal-footer,
-    #receiptModal .modal-close-btn {
+    #receiptModal .modal-close-btn,
+    #kitchenTicketModal .modal-header,
+    #kitchenTicketModal .modal-footer,
+    #kitchenTicketModal .modal-close-btn {
         display: none !important;
     }
 
-    /* Configure the thermal paper element for standard 80mm roll and A4/PDF */
+    /* Configure the thermal paper element: Safe 80mm printable width (72mm) */
     .thermal-paper,
-    #receiptModal .thermal-paper {
+    #receiptModal .thermal-paper,
+    #kitchenTicketModal .thermal-paper {
         display: block !important;
         visibility: visible !important;
         position: static !important;
-        width: 76mm !important; /* 80mm paper width minus printer margins */
-        max-width: 76mm !important;
+        width: 72mm !important; /* Standard 80mm roll printable area */
+        max-width: 72mm !important;
         margin: 0 auto !important;
-        padding: 8px 6px !important;
+        padding: 2mm 2mm 4mm 2mm !important;
         box-shadow: none !important;
-        /* Ensure font renders sharply in black and white */
+        border: none !important;
+        outline: none !important;
         color: #000000 !important;
         background: #ffffff !important;
+        background-color: #ffffff !important;
         overflow: visible !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 58mm compact roll override */
+    .thermal-paper.paper-58mm,
+    #receiptModal .thermal-paper.paper-58mm,
+    #kitchenTicketModal .thermal-paper.paper-58mm {
+        width: 48mm !important;
+        max-width: 48mm !important;
+        padding: 1mm 1mm 3mm 1mm !important;
+        font-size: 10px !important;
     }
 
     .thermal-paper * {

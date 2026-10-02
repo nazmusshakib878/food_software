@@ -171,7 +171,10 @@ function filterAllOrders() {
 }
 
 window.printKitchen = function(orderId) {
-    if (typeof showToast === 'function') {
+    const order = (typeof orders !== 'undefined') ? orders.find(o => o.id === orderId) : null;
+    if (order && typeof executeKitchenPrint === 'function') {
+        executeKitchenPrint(order);
+    } else if (typeof showToast === 'function') {
         showToast('Kitchen Print Sent: ' + orderId, 'success');
     }
 };

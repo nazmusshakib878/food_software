@@ -168,10 +168,20 @@ function markOrderDelivered(orderId) {
 function kitchenPrintOrder(orderId) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
-    if (typeof executeKitchenPrint === 'function') {
-        executeKitchenPrint(order);
+    if (posPreferences && posPreferences.autoPrint) {
+        if (typeof executeKitchenPrint === 'function') {
+            executeKitchenPrint(order);
+        } else {
+            showToast('Kitchen Print function not available', 'danger');
+        }
     } else {
-        showToast('Kitchen Print function not available', 'danger');
+        if (typeof previewKitchenTicket === 'function') {
+            previewKitchenTicket(orderId);
+        } else if (typeof executeKitchenPrint === 'function') {
+            executeKitchenPrint(order);
+        } else {
+            showToast('Kitchen Print function not available', 'danger');
+        }
     }
 }
 

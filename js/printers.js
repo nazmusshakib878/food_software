@@ -122,7 +122,27 @@ function renderPrintingDevicesModal() {
         return;
     }
 
-    listEl.innerHTML = printers.map(p => {
+    const cashierPrn = printers.find(p => p.role === 'cashier');
+    const kitchenPrn = printers.find(p => p.role === 'kitchen');
+    const sameDestination = cashierPrn && kitchenPrn && cashierPrn.ip && kitchenPrn.ip &&
+        (cashierPrn.ip.trim().toLowerCase() === kitchenPrn.ip.trim().toLowerCase());
+
+    let sameIpNoticeHtml = '';
+    if (sameDestination) {
+        sameIpNoticeHtml = `
+            <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; font-size: 12px; color: #1e40af; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-circle-info" style="font-size: 16px; flex-shrink: 0;"></i>
+                <div>
+                    <strong>${currentLang === 'ar' ? 'تنبيه الوجهة الموحدة:' : 'Shared Device Destination:'}</strong>
+                    ${currentLang === 'ar' 
+                        ? `طابعة الكاشير وطابعة المطبخ تشتركان في نفس العنوان (${escapeHtml(cashierPrn.ip)}). سيتم إرسال الفاتورة وبون المطبخ كمهمتي طباعة مستقلتين تماماً.` 
+                        : `Cashier and Kitchen printers point to the same destination (${escapeHtml(cashierPrn.ip)}). Customer Invoice and KOT are processed as separate independent jobs.`}
+                </div>
+            </div>
+        `;
+    }
+
+    listEl.innerHTML = sameIpNoticeHtml + printers.map(p => {
         const roleName = p.role === 'cashier' 
             ? (currentLang === 'ar' ? 'طابعة الكاشير والفواتير' : 'Cashier Printer')
             : p.role === 'kitchen'
@@ -422,6 +442,18 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
         return;
     }
 
+    // If kitchen modal is open and printing kitchen ticket, use direct native window.print()
+    const kitchenModal = document.getElementById('kitchenTicketModal');
+    if (role === 'kitchen' && kitchenModal && kitchenModal.classList.contains('open')) {
+        setTimeout(() => {
+            window.print();
+        }, 150);
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? `تم إرسال أمر طباعة المطبخ (${escapeHtml(title)})` : `Kitchen print job sent (${escapeHtml(title)})`, 'success');
+        }
+        return;
+    }
+
     // Silent IFrame Execution for Reports or Background Print Jobs
     try {
         let printFrame = document.getElementById('posSilentPrintFrame');
@@ -431,11 +463,13 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
             document.body.appendChild(printFrame);
         }
 
+        const safePrintWidth = (targetPrinter && targetPrinter.paperWidth === '58mm') ? '48mm' : '72mm';
+
         // Render in viewport behind UI so Chrome/Edge compositor does not cull it
         printFrame.style.position = 'fixed';
         printFrame.style.right = '0';
         printFrame.style.bottom = '0';
-        printFrame.style.width = '80mm';
+        printFrame.style.width = (targetPrinter && targetPrinter.paperWidth === '58mm') ? '58mm' : '80mm';
         printFrame.style.height = '100vh';
         printFrame.style.border = 'none';
         printFrame.style.opacity = '1';
@@ -474,11 +508,14 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
                         box-sizing: border-box;
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
+                        box-shadow: none !important;
+                        text-shadow: none !important;
                     }
                     html, body {
                         margin: 0 !important;
                         padding: 0 !important;
                         background: #ffffff !important;
+                        background-color: #ffffff !important;
                         color: #000000 !important;
                         width: 100% !important;
                         height: auto !important;
@@ -486,16 +523,19 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
                         -webkit-font-smoothing: antialiased;
                     }
                     #receiptModal,
-                    .modal-card {
+                    #kitchenTicketModal,
+                    .modal-card,
+                    .receipt-container {
                         display: block !important;
                         position: static !important;
                         width: 100% !important;
                         max-width: 100% !important;
-                        margin: 0 !important;
+                        margin: 0 auto !important;
                         padding: 0 !important;
                         border: none !important;
                         box-shadow: none !important;
-                        background: transparent !important;
+                        background: #ffffff !important;
+                        background-color: #ffffff !important;
                         overflow: visible !important;
                     }
                     .modal-header,
@@ -507,17 +547,21 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
                         display: block !important;
                         visibility: visible !important;
                         position: static !important;
-                        width: 76mm !important;
-                        max-width: 76mm !important;
+                        width: ${safePrintWidth} !important;
+                        max-width: ${safePrintWidth} !important;
                         margin: 0 auto !important;
-                        padding: 8px 6px !important;
+                        padding: 2mm 2mm 4mm 2mm !important;
                         box-shadow: none !important;
+                        border: none !important;
+                        outline: none !important;
                         color: #000000 !important;
                         background: #ffffff !important;
+                        background-color: #ffffff !important;
                         font-family: 'Courier Prime', 'Courier New', 'Cairo', Courier, monospace, sans-serif !important;
                         font-size: 11.5px !important;
                         line-height: 1.35 !important;
                         overflow: visible !important;
+                        box-sizing: border-box !important;
                     }
                     .thermal-paper * {
                         visibility: visible !important;
@@ -644,18 +688,11 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
                         margin-top: 8px !important;
                         font-size: 10.5px !important;
                     }
-                    #receiptCombinedKotSection {
-                        margin-top: 20px !important;
-                        border-top: 2px dashed #000 !important;
-                        padding-top: 10px !important;
-                    }
                 </style>
             </head>
-            <body style="margin:0;padding:0;background:#ffffff;">
-                <div id="receiptModal" class="open" style="display:block;position:static;width:100%;">
-                    <div class="modal-card" style="box-shadow:none;border:none;padding:0;margin:0;width:100%;max-width:100%;">
-                        ${contentHtml}
-                    </div>
+            <body style="margin:0;padding:0;background:#ffffff;background-color:#ffffff;">
+                <div style="width:100%;margin:0 auto;padding:0;background:#ffffff;background-color:#ffffff;">
+                    ${contentHtml}
                 </div>
             </body>
             </html>
@@ -687,8 +724,7 @@ function executeKitchenPrint(order) {
     if (typeof getKitchenOrderTicketHtml === 'function') {
         const kotHtml = getKitchenOrderTicketHtml(order);
         if (kotHtml) {
-            // Need a container for styles to apply correctly or wrap in a div
-            const contentHtml = `<div class="receipt-container">${kotHtml}</div>`;
+            const contentHtml = `<div class="thermal-paper kitchen-paper" id="thermalKitchenNode">${kotHtml}</div>`;
             routePrintJob('kitchen', contentHtml, `KOT Order #${order.seq || order.id.substring(0, 5)}`);
         } else {
             if (typeof showToast === 'function') showToast("Could not generate Kitchen Print", "warning");

@@ -1195,14 +1195,6 @@
                         <p class="footer-en">Thank you for dining with us!</p>
                         <p class="footer-ar" dir="rtl">شكراً لزيارتكم ونتمنى لكم يوماً سعيداً</p>
                     </div>
-
-                    <!-- COMBINED KOT SECTION (Tear/Cut Here) -->
-                    <div id="receiptCombinedKotSection" style="display: none; margin-top: 30px; margin-bottom: 20px; border-top: 2px dashed #000; text-align: center; position: relative;">
-                        <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #fff; padding: 0 10px; font-size: 14px; color: #000;">
-                            ✂️ Cut Here
-                        </div>
-                        <div id="receiptCombinedKotContent" style="padding-top: 20px;"></div>
-                    </div>
                 </div>
             </div>
 
@@ -1217,6 +1209,33 @@
                 </button>
             </div>
             <button class="btn-danger" style="background: var(--muted);" onclick="closeReceiptModal()">
+                <span data-i18n="btn_close">إغلاق</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: KITCHEN ORDER TICKET (KOT) -->
+<div class="modal-overlay" id="kitchenTicketModal">
+    <div class="modal-card" style="max-width: 420px;">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-utensils"></i> <span data-i18n="kitchen_ticket_title">تذكرة تجهيز المطبخ (Kitchen Order Ticket)</span></h3>
+            <button class="modal-close-btn" onclick="closeKitchenTicketModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="receipt-container">
+                <div class="thermal-paper kitchen-paper" id="thermalKitchenNode">
+                    <!-- Injected dynamically via renderKitchenTicket -->
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <button class="btn-primary" onclick="printKitchenTicketDirect()">
+                    <i class="fa-solid fa-print"></i> <span data-i18n="btn_print_kot">طباعة المطبخ (Print KOT)</span>
+                </button>
+            </div>
+            <button class="btn-danger" style="background: var(--muted);" onclick="closeKitchenTicketModal()">
                 <span data-i18n="btn_close">إغلاق</span>
             </button>
         </div>
@@ -1781,36 +1800,6 @@
 </div>
 
 
-
-<!-- PRINTING DEVICES MODAL -->
-<div class="modal-overlay" id="printingDevicesModal">
-    <div class="modal-card">
-        <div class="modal-header">
-            <h3><i class="fa-solid fa-print"></i> Printing Devices</h3>
-            <button class="modal-close-btn" onclick="closePrintingDevicesModal()"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="modal-body" style="background: #f8fafc;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <button type="button" class="btn-primary" onclick="promptAddPrinter()"><i class="fa-solid fa-plus"></i> Add Printer</button>
-                <button type="button" class="btn-secondary" onclick="syncPrinters()"><i class="fa-solid fa-rotate"></i> Sync</button>
-            </div>
-            
-            <div id="printersListContainer" style="display: flex; flex-direction: column; gap: 15px;">
-                <!-- Dynamically populated via JS -->
-            </div>
-        </div>
-        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; background: white;">
-            <label class="toggle-switch-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600;">
-                <input type="checkbox" id="autoPrintToggle" onchange="onAutoPrintToggled(this.checked)">
-                Automatic Printing (No Confirmation)
-            </label>
-            <div>
-                <button type="button" class="btn-primary" onclick="savePrintingDevicesSettings()">Save Settings</button>
-                <button type="button" class="btn-secondary" onclick="closePrintingDevicesModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Toast Shelf -->
 <div class="toast-shelf" id="toastShelf"></div>

@@ -148,23 +148,6 @@ function renderReceipt(order) {
         }
     }
 
-    // Populate the Combined KOT Section
-    const kotSection = document.getElementById('receiptCombinedKotSection');
-    const kotContent = document.getElementById('receiptCombinedKotContent');
-    if (kotSection && kotContent) {
-        try {
-            const kotHtml = getKitchenOrderTicketHtml(order);
-            if (kotHtml && kotHtml.trim() !== '') {
-                kotContent.innerHTML = kotHtml;
-                kotSection.style.display = 'block';
-            } else {
-                kotSection.style.display = 'none';
-            }
-        } catch (e) {
-            console.error("Error generating KOT HTML:", e);
-            kotSection.style.display = 'none';
-        }
-    }
 }
 
 function printReceiptDirect() {
@@ -212,11 +195,22 @@ function getKitchenOrderTicketHtml(targetOrder) {
     const order = targetOrder || lastCompletedOrder || (typeof orders !== 'undefined' ? orders[0] : null);
     if (!order) return '';
 
-    const typeStr = (order.type === 'dine_in')
-        ? (currentLang === 'ar' ? `محلي - طاولة ${order.table && order.table !== '-' ? order.table : '1'}` : `Dine-in - Table ${order.table && order.table !== '-' ? order.table : '1'}`)
-        : (order.type === 'takeaway' ? (currentLang === 'ar' ? 'سفري' : 'Takeaway') : (currentLang === 'ar' ? 'توصيل' : 'Delivery'));
+    const rawOrderNum = order.id || `ORD-${order.seq || '1013'}`;
+    const orderId = rawOrderNum.replace(/^#/, '');
 
-    const kitchenPrinter = printers.find(p => p.role === 'kitchen');
+    let typeDisplay;
+    if (order.type === 'dine_in' || order.orderTypeId === 'local') {
+        const tableNum = (order.table && order.table !== '-') ? order.table : 'Table 1';
+        typeDisplay = `DINE-IN (${tableNum})`;
+    } else if (order.type === 'takeaway' || order.orderTypeId === 'receive') {
+        typeDisplay = `TAKEAWAY`;
+    } else if (order.type === 'delivery' || order.orderTypeId === 'delivery') {
+        typeDisplay = `DELIVERY`;
+    } else {
+        typeDisplay = String(order.type || order.orderType || 'DINE-IN').toUpperCase();
+    }
+
+    const kitchenPrinter = (typeof printers !== 'undefined' && Array.isArray(printers)) ? printers.find(p => p.role === 'kitchen') : null;
     const disabledCategories = kitchenPrinter && Array.isArray(kitchenPrinter.disabledCategories) ? kitchenPrinter.disabledCategories : [];
     const filteredItems = (order.items || []).filter(item => !disabledCategories.includes(item.catId));
 
@@ -224,24 +218,24 @@ function getKitchenOrderTicketHtml(targetOrder) {
 
     const itemsHtml = filteredItems.map(item => {
         const addonsHtml = (item.addons && item.addons.length)
-            ? `<div style="font-size: 13px; font-weight: bold; margin-top: 2px;">+ ${item.addons.map(a => escapeHtml(currentLang === 'ar' ? (a.nameAr || a.nameEn) : (a.nameEn || a.nameAr))).join(', ')}</div>`
+            ? `<div class="kot-addon-line">+ ${item.addons.map(a => escapeHtml(a.nameAr ? `${a.nameAr} / ${a.nameEn || ''}` : (a.nameEn || ''))).join(', ')}</div>`
             : '';
         const modifiersHtml = (item.modifiers && item.modifiers.length)
-            ? `<div style="font-size: 13px; font-weight: bold; margin-top: 2px; color: #444;">* ${item.modifiers.map(m => `${m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '*')} ${escapeHtml(currentLang === 'ar' ? m.labelAr : m.labelEn)}`).join(', ')}</div>`
+            ? `<div class="kot-addon-line" style="color: #444;">* ${item.modifiers.map(m => `${m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '*')} ${escapeHtml(m.labelAr ? `${m.labelAr} / ${m.labelEn || ''}` : (m.labelEn || ''))}`).join(', ')}</div>`
             : '';
-        const notePrefix = currentLang === 'ar' ? '** ملاحظة: ' : '** Note: ';
         const noteHtml = item.note
-            ? `<div style="font-size: 13px; font-weight: 900; background: #000; color: #fff; padding: 2px 6px; display: inline-block; margin-top: 4px; border-radius: 3px; white-space: pre-wrap;">${notePrefix}${escapeHtml(item.note)} **</div>`
+            ? `<div class="kot-note-line">** NOTE: ${escapeHtml(item.note)} **</div>`
             : '';
 
+        const arText = item.arName || '';
+        const enText = item.enName || item.name || '';
+
         return `
-            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; border-bottom: 1px dashed #777; padding-bottom: 8px; text-align: ${currentLang === 'ar' ? 'right' : 'left'};" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
-                <span style="font-size: 20px; font-weight: 900; border: 2px solid #000; padding: 2px 8px; border-radius: 4px; line-height: 1.1;">
-                    ${item.qty}X
-                </span>
-                <div style="flex: 1;">
-                    <div style="font-size: 16px; font-weight: 900;">${escapeHtml(currentLang === 'ar' ? item.arName : item.enName)}</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #444;">${escapeHtml(currentLang === 'ar' ? item.enName : item.arName)}</div>
+            <div class="kot-item-row" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
+                <span class="kot-qty-badge">${item.qty}X</span>
+                <div class="kot-item-details">
+                    <div class="kot-item-name">${escapeHtml(arText || enText)}</div>
+                    ${arText && enText ? `<div class="kot-item-subname">${escapeHtml(enText)}</div>` : ''}
                     ${addonsHtml}
                     ${modifiersHtml}
                     ${noteHtml}
@@ -250,26 +244,54 @@ function getKitchenOrderTicketHtml(targetOrder) {
         `;
     }).join('');
 
-    const kotHeaderTitle = currentLang === 'ar' ? '*** تذكرة تجهيز المطبخ ***' : '*** Kitchen Order Ticket (KOT) ***';
+    const kotHeaderTitle = currentLang === 'ar' ? '*** تذكرة تجهيز المطبخ (KOT) ***' : '*** Kitchen Order Ticket (KOT) ***';
     const kotFooterNotice = currentLang === 'ar' ? '[ شاشة المطبخ - جاهز للطهي ]' : '[ Kitchen Display - Ready to Cook ]';
     const timeLabel = currentLang === 'ar' ? 'الوقت:' : 'Time:';
     const cashierLabel = currentLang === 'ar' ? 'الكاشير:' : 'Cashier:';
+    const timeStr = order.dateFormatted || new Date().toLocaleString();
+    const cashierName = order.cashier || (typeof currentUser !== 'undefined' ? currentUser.name : 'Cashier') || 'Cashier';
 
     return `
-        <div class="kot-header" style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 10px;">
-            <div style="font-size: 14px; font-weight: 900;">${kotHeaderTitle}</div>
-            <div style="font-size: 28px; font-weight: 900; margin: 4px 0;">${order.id}</div>
-            <div style="display: inline-block; border: 2px solid #000; padding: 4px 12px; font-size: 14px; font-weight: 900; border-radius: 6px; margin: 4px 0;">${typeStr}</div>
-            <div style="font-size: 11px; margin-top: 4px;">${timeLabel} ${order.dateFormatted || new Date().toLocaleString()}</div>
-            <div style="font-size: 11px;">${cashierLabel} ${order.cashier || 'Cashier'}</div>
+        <div class="kot-header">
+            <div class="kot-title">${kotHeaderTitle}</div>
+            <div class="kot-order-num">${orderId}</div>
+            <div class="kot-type-badge">${typeDisplay}</div>
+            <div class="kot-meta-row">
+                <span>${timeLabel} ${timeStr}</span>
+                <span>${cashierLabel} ${cashierName}</span>
+            </div>
         </div>
-        <div>
+        <div class="kot-items-list">
             ${itemsHtml}
         </div>
-        <div style="text-align: center; margin-top: 14px; font-size: 11px; border-top: 1px solid #000; padding-top: 6px;">
+        <div class="kot-footer">
             ${kotFooterNotice}
         </div>
     `;
+}
+
+function renderKitchenTicket(order) {
+    if (!order) return;
+    const node = document.getElementById('thermalKitchenNode');
+    if (node) {
+        node.innerHTML = getKitchenOrderTicketHtml(order);
+    }
+}
+
+function previewKitchenTicket(orderId) {
+    const order = (typeof orders !== 'undefined') ? orders.find(o => o.id === orderId) : null;
+    if (!order) return;
+    renderKitchenTicket(order);
+    const modal = document.getElementById('kitchenTicketModal');
+    if (modal) modal.classList.add('open');
+}
+
+function closeKitchenTicketModal() {
+    document.getElementById('kitchenTicketModal')?.classList.remove('open');
+}
+
+function printKitchenTicketDirect() {
+    window.print();
 }
 
 
