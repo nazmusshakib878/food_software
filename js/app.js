@@ -8,11 +8,15 @@ function switchView(viewName) {
     document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
 
     if (viewName === 'pos') {
+        const posOrderPanel = document.getElementById('posOrderPanel');
+        if (posOrderPanel) {
+            document.querySelector('#posView .pos-layout')?.prepend(posOrderPanel);
+        }
         document.getElementById('posView')?.classList.add('active');
         document.getElementById('tabPosBtn')?.classList.add('active');
         document.getElementById('mobileNavPos')?.classList.add('active');
         renderProducts();
-    if (typeof applyCatalogViewMode === 'function') applyCatalogViewMode();
+        if (typeof applyCatalogViewMode === 'function') applyCatalogViewMode();
         updatePosOrderBadge();
     } else if (viewName === 'kds') {
         document.getElementById('kdsView')?.classList.add('active');
@@ -31,6 +35,10 @@ function switchView(viewName) {
         document.getElementById('reportsView')?.classList.add('active');
         if (typeof renderActiveReport === 'function') renderActiveReport();
     } else if (viewName === 'returns') {
+        const posOrderPanel = document.getElementById('posOrderPanel');
+        if (posOrderPanel) {
+            document.querySelector('#returnsView .pos-layout')?.prepend(posOrderPanel);
+        }
         document.getElementById('returnsView')?.classList.add('active');
         document.getElementById('tabReturnsBtn')?.classList.add('active');
         document.getElementById('mobileNavReturns')?.classList.add('active');

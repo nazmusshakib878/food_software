@@ -40,10 +40,34 @@ function goReturnsScreen3() {
 }
 
 // Format Date
-function formatRetDate(isoString) {
+function formatRetDateOnly(isoString) {
     if (!isoString) return '';
     const date = new Date(isoString);
-    return date.toLocaleDateString('en-GB') + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString('en-CA'); // e.g. 2026-10-02
+}
+function formatRetTimeOnly(isoString) {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    return '(' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) + ')';
+}
+
+let currentReturnTab = 'uncompleted';
+
+function setReturnOrderTab(tabName, el) {
+    currentReturnTab = tabName;
+    document.querySelectorAll('.orders-top-tabs .order-tab').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.color = '#64748b';
+    });
+    el.classList.add('active');
+    el.style.background = 'var(--teal)';
+    el.style.color = 'white';
+    filterReturnsOrders();
+}
+
+function filterReturnsOrders() {
+    renderReturnsOrdersList();
 }
 
 // Screen 1: Render Orders
@@ -56,45 +80,119 @@ function renderReturnsOrdersList() {
         return;
     }
 
-    grid.innerHTML = orders.map(order => {
+    const searchTerm = (document.getElementById('returnsSearchInput')?.value || '').toLowerCase().trim();
+    
+    const filteredOrders = orders.filter(order => {
+        // Tab filtering
+        let matchTab = false;
+        const isCompleted = order.status === 'served';
+        const isCancelled = order.status === 'cancelled';
+        if (currentReturnTab === 'uncompleted') {
+            matchTab = !isCompleted && !isCancelled;
+        } else if (currentReturnTab === 'all') {
+            matchTab = true;
+        } else if (currentReturnTab === 'offline') {
+            matchTab = (order.type === 'offline'); // hypothetical
+        } else if (currentReturnTab === 'outgoing') {
+            matchTab = (order.type === 'delivery' || order.type === 'takeaway');
+        } else if (currentReturnTab === 'returned') {
+            matchTab = isCancelled;
+        } else if (currentReturnTab === 'active') {
+            matchTab = (!isCompleted && !isCancelled);
+        } else if (currentReturnTab === 'done') {
+            matchTab = isCompleted;
+        }
+        
+        if (!matchTab) return false;
+
+        // Search filtering
+        if (searchTerm) {
+            const invoiceMatch = order.id && order.id.toLowerCase().includes(searchTerm);
+            const orderNumMatch = order.seq && order.seq.toString().includes(searchTerm);
+            const userMatch = order.cashierName && order.cashierName.toLowerCase().includes(searchTerm);
+            if (!invoiceMatch && !orderNumMatch && !userMatch) return false;
+        }
+        return true;
+    });
+
+    if (filteredOrders.length === 0) {
+        grid.innerHTML = `<p style="text-align: center; color: var(--muted); grid-column: 1/-1;">No orders match the filter.</p>`;
+        return;
+    }
+
+    grid.innerHTML = filteredOrders.map(order => {
         const isDelivered = order.status === 'served';
         const isCancelled = order.status === 'cancelled';
         
-        let statusHtml = '';
-        if (isCancelled) {
-            statusHtml = `<span class="ret-status-badge ret-status-cancelled">Cancelled</span>`;
-        } else if (isDelivered) {
-            statusHtml = `<span class="ret-status-badge ret-status-delivered">Delivered</span>`;
-        } else {
-            statusHtml = `<span class="ret-status-badge" style="background: var(--muted); color: #fff;">${order.status || 'New'}</span>`;
+        let paymentTypes = order.paymentMethod || 'Unknown';
+        if (paymentTypes === 'mixed' && order.splitPayments) {
+            paymentTypes = order.splitPayments.map(p => p.method).join(' / ');
         }
-
+        
         return `
-            <div class="ret-order-card">
-                <div class="ret-order-card-header">
-                    <div>
-                        <h3>Order #${order.seq || order.id.substring(0, 5)}</h3>
-                        <div class="ret-time">${formatRetDate(order.date)}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 12px; text-align: right; color: var(--muted);">Inv: ${order.id.substring(0, 8)}</div>
-                    </div>
+            <div class="ret-order-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; font-weight: 600; color: #334155;">
+                    <div>${formatRetDateOnly(order.date)} :Date</div>
+                    <div style="text-align: right;">${order.seq || order.id.substring(0, 5)} :Order Number</div>
+                    <div>${formatRetTimeOnly(order.date)}</div>
+                    <div style="text-align: right;">${paymentTypes}/${Number(order.total || 0).toFixed(2)} :Payment Types</div>
+                    <div>${Number(order.total || 0).toFixed(2)} :Total</div>
+                    <div style="text-align: right;">${order.id} :Invoice Id</div>
+                    <div style="grid-column: 1/-1;">User Name : [${escapeHtml(order.cashierName || 'Cashier')}]</div>
                 </div>
-                <div class="ret-order-card-body">
-                    <div>User: ${escapeHtml(order.cashierName || 'Cashier')}</div>
-                    <div class="ret-total">SAR ${Number(order.total || 0).toFixed(2)}</div>
-                </div>
-                <div class="ret-order-card-actions">
-                    ${statusHtml}
-                    <div class="ret-btn-group">
-                        <button class="ret-btn-small" onclick="printReceipt('${order.id}')" title="Print"><i class="fa-solid fa-print"></i></button>
-                        <button class="ret-btn-small" title="Kitchen Print"><i class="fa-solid fa-fire"></i></button>
-                        <button class="ret-btn-small ret-btn-return" onclick="startReturnProcess('${order.id}')">Return</button>
-                    </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                    <button class="ret-btn-small" onclick="markOrderDelivered('${order.id}')" style="flex: 1; padding: 10px; background: #800020; color: white; border: none; border-radius: 6px; font-weight: 700; cursor: pointer;">Order Delivered</button>
+                    <button class="ret-btn-small" onclick="startReturnProcess('${order.id}')" style="flex: 1; padding: 10px; background: var(--teal); color: white; border: none; border-radius: 6px; font-weight: 700; cursor: pointer;">Return</button>
+                    <button class="ret-btn-small" onclick="kitchenPrintOrder('${order.id}')" style="flex: 1; padding: 10px; background: var(--teal); color: white; border: none; border-radius: 6px; font-weight: 700; cursor: pointer;">Kitchen Print</button>
+                    <button class="ret-btn-small" onclick="printReceipt('${order.id}')" style="flex: 1; padding: 10px; background: var(--teal); color: white; border: none; border-radius: 6px; font-weight: 700; cursor: pointer;">Print</button>
                 </div>
             </div>
         `;
     }).join('');
+}
+
+function markOrderDelivered(orderId) {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    if (order.status === 'cancelled') {
+        showToast(currentLang === 'ar' ? 'لا يمكن توصيل طلب ملغي' : 'Cannot deliver a cancelled order', 'danger');
+        return;
+    }
+    order.status = 'served';
+    persistData();
+    filterReturnsOrders();
+    if (typeof renderKdsScreen === 'function') renderKdsScreen();
+    showToast(currentLang === 'ar' ? 'تم تحديث حالة الطلب إلى مكتمل' : 'Order marked as Delivered', 'success');
+}
+
+function kitchenPrintOrder(orderId) {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    if (typeof executeKitchenPrint === 'function') {
+        executeKitchenPrint(order);
+    } else {
+        showToast('Kitchen Print function not available', 'danger');
+    }
+}
+
+function printReceipt(orderId) {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    if (posPreferences && posPreferences.autoPrint) {
+        if (typeof renderReceipt === 'function') renderReceipt(order);
+        const thermalNode = document.getElementById('thermalReceiptNode');
+        if (thermalNode && typeof routePrintJob === 'function') {
+            routePrintJob('cashier', thermalNode.outerHTML, `Order #${order.seq || order.id.substring(0, 5)}`);
+        } else if (typeof previewExistingOrderReceipt === 'function') {
+            previewExistingOrderReceipt(orderId);
+        }
+    } else {
+        if (typeof previewExistingOrderReceipt === 'function') {
+            previewExistingOrderReceipt(orderId);
+        } else {
+            showToast('Preview function not available', 'danger');
+        }
+    }
 }
 
 // Screen 2: Init
@@ -139,26 +237,27 @@ function renderReturnItemsTable() {
         const totalDamage = item.damagedQty * item.price;
         return `
             <tr class="${rowClass}">
-                <td><input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleRetItem(${i}, this.checked)"></td>
+                <td><input type="checkbox" style="width: 20px; height: 20px;" ${item.selected ? 'checked' : ''} onchange="toggleRetItem(${i}, this.checked)"></td>
                 <td>${escapeHtml(item.name)}</td>
                 <td>${Number(item.price).toFixed(2)}</td>
                 <td>
-                    <div class="qty-control">
-                        <button class="qty-btn" onclick="adjRetQty(${i}, -1)">-</button>
+                    <div class="qty-control" style="display: flex; gap: 5px; align-items: center; justify-content: center;">
+                        <button class="qty-btn" style="background: var(--purple, #6f42c1); color: white; border: none; border-radius: 4px; padding: 4px 10px;" onclick="adjRetQty(${i}, -1)">-</button>
                         <span style="min-width: 20px; text-align: center;">${item.returnQty}</span>
-                        <button class="qty-btn" onclick="adjRetQty(${i}, 1)">+</button>
+                        <button class="qty-btn" style="background: var(--purple, #6f42c1); color: white; border: none; border-radius: 4px; padding: 4px 10px;" onclick="adjRetQty(${i}, 1)">+</button>
                         <span style="color: var(--muted); font-size: 12px;">/ ${item.originalQty}</span>
                     </div>
                 </td>
                 <td>
-                    <div class="qty-control">
-                        <button class="qty-btn" onclick="adjDamagedQty(${i}, -1)">-</button>
+                    <div class="qty-control" style="display: flex; gap: 5px; align-items: center; justify-content: center;">
+                        <button class="qty-btn" style="background: var(--purple, #6f42c1); color: white; border: none; border-radius: 4px; padding: 4px 10px;" onclick="adjDamagedQty(${i}, -1)">-</button>
                         <span style="min-width: 20px; text-align: center;">${item.damagedQty}</span>
-                        <button class="qty-btn" onclick="adjDamagedQty(${i}, 1)">+</button>
+                        <button class="qty-btn" style="background: var(--purple, #6f42c1); color: white; border: none; border-radius: 4px; padding: 4px 10px;" onclick="adjDamagedQty(${i}, 1)">+</button>
                     </div>
                 </td>
                 <td>SAR ${totalDamage.toFixed(2)}</td>
-                <td><input type="checkbox" ${item.isDamagedChecked ? 'checked' : ''} onchange="toggleDamagedStatus(${i}, this.checked)"></td>
+                <td><input type="checkbox" style="width: 20px; height: 20px;" ${item.isDamagedChecked ? 'checked' : ''} onchange="toggleDamagedStatus(${i}, this.checked)"></td>
+                <td><button type="button" style="background: var(--danger); color: white; border: none; border-radius: 4px; padding: 4px 10px; cursor: pointer;" onclick="removeRetItem(${i})"><i class="fa-solid fa-xmark"></i></button></td>
             </tr>
         `;
     }).join('');
@@ -217,12 +316,28 @@ function toggleDamagedStatus(index, checked) {
     renderReturnItemsTable();
 }
 
-// Screen 2 Bottom actions (dummy functionality as per UI design requirements)
+function removeRetItem(index) {
+    returnItemsState.splice(index, 1);
+    // update indices
+    returnItemsState.forEach((item, i) => item.index = i);
+    renderReturnItemsTable();
+}
+
+function promptReturnNotes() {
+    const note = prompt("Enter notes for this return:", currentReturnOrder?.returnNotes || "");
+    if (note !== null && currentReturnOrder) {
+        currentReturnOrder.returnNotes = note;
+    }
+}
+
+// Screen 2 Bottom actions
 function incrementReturnItem() {
-    showToast(currentLang === 'ar' ? 'قم بتحديد صنف أو اضغط (+) للزيادة' : 'Use + to increase quantity', 'info');
+    const selected = returnItemsState.findIndex(item => item.selected);
+    if(selected >= 0) adjRetQty(selected, 1);
 }
 function decrementReturnItem() {
-    showToast(currentLang === 'ar' ? 'قم بتحديد صنف أو اضغط (-) للنقصان' : 'Use - to decrease quantity', 'info');
+    const selected = returnItemsState.findIndex(item => item.selected);
+    if(selected >= 0) adjRetQty(selected, -1);
 }
 
 
@@ -256,15 +371,15 @@ function retPadPress(val) {
         inputEl.value = inputEl.value.slice(0, -1);
     } else {
         if (activeRetInputId === 'retClientPhone' && inputEl.value.length >= 15) return;
-        if (activeRetInputId === 'retUserKey' && inputEl.value.length >= 6) return;
+        if (activeRetInputId === 'retUserKey' && inputEl.value.length >= 8) return;
         inputEl.value += val;
     }
 }
 
 function confirmCancellation() {
     const pin = document.getElementById('retUserKey').value;
-    // Basic validation
-    if (pin !== storeSettings.adminPin && pin !== storeSettings.staffPin) {
+    // Security Requirement: Cancellation authorization must use PIN 11223344.
+    if (pin !== '11223344') {
         showToast(currentLang === 'ar' ? "رمز الدخول غير صحيح" : "Invalid User Key PIN", "danger");
         return;
     }
@@ -273,15 +388,29 @@ function confirmCancellation() {
     const reasonElement = document.querySelector('input[name="cancelReason"]:checked');
     const reason = reasonElement ? reasonElement.value : 'Unknown';
 
-    // Apply the return to the actual order
-    // In a real system, we'd adjust item quantities, recalculate totals, update inventory, etc.
-    // For this prototype, we'll mark the order as cancelled/returned
     if (currentReturnOrder) {
         currentReturnOrder.status = 'cancelled';
         currentReturnOrder.cancelReason = reason;
         currentReturnOrder.clientPhone = phone;
-        currentReturnOrder.returnedBy = pin === storeSettings.adminPin ? 'Admin' : 'Staff';
+        currentReturnOrder.returnedBy = 'Admin';
+        
+        // Remove PIN from any stored logs
+        delete currentReturnOrder.cancelPin;
+        
         persistData(); // save changes
+
+        // Auto-print CANCEL INVOICE without exposing PIN
+        if (typeof renderReceipt === 'function') {
+            renderReceipt(currentReturnOrder);
+            const receiptTitle = document.querySelector('#thermalReceiptNode .invoice-badge-title');
+            if (receiptTitle) {
+                receiptTitle.innerHTML = 'CANCEL INVOICE';
+            }
+            const thermalNode = document.getElementById('thermalReceiptNode');
+            if (thermalNode && typeof routePrintJob === 'function') {
+                routePrintJob('cashier', thermalNode.outerHTML, 'Cancel Invoice');
+            }
+        }
     }
 
     showToast(currentLang === 'ar' ? "تم تأكيد الإلغاء/الإرجاع بنجاح!" : "Cancellation Confirmed Successfully!", "success");

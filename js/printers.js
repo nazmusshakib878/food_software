@@ -681,3 +681,17 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
         }
     }
 }
+
+// Execute Kitchen Print explicitly
+function executeKitchenPrint(order) {
+    if (typeof getKitchenOrderTicketHtml === 'function') {
+        const kotHtml = getKitchenOrderTicketHtml(order);
+        if (kotHtml) {
+            // Need a container for styles to apply correctly or wrap in a div
+            const contentHtml = `<div class="receipt-container">${kotHtml}</div>`;
+            routePrintJob('kitchen', contentHtml, `KOT Order #${order.seq || order.id.substring(0, 5)}`);
+        } else {
+            if (typeof showToast === 'function') showToast("Could not generate Kitchen Print", "warning");
+        }
+    }
+}
