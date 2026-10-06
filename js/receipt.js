@@ -83,7 +83,13 @@ function renderReceipt(order) {
                 ? `<div class="rec-addon-line">+ ${item.addons.map(a => `${escapeHtml(a.nameAr || a.nameEn)} (+${Number(a.price).toFixed(2)})`).join(', ')}</div>`
                 : '';
             const modifiersHtml = (item.modifiers && item.modifiers.length)
-                ? `<div class="rec-addon-line" style="color: #555;">* ${item.modifiers.map(m => `${m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '*')} ${escapeHtml(currentLang === 'ar' ? m.labelAr : m.labelEn)}`).join(', ')}</div>`
+                ? item.modifiers.map(m => {
+                    const actionIcon = m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '+');
+                    const label = escapeHtml((currentLang === 'ar' && m.labelAr) ? m.labelAr : (m.labelEn || m.labelAr || ''));
+                    const qtyText = (m.qty && m.qty > 1) ? ` x${m.qty}` : '';
+                    const priceText = (Number(m.price) > 0) ? ` (+${Number(m.price).toFixed(2)})` : '';
+                    return `<div class="rec-addon-line" style="color: #555; padding-inline-start: 12px;">${actionIcon} ${label}${qtyText}${priceText}</div>`;
+                }).join('')
                 : '';
             const noteHtml = item.note
                 ? `<div class="rec-note-line">* ${escapeHtml(item.note)}</div>`
@@ -103,8 +109,11 @@ function renderReceipt(order) {
                         ${modifiersHtml}
                         ${noteHtml}
                     </td>
-                    <td class="col-qty">${item.qty}</td>
-                    <td class="col-total">${lineTotal.toFixed(2)}</td>
+                    <td class="col-qty" style="vertical-align: top;">${item.qty}</td>
+                    <td class="col-total" style="vertical-align: top;">${lineTotal.toFixed(2)}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border-bottom: 1px solid #000; padding: 0; margin: 0; height: 6px;"></td>
                 </tr>
             `;
         }).join('');
@@ -221,7 +230,12 @@ function getKitchenOrderTicketHtml(targetOrder) {
             ? `<div class="kot-addon-line">+ ${item.addons.map(a => escapeHtml(a.nameAr ? `${a.nameAr} / ${a.nameEn || ''}` : (a.nameEn || ''))).join(', ')}</div>`
             : '';
         const modifiersHtml = (item.modifiers && item.modifiers.length)
-            ? `<div class="kot-addon-line" style="color: #444;">* ${item.modifiers.map(m => `${m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '*')} ${escapeHtml(m.labelAr ? `${m.labelAr} / ${m.labelEn || ''}` : (m.labelEn || ''))}`).join(', ')}</div>`
+            ? item.modifiers.map(m => {
+                const actionIcon = m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '+');
+                const label = escapeHtml(m.labelAr ? `${m.labelAr} / ${m.labelEn || ''}` : (m.labelEn || ''));
+                const qtyText = (m.qty && m.qty > 1) ? ` x${m.qty}` : '';
+                return `<div class="kot-addon-line" style="color: #444; padding-inline-start: 12px;">${actionIcon} ${label}${qtyText}</div>`;
+            }).join('')
             : '';
         const noteHtml = item.note
             ? `<div class="kot-note-line">** NOTE: ${escapeHtml(item.note)} **</div>`
@@ -241,6 +255,7 @@ function getKitchenOrderTicketHtml(targetOrder) {
                     ${noteHtml}
                 </div>
             </div>
+            <div style="border-bottom: 1px solid #000; margin: 4px 0 8px 0;"></div>
         `;
     }).join('');
 
