@@ -364,6 +364,7 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
             price: i.price,
             qty: i.qty,
             addons: (i.addons && i.addons.length) ? i.addons.map(a => ({ ...a })) : [],
+            modifiers: (i.modifiers && i.modifiers.length) ? i.modifiers.map(m => ({ ...m })) : [],
             note: i.note || ''
         })),
         subtotal: totals.subtotal,

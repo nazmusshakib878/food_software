@@ -84,11 +84,10 @@ function renderReceipt(order) {
                 : '';
             const modifiersHtml = (item.modifiers && item.modifiers.length)
                 ? item.modifiers.map(m => {
-                    const actionIcon = m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '+');
                     const label = escapeHtml((currentLang === 'ar' && m.labelAr) ? m.labelAr : (m.labelEn || m.labelAr || ''));
                     const qtyText = (m.qty && m.qty > 1) ? ` x${m.qty}` : '';
                     const priceText = (Number(m.price) > 0) ? ` (+${Number(m.price).toFixed(2)})` : '';
-                    return `<div class="rec-addon-line" style="color: #555; padding-inline-start: 12px;">${actionIcon} ${label}${qtyText}${priceText}</div>`;
+                    return `<div class="rec-addon-line" style="color: #555; padding-inline-start: 12px;">+ ${label}${qtyText}${priceText}</div>`;
                 }).join('')
                 : '';
             const noteHtml = item.note
@@ -231,10 +230,9 @@ function getKitchenOrderTicketHtml(targetOrder) {
             : '';
         const modifiersHtml = (item.modifiers && item.modifiers.length)
             ? item.modifiers.map(m => {
-                const actionIcon = m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '+');
                 const label = escapeHtml(m.labelAr ? `${m.labelAr} / ${m.labelEn || ''}` : (m.labelEn || ''));
                 const qtyText = (m.qty && m.qty > 1) ? ` x${m.qty}` : '';
-                return `<div class="kot-addon-line" style="color: #444; padding-inline-start: 12px;">${actionIcon} ${label}${qtyText}</div>`;
+                return `<div class="kot-addon-line" style="color: #444; padding-inline-start: 12px;">+ ${label}${qtyText}</div>`;
             }).join('')
             : '';
         const noteHtml = item.note
