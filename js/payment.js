@@ -267,12 +267,18 @@ function updatePaymentModalUI(grandTotal) {
     updateRemainingUI();
 }
 
+let isProcessingCheckout = false;
+
 function processCheckoutPay() {
+    if (isProcessingCheckout) return;
+    isProcessingCheckout = true;
+
     const remaining = getRemaining();
     const totals = calculateCartTotals();
     const allocated = calculateAllocated();
 
     if (remaining > 0.001) {
+        isProcessingCheckout = false;
         soundWarning && soundWarning();
         showToast && showToast(currentLang === 'ar' ? "الرجاء إكمال المبلغ المتبقي." : "Please complete the remaining payment amount.", "danger");
         return;
@@ -316,6 +322,7 @@ function processCheckoutPay() {
 function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", breakdown = {}, paidAmount = 0) {
     const totals = calculateCartTotals();
     if (currentCart.length === 0) {
+        isProcessingCheckout = false;
         soundWarning && soundWarning();
         showToast && showToast(currentLang === 'ar' ? "السلة فارغة!" : "Cart is empty!", "danger");
         return;
@@ -324,6 +331,7 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
     const paid = staffAllocation ? totals.grandTotal : paidAmount;
     
     if (!staffAllocation && Math.round(paid * 100) < Math.round(totals.grandTotal * 100)) {
+        isProcessingCheckout = false;
         soundWarning && soundWarning();
         showToast && showToast(currentLang === 'ar' ? "المبلغ المدفوع أقل من الإجمالي!" : "Paid amount is less than total!", "danger");
         return;
@@ -426,10 +434,18 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
     document.getElementById('receiptModal')?.classList.add('open');
 
     if (posPreferences && posPreferences.autoPrint) {
-        setTimeout(() => {
-            window.print();
-        }, 500);
+        if (typeof runPostPaymentPrintSequence === 'function') {
+            runPostPaymentPrintSequence(orderRecord);
+        } else {
+            // Fallback just in case
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        }
     }
+
+    // Free the lock after everything is dispatched
+    isProcessingCheckout = false;
 }
 
 // --- STAFF MEAL EXPENSE LOGIC ---
