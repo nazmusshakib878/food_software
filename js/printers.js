@@ -789,18 +789,60 @@ async function runPostPaymentPrintSequence(order) {
     isPrintSequenceRunning = true;
     
     try {
-        console.log("Starting KOT print job...");
-        // 1. Kitchen Print Job (KOT)
-        if (typeof executeKitchenPrint === 'function') {
-            await executeKitchenPrint(order);
-            // Wait for 1.5 seconds to allow printer to perform physical cut and clear spooler
+        const receiptModal = document.getElementById('receiptModal');
+        const kitchenModal = document.getElementById('kitchenTicketModal');
+        
+        let kotHtml = '';
+        if (typeof getKitchenOrderTicketHtml === 'function') {
+            kotHtml = getKitchenOrderTicketHtml(order);
+        }
+
+        if (kotHtml) {
+            console.log("Starting KOT print job...");
+            // Hide customer receipt so it doesn't print during KOT
+            if (receiptModal) receiptModal.classList.remove('open');
+            
+            // Render KOT into the existing modal
+            if (typeof renderKitchenTicket === 'function') {
+                renderKitchenTicket(order);
+            }
+            if (kitchenModal) kitchenModal.classList.add('open');
+            
+            // Allow DOM to update before printing
+            await new Promise(r => setTimeout(r, 150));
+            
+            await new Promise(resolve => {
+                const afterHandler = () => {
+                    window.removeEventListener('afterprint', afterHandler);
+                    resolve();
+                };
+                window.addEventListener('afterprint', afterHandler);
+                
+                setTimeout(() => {
+                    window.print();
+                    
+                    // Fallback timeout in case afterprint does not fire
+                    setTimeout(() => {
+                        window.removeEventListener('afterprint', afterHandler);
+                        resolve();
+                    }, 5000);
+                }, 150);
+            });
+            
+            // Hide kitchen modal after KOT print
+            if (kitchenModal) kitchenModal.classList.remove('open');
+            
+            // Wait for printer to perform physical cut and clear spooler
             await new Promise(r => setTimeout(r, 1500));
         }
 
         console.log("Starting Customer Invoice print job...");
-        // 2. Customer Invoice Job
-        // The modal #receiptModal is already opened by completeOrderAndShowReceipt.
-        // So window.print() will print the customer receipt.
+        // Ensure customer receipt is shown
+        if (receiptModal) receiptModal.classList.add('open');
+        
+        // Allow DOM to update
+        await new Promise(r => setTimeout(r, 150));
+        
         await new Promise(resolve => {
             const afterHandler = () => {
                 window.removeEventListener('afterprint', afterHandler);
@@ -816,13 +858,20 @@ async function runPostPaymentPrintSequence(order) {
                     window.removeEventListener('afterprint', afterHandler);
                     resolve();
                 }, 5000);
-            }, 300);
+            }, 150);
         });
+        
         console.log("Post-payment print sequence completed.");
         
     } catch (e) {
         console.error("Error during sequential print:", e);
     } finally {
         isPrintSequenceRunning = false;
+        
+        // Ensure UI is restored (Customer Invoice should remain visible to the cashier)
+        const receiptModal = document.getElementById('receiptModal');
+        const kitchenModal = document.getElementById('kitchenTicketModal');
+        if (kitchenModal) kitchenModal.classList.remove('open');
+        if (receiptModal) receiptModal.classList.add('open');
     }
 }
