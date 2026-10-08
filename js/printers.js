@@ -789,28 +789,25 @@ async function runPostPaymentPrintSequence(order) {
     isPrintSequenceRunning = true;
     
     try {
-        const receiptModal = document.getElementById('receiptModal');
-        const kitchenModal = document.getElementById('kitchenTicketModal');
+        console.log("Starting KOT print job...");
         
-        let kotHtml = '';
-        if (typeof getKitchenOrderTicketHtml === 'function') {
-            kotHtml = getKitchenOrderTicketHtml(order);
-        }
+        // 1. KITCHEN PRINT FIRST
+        // executeKitchenPrint uses an iframe and handles everything without messing with main DOM visibility.
+        // It returns a promise that resolves when the print dialog/spooler is done.
+        await executeKitchenPrint(order);
+        
+        // 2. WAIT FOR PHYSICAL CUT
+        // The printer will cut after the Kitchen Print finishes.
+        // Adding a delay ensures the spooler is cleared and the printer has time to physically cut.
+        await new Promise(r => setTimeout(r, 1500));
 
-        if (kotHtml) {
-            console.log("Starting KOT print job...");
-            // Hide customer receipt so it doesn't print during KOT
-            if (receiptModal) receiptModal.classList.remove('open');
-            
-            // Render KOT into the existing modal
-            if (typeof renderKitchenTicket === 'function') {
-                renderKitchenTicket(order);
-            }
-            if (kitchenModal) kitchenModal.classList.add('open');
-            
-            // Allow DOM to update before printing
-            await new Promise(r => setTimeout(r, 150));
-            
+        console.log("Starting Customer Invoice print job...");
+        
+        // 3. CUSTOMER INVOICE SECOND
+        // By this point, receiptModal is already open from payment.js.
+        // We use the direct native window.print() for the cashier receipt just like manual printing.
+        const receiptModal = document.getElementById('receiptModal');
+        if (receiptModal && receiptModal.classList.contains('open')) {
             await new Promise(resolve => {
                 const afterHandler = () => {
                     window.removeEventListener('afterprint', afterHandler);
@@ -828,38 +825,7 @@ async function runPostPaymentPrintSequence(order) {
                     }, 5000);
                 }, 150);
             });
-            
-            // Hide kitchen modal after KOT print
-            if (kitchenModal) kitchenModal.classList.remove('open');
-            
-            // Wait for printer to perform physical cut and clear spooler
-            await new Promise(r => setTimeout(r, 1500));
         }
-
-        console.log("Starting Customer Invoice print job...");
-        // Ensure customer receipt is shown
-        if (receiptModal) receiptModal.classList.add('open');
-        
-        // Allow DOM to update
-        await new Promise(r => setTimeout(r, 150));
-        
-        await new Promise(resolve => {
-            const afterHandler = () => {
-                window.removeEventListener('afterprint', afterHandler);
-                resolve();
-            };
-            window.addEventListener('afterprint', afterHandler);
-            
-            setTimeout(() => {
-                window.print();
-                
-                // Fallback timeout in case afterprint does not fire
-                setTimeout(() => {
-                    window.removeEventListener('afterprint', afterHandler);
-                    resolve();
-                }, 5000);
-            }, 150);
-        });
         
         console.log("Post-payment print sequence completed.");
         
@@ -870,8 +836,6 @@ async function runPostPaymentPrintSequence(order) {
         
         // Ensure UI is restored (Customer Invoice should remain visible to the cashier)
         const receiptModal = document.getElementById('receiptModal');
-        const kitchenModal = document.getElementById('kitchenTicketModal');
-        if (kitchenModal) kitchenModal.classList.remove('open');
         if (receiptModal) receiptModal.classList.add('open');
     }
 }
