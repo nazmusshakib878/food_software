@@ -523,7 +523,11 @@ function renderCart() {
     if (floatBadge) floatBadge.innerText = totalCount;
     if (floatTotal) floatTotal.innerText = `${currentLang === 'ar' ? 'الإجمالي: ' : 'Total: '}${formatCurrency(totals.grandTotal)}`;
     if (floatWidget) {
-        floatWidget.style.display = 'none';
+        if (catalogViewMode === 'grid8' && totalCount > 0) {
+            floatWidget.style.display = 'flex';
+        } else {
+            floatWidget.style.display = 'none';
+        }
     }
 
     // Mobile floater update
@@ -536,7 +540,7 @@ function renderCart() {
     if (mobileCountEl) mobileCountEl.innerText = totalQty;
     if (mobileTotalEl) mobileTotalEl.innerText = formatCurrency(totals.grandTotal);
     if (mobileFloaterEl) {
-        mobileFloaterEl.style.display = 'none';
+        mobileFloaterEl.style.display = (totalQty > 0) ? 'flex' : 'none';
     }
     if (mobileArrowEl) {
         mobileArrowEl.className = (currentLang === 'ar') ? 'fa-solid fa-arrow-left' : 'fa-solid fa-arrow-right';
