@@ -553,7 +553,7 @@ function deleteCategory(id) {
         categories = categories.filter(c => c.id !== id);
 
         if (activeCategory === id) {
-            activeCategory = 'all';
+            activeCategory = null;
         }
 
         persistData();
@@ -615,7 +615,7 @@ function resetToDemoData() {
         items = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
         categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
         storeSettings = JSON.parse(JSON.stringify(DEFAULT_STORE));
-        activeCategory = 'all';
+        activeCategory = null;
         currentCart = [];
         persistData();
         location.reload();

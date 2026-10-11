@@ -367,6 +367,7 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
         cashier: currentUser.name || 'Cashier',
         items: currentCart.map(i => ({
             id: i.id,
+            catId: i.catId || i.category || null, // Preserved for KOT category filter
             arName: i.arName,
             enName: i.enName,
             price: i.price,
@@ -430,18 +431,29 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
     renderProducts();
 
     showToast && showToast(currentLang === 'ar' ? "تم تسجيل الطلب والدفع بنجاح!" : "Order completed successfully!", "success");
+
+    // Render receipt content into DOM (modal stays closed until print sequence decides to show it)
     if (typeof renderReceipt === 'function') renderReceipt(orderRecord);
-    document.getElementById('receiptModal')?.classList.add('open');
+
+    console.log('[PAY PRINT] payment success');
 
     if (posPreferences && posPreferences.autoPrint) {
+        // Print sequence: KOT → CUT → Invoice → CUT
+        // The sequence itself opens/closes receiptModal at the correct time.
+        // Do NOT open receiptModal here before the sequence — let executeKitchenPrint
+        // control the modal visibility so only KOT prints first.
         if (typeof runPostPaymentPrintSequence === 'function') {
             runPostPaymentPrintSequence(orderRecord);
         } else {
-            // Fallback just in case
+            // Fallback: no sequence function available, open receipt and print directly
+            document.getElementById('receiptModal')?.classList.add('open');
             setTimeout(() => {
                 window.print();
             }, 500);
         }
+    } else {
+        // autoPrint is off — just show the receipt modal for manual printing
+        document.getElementById('receiptModal')?.classList.add('open');
     }
 
     // Free the lock after everything is dispatched

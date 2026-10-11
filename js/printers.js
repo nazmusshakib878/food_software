@@ -764,47 +764,52 @@ function routePrintJob(role, contentHtml, title = 'Print Job') {
     });
 }
 
-// Execute Kitchen Print explicitly
+// Execute Kitchen Print explicitly — used by both manual (admin.js) and auto-pay sequence
+// Returns a Promise that resolves AFTER the physical KOT print job is dispatched.
+// IMPORTANT: This function does NOT touch receiptModal — the caller manages that.
 function executeKitchenPrint(order) {
     return new Promise(resolve => {
+        console.log('[PAY PRINT] starting kitchen');
+
         if (typeof getKitchenOrderTicketHtml !== 'function') {
+            console.warn('[PAY PRINT] getKitchenOrderTicketHtml is not defined — skipping KOT');
             resolve();
             return;
         }
 
         const kotHtml = getKitchenOrderTicketHtml(order);
         if (!kotHtml) {
-            console.log("[PRINT] KOT HTML generated - EMPTY (skipping)");
-            if (typeof showToast === 'function') showToast("Could not generate Kitchen Print", "warning");
+            console.warn('[PAY PRINT] KOT HTML is empty — no printable kitchen items (check disabledCategories or catId mapping)');
+            if (typeof showToast === 'function') showToast('Kitchen ticket is empty — nothing to print', 'warning');
             resolve();
             return;
         }
 
-        console.log("[PRINT] KOT HTML generated");
+        console.log('[PAY PRINT] kitchen data ready');
 
+        // Render KOT content into the kitchen modal node
         if (typeof renderKitchenTicket === 'function') {
             renderKitchenTicket(order);
         }
 
+        // Ensure receiptModal is hidden so only KOT prints
         const receiptModal = document.getElementById('receiptModal');
-        let wasReceiptOpen = false;
-        if (receiptModal && receiptModal.classList.contains('open')) {
-            wasReceiptOpen = true;
-            receiptModal.classList.remove('open');
-        }
+        if (receiptModal) receiptModal.classList.remove('open');
 
+        // Open the kitchen ticket modal — the @media print CSS will print ONLY this
         const kitchenModal = document.getElementById('kitchenTicketModal');
-        if (kitchenModal) {
-            kitchenModal.classList.add('open');
-        }
+        if (kitchenModal) kitchenModal.classList.add('open');
 
-        console.log("[PRINT] KOT print invoked");
+        console.log('[PAY PRINT] kitchen print invoked');
+
+        const cleanup = () => {
+            if (kitchenModal) kitchenModal.classList.remove('open');
+        };
 
         const afterHandler = () => {
             window.removeEventListener('afterprint', afterHandler);
-            if (kitchenModal) kitchenModal.classList.remove('open');
-            if (wasReceiptOpen && receiptModal) receiptModal.classList.add('open');
-            console.log("[PRINT] KOT afterprint received");
+            cleanup();
+            console.log('[PAY PRINT] kitchen finished');
             resolve();
         };
         window.addEventListener('afterprint', afterHandler);
@@ -812,11 +817,11 @@ function executeKitchenPrint(order) {
         setTimeout(() => {
             window.print();
 
+            // Fallback in case afterprint never fires (Android / RawBT)
             setTimeout(() => {
                 window.removeEventListener('afterprint', afterHandler);
-                if (kitchenModal) kitchenModal.classList.remove('open');
-                if (wasReceiptOpen && receiptModal) receiptModal.classList.add('open');
-                console.log("[PRINT] KOT afterprint received (fallback timeout)");
+                cleanup();
+                console.log('[PAY PRINT] kitchen finished (fallback timeout)');
                 resolve();
             }, 5000);
         }, 300);
@@ -824,63 +829,69 @@ function executeKitchenPrint(order) {
 }
 
 // Sequential Post-Payment Printing (KOT -> CUT -> INVOICE -> CUT)
+// Guaranteed order: KOT prints first, physical cut, then Customer Invoice, physical cut.
 let isPrintSequenceRunning = false;
 
 async function runPostPaymentPrintSequence(order) {
     if (isPrintSequenceRunning) {
-        console.warn("Print sequence already running, skipping duplicate.");
+        console.warn('[PAY PRINT] sequence already running — duplicate call ignored');
         return;
     }
     isPrintSequenceRunning = true;
-    
+
     try {
-        console.log("[PRINT] payment complete");
-        console.log("[PRINT] starting KOT");
-        
-        // 1. KITCHEN PRINT FIRST
-        // executeKitchenPrint now safely uses the UI modal + top-level window.print()
+        console.log('[PAY PRINT] payment success');
+        console.log('[PAY PRINT] starting kitchen');
+
+        // ── STEP 1: KITCHEN / KOT ──────────────────────────────────────────────
+        // executeKitchenPrint opens kitchenTicketModal, calls window.print(),
+        // waits for afterprint (or 5s fallback), then closes kitchenTicketModal.
+        // receiptModal is kept CLOSED during this step.
         await executeKitchenPrint(order);
-        
-        // 2. WAIT FOR PHYSICAL CUT
-        // The printer will cut after the Kitchen Print finishes.
-        // Adding a delay ensures the spooler is cleared and the printer has time to physically cut.
+
+        // ── STEP 2: PHYSICAL CUT GAP ───────────────────────────────────────────
+        // Give the printer spooler time to process the cut command before
+        // sending the next print job.
         await new Promise(r => setTimeout(r, 1500));
 
-        console.log("[PRINT] starting Invoice");
-        
-        // 3. CUSTOMER INVOICE SECOND
-        // By this point, receiptModal is already open from payment.js or restored by executeKitchenPrint.
+        // ── STEP 3: CUSTOMER INVOICE ───────────────────────────────────────────
+        console.log('[PAY PRINT] starting customer invoice');
+
+        // Open the receipt modal now — the @media print CSS will print ONLY this
+        // because kitchenTicketModal was already closed by executeKitchenPrint.
         const receiptModal = document.getElementById('receiptModal');
-        if (receiptModal && receiptModal.classList.contains('open')) {
-            console.log("[PRINT] Invoice print invoked");
-            await new Promise(resolve => {
-                const afterHandler = () => {
+        if (receiptModal) receiptModal.classList.add('open');
+
+        console.log('[PAY PRINT] invoice print invoked');
+
+        await new Promise(resolve => {
+            const afterHandler = () => {
+                window.removeEventListener('afterprint', afterHandler);
+                resolve();
+            };
+            window.addEventListener('afterprint', afterHandler);
+
+            setTimeout(() => {
+                window.print();
+
+                // Fallback in case afterprint never fires
+                setTimeout(() => {
                     window.removeEventListener('afterprint', afterHandler);
                     resolve();
-                };
-                window.addEventListener('afterprint', afterHandler);
-                
-                setTimeout(() => {
-                    window.print();
-                    
-                    // Fallback timeout in case afterprint does not fire
-                    setTimeout(() => {
-                        window.removeEventListener('afterprint', afterHandler);
-                        resolve();
-                    }, 5000);
-                }, 300);
-            });
-            console.log("[PRINT] Invoice afterprint received");
-        }
-        
-        console.log("[PRINT] sequence complete");
-        
+                }, 5000);
+            }, 300);
+        });
+
+        console.log('[PAY PRINT] invoice finished');
+        console.log('[PAY PRINT] sequence complete');
+
     } catch (e) {
-        console.error("Error during sequential print:", e);
+        console.error('[PAY PRINT] error during sequential print sequence:', e);
     } finally {
         isPrintSequenceRunning = false;
-        
-        // Ensure UI is restored (Customer Invoice should remain visible to the cashier)
+
+        // Always ensure receiptModal is visible after the sequence so the
+        // cashier can see and manually re-print if needed.
         const receiptModal = document.getElementById('receiptModal');
         if (receiptModal) receiptModal.classList.add('open');
     }

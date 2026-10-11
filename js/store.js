@@ -170,7 +170,7 @@ var currentLang = (() => {
         return 'en';
     }
 })();
-var activeCategory = 'all';
+var activeCategory = null; // null = Category / Folder View
 var currentCart = [];
 var selectedCartItemIndex = null; // Used for item modifier panel
 var currentOrderType = 'local';

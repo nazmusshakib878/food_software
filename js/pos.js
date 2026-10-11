@@ -148,41 +148,143 @@ function promptAddOrderType() {
     }
 }
 
-// 3. Categories Ribbon / Cards
+// Robust item category resolution
+function getItemCategoryId(item) {
+    if (!item) return '';
+    if (item.catId !== undefined && item.catId !== null) return String(item.catId);
+    if (item.categoryId !== undefined && item.categoryId !== null) return String(item.categoryId);
+    if (item.category !== undefined && item.category !== null) {
+        if (typeof item.category === 'object') {
+            return String(item.category.id || item.category.catId || item.category.name || '');
+        }
+        return String(item.category);
+    }
+    if (item.mealCategory) return 'meals';
+    return '';
+}
+
+function itemMatchesCategory(item, catId) {
+    if (!item || !catId) return false;
+    const itemCat = getItemCategoryId(item);
+    if (!itemCat) return false;
+    if (itemCat === catId) return true;
+    const catObj = categories.find(c => c.id === catId);
+    if (catObj) {
+        if (catObj.nameEn && itemCat.toLowerCase() === catObj.nameEn.toLowerCase()) return true;
+        if (catObj.nameAr && itemCat === catObj.nameAr) return true;
+    }
+    return false;
+}
+
+// 3. Categories Ribbon / Folder Navigation Header
 function renderCategoriesRibbon() {
     const ribbon = document.getElementById('categoriesRibbon');
     if (!ribbon) return;
 
     const availableItems = items.filter(i => i.available !== false);
+    const isInsideFolder = Boolean(activeCategory && activeCategory !== 'all');
 
-    let html = `
-        <div class="cat-chip ${activeCategory === 'all' ? 'active' : ''}" onclick="selectCategory('all')">
-            <i class="fa-solid fa-utensils"></i>
-            <span>${escapeHtml(i18n[currentLang].all_cat || 'الكل')}</span>
-            <span class="count-badge">${availableItems.length}</span>
-        </div>
-    `;
-
-    categories.forEach(cat => {
-        const itemCount = availableItems.filter(i => i.catId === cat.id).length;
-        const displayName = currentLang === 'ar' ? cat.nameAr : cat.nameEn;
-        const iconClass = cat.icon || 'fa-burger';
-        html += `
-            <div class="cat-chip ${activeCategory === cat.id ? 'active' : ''}" onclick="selectCategory('${escapeHtml(cat.id)}')">
-                <i class="fa-solid ${iconClass}"></i>
-                <span>${escapeHtml(displayName)}</span>
-                <span class="count-badge">${itemCount}</span>
+    if (!isInsideFolder) {
+        // Folder Overview Mode: Clean category chips bar
+        let html = `
+            <div class="cat-chip active" onclick="backToFolderView()" title="${currentLang === 'ar' ? 'عرض كل المجلدات' : 'View All Folders'}">
+                <i class="fa-solid fa-folder-tree"></i>
+                <span>${currentLang === 'ar' ? 'كل المجلدات' : 'All Folders'}</span>
+                <span class="count-badge">${categories.length}</span>
             </div>
         `;
-    });
+
+        categories.forEach(cat => {
+            const itemCount = availableItems.filter(i => itemMatchesCategory(i, cat.id)).length;
+            const displayName = currentLang === 'ar' ? (cat.nameAr || cat.nameEn) : (cat.nameEn || cat.nameAr);
+            const iconClass = cat.icon || 'fa-burger';
+            html += `
+                <div class="cat-chip" onclick="openCategoryFolder('${escapeHtml(cat.id)}')">
+                    <i class="fa-solid ${iconClass}"></i>
+                    <span>${escapeHtml(displayName)}</span>
+                    <span class="count-badge">${itemCount}</span>
+                </div>
+            `;
+        });
+
+        ribbon.innerHTML = html;
+        return;
+    }
+
+    // Inside Folder Mode: Show prominent Back button + active folder badge + category switcher
+    const activeCat = categories.find(c => c.id === activeCategory);
+    const catDisplayName = activeCat 
+        ? (currentLang === 'ar' ? (activeCat.nameAr || activeCat.nameEn) : (activeCat.nameEn || activeCat.nameAr))
+        : activeCategory;
+    const folderCount = availableItems.filter(i => itemMatchesCategory(i, activeCategory)).length;
+    const backArrowIcon = currentLang === 'ar' ? 'fa-arrow-right' : 'fa-arrow-left';
+
+    let html = `
+        <div class="pos-folder-header-bar">
+            <button type="button" class="pos-folder-back-btn" onclick="backToFolderView()" title="${currentLang === 'ar' ? 'الرجوع للمجلدات' : 'Back to Folders'}">
+                <i class="fa-solid ${backArrowIcon}"></i>
+                <span>${currentLang === 'ar' ? 'رجوع للمجلدات' : 'Back'}</span>
+            </button>
+            <div class="pos-folder-current-meta">
+                <span class="pos-folder-active-badge">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span>${escapeHtml(catDisplayName)}</span>
+                </span>
+                <span class="pos-folder-active-count">${folderCount} ${currentLang === 'ar' ? 'صنف' : 'items'}</span>
+            </div>
+            <div class="pos-folder-quick-chips">
+                <div class="cat-chip" onclick="backToFolderView()" title="${currentLang === 'ar' ? 'كل المجلدات' : 'All Folders'}">
+                    <i class="fa-solid fa-folder-tree"></i>
+                    <span>${currentLang === 'ar' ? 'المجلدات' : 'Folders'}</span>
+                </div>
+                ${categories.map(cat => {
+                    const isAct = cat.id === activeCategory;
+                    const cnt = availableItems.filter(i => itemMatchesCategory(i, cat.id)).length;
+                    const name = currentLang === 'ar' ? (cat.nameAr || cat.nameEn) : (cat.nameEn || cat.nameAr);
+                    const icon = cat.icon || 'fa-burger';
+                    return `
+                        <div class="cat-chip ${isAct ? 'active' : ''}" onclick="openCategoryFolder('${escapeHtml(cat.id)}')">
+                            <i class="fa-solid ${icon}"></i>
+                            <span>${escapeHtml(name)}</span>
+                            <span class="count-badge">${cnt}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
 
     ribbon.innerHTML = html;
 }
 
-function selectCategory(catId) {
+function openCategoryFolder(catId) {
     activeCategory = catId;
+    const searchInput = document.getElementById('productSearchInput');
+    if (searchInput) searchInput.value = '';
     renderCategoriesRibbon();
     renderProducts();
+}
+
+function backToFolderView() {
+    activeCategory = null;
+    const searchInput = document.getElementById('productSearchInput');
+    if (searchInput) searchInput.value = '';
+    renderCategoriesRibbon();
+    renderProducts();
+}
+
+function clearProductSearch() {
+    const searchInput = document.getElementById('productSearchInput');
+    if (searchInput) searchInput.value = '';
+    renderProducts();
+}
+
+function selectCategory(catId) {
+    if (!catId || catId === 'all' || catId === 'folders') {
+        backToFolderView();
+    } else {
+        openCategoryFolder(catId);
+    }
 }
 
 // Normalize Arabic letters for fuzzy search
@@ -196,7 +298,7 @@ function normalizeArabicText(str) {
         .trim();
 }
 
-// 4. Products Grid
+// 4. Products & Folders Grid
 function renderProducts() {
     const grid = document.getElementById('productsGrid');
     if (!grid) return;
@@ -204,32 +306,172 @@ function renderProducts() {
     const rawQuery = (document.getElementById('productSearchInput')?.value || '').toLowerCase().trim();
     const normalizedQuery = normalizeArabicText(rawQuery);
 
-    const filtered = items.filter(item => {
-        const matchesCat = (activeCategory === 'all' || item.catId === activeCategory);
+    const isInsideFolder = Boolean(activeCategory && activeCategory !== 'all');
+
+    // Case 1: Search query typed from Folder View -> search across all items
+    if (!isInsideFolder && rawQuery) {
+        grid.classList.remove('category-folders-view');
+        const searchMatches = items.filter(item => {
+            const arNorm = normalizeArabicText(item.arName);
+            const enNorm = (item.enName || '').toLowerCase();
+            const codeNorm = (item.code !== undefined && item.code !== null ? String(item.code) : '').toLowerCase();
+            return arNorm.includes(normalizedQuery) || enNorm.includes(rawQuery) || codeNorm.includes(rawQuery);
+        });
+
+        if (searchMatches.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--muted);">
+                    <i class="fa-solid fa-magnifying-glass" style="font-size: 36px; margin-bottom: 8px;"></i>
+                    <p>${currentLang === 'ar' ? 'لا توجد أصناف مطابقة للبحث' : 'No matching products found'}</p>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="clearProductSearch()" style="margin-top: 10px;">
+                        <i class="fa-solid fa-folder-tree"></i> ${currentLang === 'ar' ? 'الرجوع للمجلدات' : 'Back to Folders'}
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = `
+            <div style="grid-column: 1/-1; display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: rgba(13, 148, 136, 0.08); border-radius: 12px; border: 1px solid rgba(13, 148, 136, 0.2); margin-bottom: 6px;">
+                <span style="font-size: 13px; font-weight: 700; color: var(--teal);">
+                    <i class="fa-solid fa-magnifying-glass"></i> ${currentLang === 'ar' ? 'نتائج البحث عن:' : 'Search results for:'} "${escapeHtml(rawQuery)}" (${searchMatches.length})
+                </span>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearProductSearch()" style="font-size: 12px; padding: 4px 10px;">
+                    <i class="fa-solid fa-xmark"></i> ${currentLang === 'ar' ? 'مسح والعودة للمجلدات' : 'Clear & Back to Folders'}
+                </button>
+            </div>
+            ${renderProductCardsHTML(searchMatches)}
+        `;
+        return;
+    }
+
+    // Case 2: Folder View (Default: show category folder cards)
+    if (!isInsideFolder) {
+        grid.classList.add('category-folders-view');
+        renderCategoryFoldersView(grid);
+        return;
+    }
+
+    // Case 3: Inside a specific folder -> show ONLY items belonging to this folder
+    grid.classList.remove('category-folders-view');
+    renderFolderItemsView(grid, rawQuery, normalizedQuery);
+}
+
+function renderCategoryFoldersView(grid) {
+    if (!categories || categories.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--muted);">
+                <i class="fa-solid fa-folder-open" style="font-size: 36px; margin-bottom: 8px;"></i>
+                <p>${currentLang === 'ar' ? 'لا توجد مجلدات أو أقسام مضافة' : 'No category folders found'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = categories.map(cat => {
+        const catItems = items.filter(i => itemMatchesCategory(i, cat.id));
+        const totalCount = catItems.length;
+
+        const displayName = currentLang === 'ar' ? (cat.nameAr || cat.nameEn) : (cat.nameEn || cat.nameAr);
+        const secondaryName = currentLang === 'ar' ? (cat.nameEn || '') : (cat.nameAr || '');
+        const iconClass = cat.icon || 'fa-burger';
         
+        // Find preview image
+        const firstWithImage = catItems.find(i => i.image && i.image.trim().length > 5);
+        const imgUrl = (firstWithImage ? firstWithImage.image : '') || getCategoryFallbackImage(cat.id);
+
+        const countLabel = currentLang === 'ar' ? `${totalCount} صنف` : `${totalCount} items`;
+
+        return `
+            <div class="pos-category-folder-card" onclick="openCategoryFolder('${escapeHtml(cat.id)}')">
+                <div class="folder-card-media">
+                    <img src="${imgUrl}" alt="${escapeHtml(displayName)}" loading="lazy" onerror="handleImageError(this, '${escapeHtml(cat.id)}')">
+                    <span class="folder-tab-pill">
+                        <i class="fa-solid fa-folder"></i>
+                        <span>${currentLang === 'ar' ? 'مجلد' : 'Folder'}</span>
+                    </span>
+                    <span class="folder-count-pill">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                        <span>${countLabel}</span>
+                    </span>
+                </div>
+                <div class="folder-card-body">
+                    <div class="folder-title-row">
+                        <div class="folder-icon-circle">
+                            <i class="fa-solid ${iconClass}"></i>
+                        </div>
+                        <div class="folder-text-wrap">
+                            <h3 class="folder-primary-title" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</h3>
+                            <p class="folder-secondary-title" title="${escapeHtml(secondaryName)}">${escapeHtml(secondaryName)}</p>
+                        </div>
+                    </div>
+                    <div class="folder-card-footer">
+                        <span class="folder-enter-hint">
+                            <i class="fa-regular fa-folder-open"></i>
+                            <span>${currentLang === 'ar' ? 'عرض الأصناف' : 'Open Folder'}</span>
+                        </span>
+                        <div class="folder-chevron-circle">
+                            <i class="fa-solid ${currentLang === 'ar' ? 'fa-arrow-left' : 'fa-arrow-right'}"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderFolderItemsView(grid, rawQuery, normalizedQuery) {
+    const activeCat = categories.find(c => c.id === activeCategory);
+    const catDisplayName = activeCat 
+        ? (currentLang === 'ar' ? (activeCat.nameAr || activeCat.nameEn) : (activeCat.nameEn || activeCat.nameAr))
+        : activeCategory;
+
+    // Filter strictly by this folder
+    const folderItems = items.filter(item => itemMatchesCategory(item, activeCategory));
+
+    // Stable sort using configured sortOrder/position/order
+    folderItems.sort((a, b) => {
+        const orderA = (a.sortOrder !== undefined && a.sortOrder !== null) ? a.sortOrder :
+                       (a.position !== undefined && a.position !== null) ? a.position :
+                       (a.order !== undefined && a.order !== null) ? a.order : null;
+        const orderB = (b.sortOrder !== undefined && b.sortOrder !== null) ? b.sortOrder :
+                       (b.position !== undefined && b.position !== null) ? b.position :
+                       (b.order !== undefined && b.order !== null) ? b.order : null;
+        if (orderA !== null && orderB !== null) return orderA - orderB;
+        if (orderA !== null) return -1;
+        if (orderB !== null) return 1;
+        return 0; // Stable original order
+    });
+
+    const filtered = folderItems.filter(item => {
+        if (!rawQuery) return true;
         const arNorm = normalizeArabicText(item.arName);
         const enNorm = (item.enName || '').toLowerCase();
-        const codeNorm = (item.code || '').toLowerCase();
-
-        const matchesSearch = !rawQuery || 
-                              arNorm.includes(normalizedQuery) || 
-                              enNorm.includes(rawQuery) ||
-                              codeNorm.includes(rawQuery);
-
-        return matchesCat && matchesSearch;
+        const codeNorm = (item.code !== undefined && item.code !== null ? String(item.code) : '').toLowerCase();
+        return arNorm.includes(normalizedQuery) || enNorm.includes(rawQuery) || codeNorm.includes(rawQuery);
     });
 
     if (filtered.length === 0) {
         grid.innerHTML = `
             <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--muted);">
                 <i class="fa-solid fa-utensils" style="font-size: 36px; margin-bottom: 8px;"></i>
-                <p>${currentLang === 'ar' ? 'لا توجد أصناف مطابقة للبحث' : 'No matching products found'}</p>
+                <p>${rawQuery 
+                    ? (currentLang === 'ar' ? 'لا توجد أصناف مطابقة للبحث في هذا المجلد' : 'No matching products found in this folder')
+                    : (currentLang === 'ar' ? 'لا توجد أصناف في هذا المجلد حالياً' : 'No products in this folder currently')
+                }</p>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="backToFolderView()" style="margin-top: 10px;">
+                    <i class="fa-solid ${currentLang === 'ar' ? 'fa-arrow-right' : 'fa-arrow-left'}"></i> ${currentLang === 'ar' ? 'الرجوع للمجلدات' : 'Back to Folders'}
+                </button>
             </div>
         `;
         return;
     }
 
-    grid.innerHTML = filtered.map(item => {
+    grid.innerHTML = renderProductCardsHTML(filtered);
+}
+
+function renderProductCardsHTML(itemsList) {
+    return itemsList.map(item => {
         let isAvailable = item.available !== false;
         
         const inCartQty = currentCart.filter(c => c.id === item.id).reduce((sum, c) => sum + c.qty, 0);
@@ -256,10 +498,10 @@ function renderProducts() {
 
         const qtyBadge = inCartQty > 0 ? `<span class="cart-qty-badge">${inCartQty}</span>` : '';
         const primaryName = currentLang === 'ar' ? (item.arName || item.enName) : (item.enName || item.arName);
-        const cat = categories.find(c => c.id === item.catId);
+        const cat = categories.find(c => c.id === getItemCategoryId(item));
         const catName = cat ? (currentLang === 'ar' ? cat.nameAr : cat.nameEn) : '';
         const subtitle = currentLang === 'ar' ? (item.subtitleAr || catName) : (item.subtitleEn || catName);
-        const imgUrl = item.image || getCategoryFallbackImage(item.catId);
+        const imgUrl = item.image || getCategoryFallbackImage(getItemCategoryId(item));
         const codePill = `<span class="code-pill">${escapeHtml(item.code !== undefined && item.code !== null ? String(item.code) : '0')}</span>`;
         const outOfStockBadge = !isAvailable 
             ? `<span class="out-of-stock-badge"><i class="fa-solid fa-ban"></i> ${currentLang === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>` 
@@ -279,7 +521,7 @@ function renderProducts() {
                 ${outOfStockBadge}
                 <div class="product-card-media">
                     ${stockPillHTML}
-                    <img src="${imgUrl}" alt="${escapeHtml(primaryName)}" loading="lazy" onerror="handleImageError(this, '${escapeHtml(item.catId)}')">
+                    <img src="${imgUrl}" alt="${escapeHtml(primaryName)}" loading="lazy" onerror="handleImageError(this, '${escapeHtml(getItemCategoryId(item))}')">
                     ${codePill}
                     <span class="price-pill">${formatCurrency(item.price)}</span>
                 </div>
@@ -338,8 +580,8 @@ function addToCart(itemId) {
             arName: item.arName,
             enName: item.enName,
             price: item.price,
-            image: item.image || getCategoryFallbackImage(item.catId),
-            catId: item.catId,
+            image: item.image || getCategoryFallbackImage(getItemCategoryId(item) || item.catId),
+            catId: getItemCategoryId(item) || item.catId,
             qty: 1,
             addons: [],
             modifiers: [],
@@ -353,8 +595,8 @@ function addToCart(itemId) {
     selectCartItem(targetIndex);
 
     // Respect Stay at Selected Category Preference
-    if (posPreferences.stayAtCategory === 'exit' && activeCategory !== 'all') {
-        activeCategory = 'all';
+    if (posPreferences.stayAtCategory === 'exit' && activeCategory) {
+        activeCategory = null;
         renderCategoriesRibbon();
     }
 
