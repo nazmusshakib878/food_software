@@ -607,134 +607,31 @@
 
         <!-- ================= VIEW 5: RETURNS & ORDERS VIEW ================= -->
         <div class="screen-view returns-screen-container" id="returnsView">
-            <div class="pos-layout">
-                <!-- posOrderPanel will be dynamically moved here when active -->
-                <main class="pos-catalog-panel" style="background: var(--bg-color); flex: 1; min-height: 0; display: flex; flex-direction: column;">
-                    
-                    <!-- Screen 1: Order History -->
-                    <div class="returns-sub-view active" id="returnsScreen1" style="flex: 1; display: flex; flex-direction: column;">
-                        
-                        <div class="orders-top-tabs" style="display: flex; gap: 10px; overflow-x: auto; padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: 600; font-size: 14px; background: white;">
-                            <div class="order-tab active" onclick="setReturnOrderTab('uncompleted', this)" data-i18n="tab_uncompleted" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; background: var(--teal); color: white;">Uncompleted</div>
-                            <div class="order-tab" onclick="setReturnOrderTab('all', this)" data-i18n="tab_all" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">All</div>
-                            <div class="order-tab" onclick="setReturnOrderTab('offline', this)" data-i18n="tab_offline" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Offline</div>
-                            <div class="order-tab" onclick="setReturnOrderTab('outgoing', this)" data-i18n="tab_outgoing" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Outgoing</div>
-                            <div class="order-tab" onclick="setReturnOrderTab('returned', this)" data-i18n="tab_returned" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Returned</div>
-                            <div class="order-tab" onclick="setReturnOrderTab('active', this)" data-i18n="tab_active" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Active</div>
-                            <div class="order-tab" onclick="setReturnOrderTab('done', this)" data-i18n="tab_done" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Done</div>
-                        </div>
+            <div class="orders-screen-wrapper" id="returnsScreen1">
+                <!-- Top Filter Tabs -->
+                <div class="orders-top-tabs" id="ordersTopTabs">
+                    <button type="button" class="order-tab active" onclick="setReturnOrderTab('uncompleted', this)" data-i18n="tab_uncompleted">Uncompleted</button>
+                    <button type="button" class="order-tab" onclick="setReturnOrderTab('all', this)" data-i18n="tab_all">All</button>
+                    <button type="button" class="order-tab" onclick="setReturnOrderTab('offline', this)" data-i18n="tab_offline">Offline</button>
+                    <button type="button" class="order-tab" onclick="setReturnOrderTab('outgoing', this)" data-i18n="tab_outgoing">Outgoing</button>
+                    <button type="button" class="order-tab" onclick="setReturnOrderTab('returned', this)" data-i18n="tab_returned">Returned</button>
+                    <button type="button" class="order-tab" onclick="setReturnOrderTab('active', this)" data-i18n="tab_active">Active</button>
+                    <button type="button" class="order-tab" onclick="setReturnOrderTab('done', this)" data-i18n="tab_done">Done</button>
+                </div>
 
-                        <div class="catalog-controls" style="padding: 10px 15px; background: white; border-bottom: 1px solid #e2e8f0;">
-                            <div class="search-input-wrap" style="max-width: 100%;">
-                                <i class="fa-solid fa-magnifying-glass"></i>
-                                <input type="text" id="returnsSearchInput" placeholder="Search Invoice ID, Order Number, User Name..." oninput="filterReturnsOrders()">
-                                <i class="fa-solid fa-xmark" style="cursor: pointer; pointer-events: auto; right: 15px; left: auto;" onclick="document.getElementById('returnsSearchInput').value=''; filterReturnsOrders();"></i>
-                            </div>
-                        </div>
-
-                        <div class="returns-orders-grid" id="returnsOrdersGrid" style="flex: 1; overflow-y: auto; padding: 15px; align-content: flex-start;">
-                            <!-- Populated dynamically via JS -->
-                        </div>
-                    </div>
-
-            <!-- Screen 2: Cancel Invoice Item Selection -->
-            <div class="returns-sub-view" id="returnsScreen2">
-                <div class="returns-layout-split">
-                    <div class="returns-main-panel">
-                        <div class="returns-table-container">
-                            <table class="returns-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 50px;"><input type="checkbox" id="retSelectAll" style="width: 20px; height: 20px;" onchange="toggleSelectAllReturns(this.checked)"></th>
-                                        <th>Name</th>
-                                        <th>Price</th>
-                                        <th>Return Qty / Qty</th>
-                                        <th>Damaged Qty</th>
-                                        <th>Total Damage</th>
-                                        <th>Damaged</th>
-                                        <th style="width: 50px;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="returnsItemsTbody">
-                                    <!-- Populated dynamically -->
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="returns-action-row">
-                            <div class="left-actions" style="display: flex; gap: 10px;">
-                                <button type="button" class="btn-return-action" style="background: var(--purple, #6f42c1); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer;" onclick="incrementReturnItem()"><i class="fa-solid fa-plus"></i> Add</button>
-                                <button type="button" class="btn-return-action" style="background: var(--purple, #6f42c1); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer;" onclick="decrementReturnItem()"><i class="fa-solid fa-minus"></i> Remove</button>
-                                <button type="button" class="btn-return-action" style="background: var(--purple, #6f42c1); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer;" onclick="promptReturnNotes()"><i class="fa-solid fa-note-sticky"></i> Notes</button>
-                                <button type="button" class="btn-return-action btn-back" style="background: var(--purple, #6f42c1); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer;" onclick="goReturnsScreen1()"><i class="fa-solid fa-arrow-left"></i> Back</button>
-                            </div>
-                            <div class="right-actions" style="display: flex; gap: 10px;">
-                                <button type="button" class="btn-return-big btn-back-big" style="background: var(--teal, #0f766e); color: white; border: none; padding: 15px 30px; border-radius: 6px; font-weight: 700; font-size: 16px; cursor: pointer;" onclick="goReturnsScreen1()"><i class="fa-solid fa-arrow-left"></i> Back</button>
-                                <button type="button" class="btn-return-big btn-next" style="background: var(--teal, #0f766e); color: white; border: none; padding: 15px 30px; border-radius: 6px; font-weight: 700; font-size: 16px; cursor: pointer;" onclick="goReturnsScreen3()">Next <i class="fa-solid fa-arrow-right"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="returns-sidebar">
-                        <h1 style="color: var(--purple, #6f42c1); text-align: center;">Cancel Invoice</h1>
-                        <div class="sidebar-meta" id="retSidebarMeta">
-                            <!-- Order details here -->
-                        </div>
+                <!-- Orders Search Bar -->
+                <div class="orders-search-bar-wrap">
+                    <div class="search-input-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="returnsSearchInput" placeholder="Search Invoice ID, Order Number, User Name..." oninput="filterReturnsOrders()">
+                        <i class="fa-solid fa-xmark clear-search-icon" onclick="clearReturnsSearch()" title="Clear Search"></i>
                     </div>
                 </div>
-            </div>
 
-            <!-- Screen 3: Cancel Confirmation & Security -->
-            <div class="returns-sub-view" id="returnsScreen3">
-                <div class="returns-layout-split">
-                    <div class="returns-main-panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                        <div class="security-panel">
-                            <div class="reason-group">
-                                <h3>Reason for cancellation:</h3>
-                                <label class="radio-label"><input type="radio" name="cancelReason" value="Error" checked> Error</label>
-                                <label class="radio-label"><input type="radio" name="cancelReason" value="Client Cancellation"> Client Cancellation</label>
-                                <label class="radio-label"><input type="radio" name="cancelReason" value="Wrong Order"> Wrong Order</label>
-                            </div>
-                            
-                            <div class="input-group">
-                                <label>Client Phone Number</label>
-                                <input type="text" id="retClientPhone" class="ret-input" placeholder="05xxxxxxxx" readonly onclick="setActiveRetInput('retClientPhone')">
-                            </div>
-
-                            <div class="input-group">
-                                <label>User Key (PIN)</label>
-                                <input type="password" id="retUserKey" class="ret-input" placeholder="****" readonly onclick="setActiveRetInput('retUserKey')">
-                            </div>
-                        </div>
-
-                        <div class="ret-numpad-container">
-                            <div class="ret-numpad">
-                                <button type="button" onclick="retPadPress('1')">1</button>
-                                <button type="button" onclick="retPadPress('2')">2</button>
-                                <button type="button" onclick="retPadPress('3')">3</button>
-                                <button type="button" onclick="retPadPress('4')">4</button>
-                                <button type="button" onclick="retPadPress('5')">5</button>
-                                <button type="button" onclick="retPadPress('6')">6</button>
-                                <button type="button" onclick="retPadPress('7')">7</button>
-                                <button type="button" onclick="retPadPress('8')">8</button>
-                                <button type="button" onclick="retPadPress('9')">9</button>
-                                <button type="button" onclick="retPadPress('C')" style="color: var(--danger);">C</button>
-                                <button type="button" onclick="retPadPress('0')">0</button>
-                                <button type="button" onclick="retPadPress('BACK')"><i class="fa-solid fa-delete-left"></i></button>
-                            </div>
-                        </div>
-
-                        <div class="returns-action-row" style="width: 100%; max-width: 600px; margin-top: 30px;">
-                            <button type="button" class="btn-return-big btn-back-big" onclick="goReturnsScreen2()"><i class="fa-solid fa-arrow-left"></i> Back</button>
-                            <button type="button" class="btn-return-big btn-confirm" onclick="confirmCancellation()"><i class="fa-solid fa-check-double"></i> Confirm Cancellation</button>
-                        </div>
-                    </div>
-                    <div class="returns-sidebar">
-                        <h1>Cancel Invoice</h1>
-                        <div class="sidebar-meta" id="retSidebarMeta3">
-                            <!-- Order details here -->
-                        </div>
-                    </div>
+                <!-- Orders Cards Grid -->
+                <div class="returns-orders-grid" id="returnsOrdersGrid">
+                    <!-- Populated dynamically via js/returns.js -->
                 </div>
-            </main>
             </div>
         </div>
 
@@ -1193,15 +1090,15 @@
         </div>
         <div class="modal-footer" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <button class="btn-primary" onclick="printReceiptDirect()">
-                    <i class="fa-solid fa-print"></i> <span data-i18n="btn_print_receipt">طباعة (Print)</span>
+                <button type="button" class="btn-primary" onclick="printReceiptDirect()" style="background: var(--teal, #0d9488); font-weight: 700; padding: 10px 22px;">
+                    <i class="fa-solid fa-print"></i> <span data-i18n="btn_print_receipt">Print</span>
                 </button>
                 <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);" onclick="downloadReceiptPdf()">
                     <i class="fa-solid fa-file-pdf"></i> <span data-i18n="btn_download_pdf">تحميل PDF</span>
                 </button>
             </div>
-            <button class="btn-danger" style="background: var(--muted);" onclick="closeReceiptModal()">
-                <span data-i18n="btn_close">إغلاق</span>
+            <button type="button" class="btn-secondary" style="background: #e2e8f0; color: #334155; font-weight: 700; padding: 10px 22px; border: none; border-radius: 8px; cursor: pointer;" onclick="closeReceiptModal()">
+                <span data-i18n="btn_ok">OK</span>
             </button>
         </div>
     </div>
@@ -1231,6 +1128,131 @@
                 <span data-i18n="btn_close">إغلاق</span>
             </button>
         </div>
+    </div>
+</div>
+
+<!-- ================= MODAL: CANCEL INVOICE (RETURN WORKFLOW) ================= -->
+<div class="modal-overlay" id="cancelInvoiceModal">
+    <div class="modal-card cancel-invoice-modal-card">
+        
+        <!-- STEP 1: ITEM SELECTION & RETURN QUANTITY -->
+        <div class="cancel-invoice-step" id="returnsScreen2">
+            <!-- Header -->
+            <div class="cancel-invoice-header">
+                <div class="cancel-step1-top-controls">
+                    <button type="button" class="btn-cancel-purple btn-plus" onclick="incrementReturnItem()" title="Add / Increase Quantity"><i class="fa-solid fa-plus"></i></button>
+                    <button type="button" class="btn-cancel-purple btn-minus" onclick="decrementReturnItem()" title="Remove / Decrease Quantity"><i class="fa-solid fa-minus"></i></button>
+                    <button type="button" class="btn-cancel-purple btn-notes" onclick="promptReturnNotes()"><i class="fa-solid fa-note-sticky"></i> <span>Notes</span></button>
+                    <button type="button" class="btn-cancel-purple btn-back-top" onclick="closeCancelInvoiceModal()"><i class="fa-solid fa-arrow-left"></i> <span>Back</span></button>
+                </div>
+                <h2 class="cancel-invoice-title">Cancel Invoice</h2>
+            </div>
+
+            <!-- Table Container -->
+            <div class="cancel-table-container">
+                <table class="cancel-invoice-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 45px; text-align: center;">
+                                <input type="checkbox" id="retSelectAll" onchange="toggleSelectAllReturns(this.checked)">
+                            </th>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th style="text-align: center;">Return Quantity</th>
+                            <th style="text-align: center;">Quantity</th>
+                            <th style="text-align: center;">Damaged Quantity</th>
+                            <th>Total Damage</th>
+                            <th style="text-align: center;">Damaged</th>
+                            <th style="width: 45px; text-align: center;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="returnsItemsTbody">
+                        <!-- Populated dynamically via renderReturnItemsTable() -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Bottom Actions -->
+            <div class="cancel-modal-footer">
+                <button type="button" class="btn-cancel-teal btn-next" onclick="goReturnsScreen3()">
+                    <span>Next</span> <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <button type="button" class="btn-cancel-teal btn-back-bottom" onclick="closeCancelInvoiceModal()">
+                    <i class="fa-solid fa-arrow-left"></i> <span>Back</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 2: REASON, SECURITY & KEYPAD -->
+        <div class="cancel-invoice-step" id="returnsScreen3" style="display: none;">
+            <!-- Header -->
+            <div class="cancel-invoice-header">
+                <h2 class="cancel-invoice-title">Cancel Invoice</h2>
+            </div>
+
+            <!-- Step 2 Content: Split Left / Right -->
+            <div class="cancel-step2-body">
+                <!-- Left Column: Reasons & Inputs -->
+                <div class="cancel-step2-left">
+                    <div class="cancel-reasons-group">
+                        <label class="cancel-radio-label">
+                            <input type="radio" name="cancelReason" value="Error" checked>
+                            <span class="custom-radio-circle"></span>
+                            <span>Error</span>
+                        </label>
+                        <label class="cancel-radio-label">
+                            <input type="radio" name="cancelReason" value="Client Cancellation">
+                            <span class="custom-radio-circle"></span>
+                            <span>Client Cancellation</span>
+                        </label>
+                        <label class="cancel-radio-label">
+                            <input type="radio" name="cancelReason" value="Wrong Order">
+                            <span class="custom-radio-circle"></span>
+                            <span>Wrong Order</span>
+                        </label>
+                    </div>
+
+                    <div class="cancel-input-block">
+                        <label for="retUserKey">User Key <span style="color: #e11d48;">*</span></label>
+                        <input type="password" id="retUserKey" class="cancel-keypad-input active" placeholder="••••••••" readonly onclick="setActiveRetInput('retUserKey')">
+                    </div>
+
+                    <div class="cancel-input-block">
+                        <label for="retClientPhone">Client Phone Number</label>
+                        <input type="text" id="retClientPhone" class="cancel-keypad-input" placeholder="05xxxxxxxx" readonly onclick="setActiveRetInput('retClientPhone')">
+                    </div>
+                </div>
+
+                <!-- Right Column: Keypad -->
+                <div class="cancel-step2-right">
+                    <div class="cancel-keypad-grid">
+                        <button type="button" class="cancel-pad-btn" onclick="retPadPress('1')">1</button>
+                        <button type="button" class="cancel-pad-btn" onclick="retPadPress('2')">2</button>
+                        <button type="button" class="cancel-pad-btn" onclick="retPadPress('3')">3</button>
+                        <button type="button" class="cancel-pad-btn" onclick="retPadPress('4')">4</button>
+                        <button type="button" class="cancel-pad-btn" onclick="retPadPress('5')">5</button>
+                        <button type="button" class="cancel-pad-btn" onclick="retPadPress('6')">6</button>
+                        <button type="button" class="cancel-pad-btn" onclick="retPadPress('7')">7</button>
+                        <button type="button" class="cancel-pad-btn" onclick="retPadPress('8')">8</button>
+                        <button type="button" class="cancel-pad-btn" onclick="retPadPress('9')">9</button>
+                        <button type="button" class="cancel-pad-btn cancel-pad-clear" onclick="retPadPress('C')">C</button>
+                        <button type="button" class="cancel-pad-btn" onclick="retPadPress('0')">0</button>
+                        <button type="button" class="cancel-pad-btn cancel-pad-backspace" onclick="retPadPress('BACK')">⌫</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Actions -->
+            <div class="cancel-modal-footer">
+                <button type="button" class="btn-cancel-teal btn-confirm" onclick="confirmCancellation()">
+                    <span>Confirm Cancellation</span>
+                </button>
+                <button type="button" class="btn-cancel-teal btn-back-step2" onclick="goReturnsScreen2()">
+                    <i class="fa-solid fa-arrow-left"></i> <span>Back</span>
+                </button>
+            </div>
+        </div>
+
     </div>
 </div>
 

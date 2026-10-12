@@ -1,435 +1,714 @@
 /* =========================================================
-   RETURNS & CANCELLATIONS UI (css/returns.css)
+   RETURNS & ORDERS SCREEN STYLES (css/returns.css)
+   Pixel-close reference implementation
    ========================================================= */
 
-/* Main Container */
+/* Main Container: Orders View */
 .returns-screen-container {
-    padding: 20px;
-    background: var(--bg);
-    color: var(--text);
+    padding: 0;
+    background: #f8fafc;
+    color: var(--text, #1e293b);
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-}
-
-/* Sub Views */
-.returns-sub-view {
     display: none;
-    height: 100%;
     flex-direction: column;
 }
-.returns-sub-view.active {
+
+.returns-screen-container.active {
     display: flex;
 }
 
-/* Header */
-.returns-header {
+.orders-screen-wrapper {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    gap: 12px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
+    background: #f8fafc;
 }
-.returns-header h2 {
-    margin: 0;
-    font-size: 22px;
-    font-weight: 900;
-    color: var(--text);
-    letter-spacing: -0.3px;
+
+/* =========================================================
+   1. TOP FILTER TABS
+   Exact order: Uncompleted, All, Offline, Outgoing, Returned, Active, Done
+   Selected: TEAL background, white text.
+   Inactive: light/white background, dark readable text.
+   ========================================================= */
+.orders-top-tabs {
     display: flex;
-    align-items: center;
     gap: 10px;
+    overflow-x: auto;
+    padding: 14px 20px 10px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    scrollbar-width: thin;
+    white-space: nowrap;
+    align-items: center;
+    flex-shrink: 0;
 }
 
-/* Screen 1: Order History Grid */
+.orders-top-tabs::-webkit-scrollbar {
+    height: 4px;
+}
+.orders-top-tabs::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.order-tab {
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #334155;
+    transition: all 0.18s ease;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.order-tab:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.order-tab.active {
+    background: var(--teal, #0d9488) !important;
+    color: #ffffff !important;
+    border-color: var(--teal, #0d9488) !important;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.28);
+}
+
+/* =========================================================
+   2. ORDERS SEARCH BAR
+   Long search field directly below tabs with search icon & clear X button
+   ========================================================= */
+.orders-search-bar-wrap {
+    padding: 12px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.orders-search-bar-wrap .search-input-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.orders-search-bar-wrap .search-input-wrap i.fa-magnifying-glass {
+    position: absolute;
+    left: 14px;
+    color: #94a3b8;
+    font-size: 15px;
+    pointer-events: none;
+}
+
+.orders-search-bar-wrap .search-input-wrap input {
+    width: 100%;
+    padding: 11px 40px 11px 40px;
+    font-size: 14.5px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.orders-search-bar-wrap .search-input-wrap input:focus {
+    border-color: var(--teal, #0d9488);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.orders-search-bar-wrap .clear-search-icon {
+    position: absolute;
+    right: 14px;
+    color: #94a3b8;
+    font-size: 15px;
+    cursor: pointer;
+    transition: color 0.15s;
+    padding: 4px;
+}
+
+.orders-search-bar-wrap .clear-search-icon:hover {
+    color: #e11d48;
+}
+
+/* =========================================================
+   3. ORDERS CARDS GRID
+   ========================================================= */
 .returns-orders-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
     gap: 16px;
-    padding-bottom: 20px;
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    align-content: flex-start;
 }
 
 .ret-order-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 0;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 0;
-    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.07);
-    overflow: hidden;
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    gap: 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.ret-order-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
-}
-.ret-order-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(135deg, #022c28 0%, #064e46 70%, #0d9488 100%);
-    color: #fff;
-    padding: 12px 16px;
-    gap: 8px;
-}
-.ret-order-card-header h3 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 800;
-    color: #fff;
-    letter-spacing: -0.2px;
-}
-.ret-order-card-header .ret-time {
-    font-size: 11px;
-    color: rgba(255,255,255,0.78);
-    font-weight: 600;
-}
-.ret-order-card-body {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-    padding: 12px 16px 4px 16px;
-    color: var(--text-secondary);
-}
-.ret-order-card-body .ret-total {
-    font-weight: 900;
-    font-size: 17px;
-    color: var(--text);
-    font-variant-numeric: tabular-nums;
-}
-.ret-order-card-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
-    padding: 10px 16px 14px 16px;
-    border-top: 1px solid var(--border);
-    background: var(--surface-2);
-}
-.ret-status-badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-}
-.ret-status-delivered { background: var(--success); color: #fff; }
-.ret-status-cancelled { background: var(--danger); color: #fff; }
 
-.ret-btn-group {
+.ret-order-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.ret-order-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    font-size: 13.5px;
+    color: #334155;
+    line-height: 1.4;
+}
+
+.ret-info-item {
     display: flex;
     gap: 6px;
-}
-.ret-btn-small {
-    background: var(--surface-hover);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 7px 12px;
-    border-radius: 8px;
-    font-size: 12.5px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.18s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-.ret-btn-small:hover {
-    background: var(--surface-3);
-    border-color: var(--teal);
-}
-.ret-btn-return {
-    background: linear-gradient(135deg, #b45309, var(--orange));
-    color: #fff;
-    border-color: var(--orange);
-    box-shadow: 0 3px 10px rgba(234,88,12,0.28);
-}
-.ret-btn-return:hover {
-    filter: brightness(1.08);
-    box-shadow: 0 5px 14px rgba(234,88,12,0.38);
+    align-items: baseline;
 }
 
-/* Screen 2 & 3: Split Layout */
-.returns-layout-split {
-    display: flex;
-    flex-direction: row;
-    height: 100%;
-    gap: 20px;
+.ret-info-item.text-right {
+    justify-content: flex-end;
+    text-align: right;
 }
-.returns-main-panel {
-    flex: 1;
+
+.ret-label {
+    font-weight: 700;
+    color: #475569;
+}
+
+.ret-value {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.ret-value.font-bold {
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.ret-info-user {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    padding-top: 6px;
+    border-top: 1px dashed #e2e8f0;
+    margin-top: 2px;
+}
+
+/* =========================================================
+   4. ORDER CARD BUTTONS — EXACT ORDER
+   Order Delivered | Return | Kitchen Print | Print
+   Order Delivered: DARK MAROON (#800020)
+   Return: TEAL (#0d9488)
+   Kitchen Print: TEAL (#0d9488)
+   Print: TEAL (#0d9488)
+   ========================================================= */
+.ret-card-actions {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr 1.25fr 0.9fr;
+    gap: 6px;
+    margin-top: auto;
+    width: 100%;
+}
+
+.btn-card-action {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 4px;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12.5px;
+    cursor: pointer;
+    text-align: center;
+    transition: filter 0.15s ease, transform 0.1s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-card-action:hover {
+    filter: brightness(1.1);
+}
+
+.btn-card-action:active {
+    transform: scale(0.98);
+}
+
+.btn-order-delivered {
+    background: #800020 !important; /* DARK MAROON */
+}
+
+.btn-order-return {
+    background: var(--teal, #0d9488) !important;
+}
+
+.btn-order-kitchen {
+    background: var(--teal, #0d9488) !important;
+}
+
+.btn-order-print {
+    background: var(--teal, #0d9488) !important;
+}
+
+/* =========================================================
+   5. CANCEL INVOICE MODAL (STEP 1 & STEP 2)
+   Large, rounded, white/light modal
+   Title: centered PURPLE / DARK MAGENTA (#6d28d9)
+   ========================================================= */
+.cancel-invoice-modal-card {
+    max-width: 960px;
+    width: 95vw;
+    max-height: 90vh;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px;
-    overflow-y: auto;
-    box-shadow: 0 4px 16px rgba(15,23,42,0.04);
+    overflow: hidden;
+    padding: 24px 28px;
+    border: 1px solid #e2e8f0;
 }
-.returns-sidebar {
-    width: 300px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px;
+
+.cancel-invoice-step {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.cancel-invoice-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 18px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.cancel-invoice-title {
+    text-align: center;
+    margin: 0;
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--purple, #6d28d9); /* PURPLE / DARK MAGENTA */
+    letter-spacing: -0.3px;
+}
+
+/* Step 1 Top Controls: +, −, Notes, Back (PURPLE / MAGENTA styling) */
+.cancel-step1-top-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn-cancel-purple {
+    background: var(--purple, #6d28d9) !important;
+    color: #ffffff !important;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.btn-cancel-purple:hover {
+    filter: brightness(1.12);
+}
+
+.btn-cancel-purple:active {
+    transform: scale(0.97);
+}
+
+.btn-cancel-purple.btn-plus,
+.btn-cancel-purple.btn-minus {
+    min-width: 44px;
+    padding: 9px 14px;
+    font-size: 16px;
+}
+
+/* Step 1 Table: Header is DARK TEAL / GREEN (#0f766e) */
+.cancel-table-container {
+    flex: 1;
+    overflow-y: auto;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    min-height: 240px;
+    max-height: 52vh;
+    background: #ffffff;
+}
+
+.cancel-invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    text-align: left;
+}
+
+.cancel-invoice-table thead th {
+    background: #0f766e; /* DARK TEAL / GREEN */
+    color: #ffffff;
+    padding: 12px 10px;
+    font-weight: 700;
+    font-size: 13.5px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    border: none;
+    white-space: nowrap;
+}
+
+.cancel-invoice-table tbody tr {
+    transition: background-color 0.12s;
+}
+
+.cancel-invoice-table tbody tr:nth-child(even) {
+    background: #fbfcfd;
+}
+
+.cancel-invoice-table tbody tr:hover {
+    background: #f1f5f9;
+}
+
+.cancel-invoice-table tbody tr.selected-row {
+    background: rgba(13, 148, 136, 0.08);
+}
+
+.cancel-invoice-table tbody td {
+    padding: 10px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.ret-item-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--teal, #0d9488);
+}
+
+/* Stepper for Return Quantity & Damaged Quantity */
+.ret-stepper-wrap {
+    display: inline-flex;
+    align-items: center;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.ret-stepper-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 800;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s;
+}
+
+.ret-stepper-btn:hover {
+    background: #e2e8f0;
+}
+
+.ret-stepper-btn:active {
+    background: #cbd5e1;
+}
+
+.ret-stepper-input {
+    width: 44px;
+    height: 32px;
+    border: none;
+    border-left: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    outline: none;
+    -moz-appearance: textfield;
+}
+
+.ret-stepper-input::-webkit-outer-spin-button,
+.ret-stepper-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.ret-row-xmark {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid #fecdd3;
+    background: #fff1f2;
+    color: #e11d48;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s ease;
+}
+
+.ret-row-xmark:hover {
+    background: #e11d48;
+    color: #ffffff;
+    border-color: #e11d48;
+}
+
+/* Bottom Large TEAL Buttons for Step 1 & Step 2 */
+.cancel-modal-footer {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 10px;
+    flex-shrink: 0;
+}
+
+.btn-cancel-teal {
+    flex: 1;
+    padding: 14px 28px;
+    background: var(--teal, #0d9488) !important;
+    color: #ffffff !important;
+    border: none;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: filter 0.15s ease, transform 0.1s ease;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+}
+
+.btn-cancel-teal:hover {
+    filter: brightness(1.08);
+}
+
+.btn-cancel-teal:active {
+    transform: scale(0.99);
+}
+
+/* =========================================================
+   6. CANCEL INVOICE STEP 2 VISUAL
+   LEFT: Reasons + User Key + Client Phone Number
+   RIGHT: Numeric Keypad (1-9, C, 0, ⌫)
+   BOTTOM: Confirm Cancellation + Back
+   ========================================================= */
+.cancel-step2-body {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 28px;
+    margin-bottom: 24px;
+    align-items: start;
+    flex: 1;
+}
+
+.cancel-step2-left {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    box-shadow: 0 4px 16px rgba(15,23,42,0.04);
-    flex-shrink: 0;
 }
-.returns-sidebar h1 {
-    font-size: 24px;
-    margin: 0;
-    color: var(--danger);
-    text-align: center;
-    border-bottom: 2px solid var(--danger);
-    padding-bottom: 10px;
-}
-.sidebar-meta {
+
+.cancel-reasons-group {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    font-size: 14px;
-}
-.sidebar-meta-row {
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px dashed var(--border);
-    padding-bottom: 4px;
 }
 
-/* Returns Table */
-.returns-table-container {
-    flex: 1;
-    overflow-y: auto;
-    margin-bottom: 16px;
-}
-.returns-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-.returns-table th, .returns-table td {
-    padding: 10px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-}
-.returns-table th {
-    background: var(--surface-hover);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    font-weight: 800;
-    font-size: 13px;
-    color: var(--text-secondary);
-    border-bottom: 2px solid var(--border);
-}
-.returns-table tr.selected {
-    background: rgba(225, 29, 72, 0.05); /* light red/danger tint */
-}
-.qty-control {
+.cancel-radio-label {
     display: flex;
     align-items: center;
-    gap: 8px;
-}
-.qty-btn {
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
+    gap: 12px;
+    padding: 13px 18px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #ffffff;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.qty-btn:hover { background: var(--surface-hover); }
-
-/* Action Buttons Bottom Row */
-.returns-action-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 1px solid var(--border);
-    padding-top: 16px;
-}
-.left-actions, .right-actions {
-    display: flex;
-    gap: 10px;
-}
-.btn-return-action {
-    background: var(--surface-hover);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.btn-return-action:hover {
-    background: var(--border);
-}
-.btn-return-big {
-    background: linear-gradient(135deg, #0a5c53, var(--teal));
-    color: #fff;
-    border: none;
-    padding: 13px 24px;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 6px 18px rgba(13,148,136,0.3);
-    letter-spacing: 0.1px;
-}
-.btn-return-big:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(13,148,136,0.4);
-    filter: brightness(1.06);
-}
-.btn-back-big {
-    background: var(--surface-2);
-    color: var(--text);
-    border: 1px solid var(--border);
-    box-shadow: none;
-}
-.btn-back-big:hover {
-    background: var(--surface-3);
-    transform: translateY(-1px);
-}
-.btn-next {
-    background: linear-gradient(135deg, #b45309, var(--orange));
-    color: #fff;
-    border: none;
-    box-shadow: 0 4px 14px rgba(234,88,12,0.28);
-}
-.btn-next:hover {
-    filter: brightness(1.08);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(234,88,12,0.38);
-}
-.btn-confirm {
-    background: linear-gradient(135deg, #9f1239, var(--danger));
-    color: #fff;
-    border: none;
-    box-shadow: 0 4px 14px rgba(225,29,72,0.28);
-}
-.btn-confirm:hover {
-    filter: brightness(1.08);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(225,29,72,0.38);
+    color: #1e293b;
+    transition: all 0.15s ease;
+    user-select: none;
 }
 
-/* Security Panel (Screen 3) */
-.security-panel {
-    display: flex;
-    flex-direction: row;
-    gap: 30px;
-    width: 100%;
-    max-width: 800px;
-    margin-bottom: 30px;
+.cancel-radio-label:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
 }
-.reason-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    flex: 1;
-}
-.reason-group h3 {
-    margin: 0 0 10px 0;
-    font-size: 16px;
-}
-.radio-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 15px;
+
+.cancel-radio-label input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--teal, #0d9488);
     cursor: pointer;
-    padding: 8px;
-    background: var(--surface-hover);
-    border-radius: 6px;
-    border: 1px solid var(--border);
 }
-.input-group {
+
+.cancel-input-block {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    flex: 1;
 }
-.input-group label {
-    font-size: 14px;
-    font-weight: 600;
+
+.cancel-input-block label {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #334155;
 }
-.ret-input {
-    padding: 12px;
+
+.cancel-keypad-input {
+    padding: 13px 16px;
     font-size: 18px;
-    border: 2px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg);
-    color: var(--text);
-    text-align: center;
+    border: 2px solid #cbd5e1;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #0f172a;
     cursor: pointer;
-}
-.ret-input:focus, .ret-input.active {
-    border-color: var(--teal);
+    letter-spacing: 2px;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Numpad */
-.ret-numpad-container {
+.cancel-keypad-input.active {
+    border-color: var(--teal, #0d9488);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
+}
+
+/* Keypad (RIGHT) */
+.cancel-step2-right {
     display: flex;
     justify-content: center;
+    align-items: center;
 }
-.ret-numpad {
+
+.cancel-keypad-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
+    width: 100%;
+    max-width: 320px;
 }
-.ret-numpad button {
-    width: 70px;
-    height: 70px;
-    font-size: 24px;
+
+.cancel-pad-btn {
+    height: 64px;
+    font-size: 22px;
     font-weight: 700;
+    border: 1.5px solid #cbd5e1;
     border-radius: 12px;
-    background: var(--surface-hover);
-    border: 1px solid var(--border);
-    color: var(--text);
+    background: #ffffff;
+    color: #1e293b;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.1s;
-}
-.ret-numpad button:active {
-    background: var(--border);
-    transform: scale(0.95);
+    transition: all 0.12s ease;
+    user-select: none;
 }
 
-/* Mobile responsive */
-@media (max-width: 768px) {
-    .returns-layout-split {
+.cancel-pad-btn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.cancel-pad-btn:active {
+    background: #e2e8f0;
+    transform: scale(0.96);
+}
+
+.cancel-pad-clear {
+    color: #e11d48 !important;
+    font-weight: 900;
+}
+
+.cancel-pad-backspace {
+    color: #475569;
+}
+
+/* =========================================================
+   7. RESPONSIVE DESIGN
+   Tablet portrait, mobile, desktop support
+   ========================================================= */
+@media (max-width: 900px) {
+    .cancel-step2-body {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+    .cancel-keypad-grid {
+        max-width: 280px;
+    }
+    .cancel-pad-btn {
+        height: 54px;
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 640px) {
+    .orders-top-tabs {
+        padding: 10px 12px;
+    }
+    .orders-search-bar-wrap {
+        padding: 10px 12px;
+    }
+    .returns-orders-grid {
+        grid-template-columns: 1fr;
+        padding: 12px;
+    }
+    .ret-order-info-grid {
+        grid-template-columns: 1fr;
+    }
+    .ret-info-item.text-right {
+        justify-content: flex-start;
+        text-align: left;
+    }
+    .cancel-invoice-modal-card {
+        padding: 16px 14px;
+        width: 98vw;
+    }
+    .cancel-modal-footer {
         flex-direction: column-reverse;
     }
-    .returns-sidebar {
+    .btn-cancel-teal {
         width: 100%;
-        height: auto;
-    }
-    .security-panel {
-        flex-direction: column;
     }
 }

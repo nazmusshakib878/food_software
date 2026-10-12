@@ -25,3 +25,5 @@ refine_*.js
 fix_verify.js
 inspect.js
 sync_to_app.js
+scratch/
+

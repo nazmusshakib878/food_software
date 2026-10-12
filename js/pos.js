@@ -1222,11 +1222,7 @@ function bottomNavNewOrder() {
 }
 
 function bottomNavOrders() {
-    switchView('admin');
-    const adminTabs = document.querySelectorAll('.admin-nav-item');
-    if (adminTabs.length > 3) {
-        switchAdminTab('orders', adminTabs[3]);
-    }
+    switchView('returns');
 }
 
 function bottomNavTables() {

@@ -37,11 +37,13 @@ function switchView(viewName) {
     } else if (viewName === 'returns') {
         const posOrderPanel = document.getElementById('posOrderPanel');
         if (posOrderPanel) {
-            document.querySelector('#returnsView .pos-layout')?.prepend(posOrderPanel);
+            document.querySelector('#posView .pos-layout')?.prepend(posOrderPanel);
         }
         document.getElementById('returnsView')?.classList.add('active');
         document.getElementById('tabReturnsBtn')?.classList.add('active');
         document.getElementById('mobileNavReturns')?.classList.add('active');
+        document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.bottom-nav-btn[onclick="bottomNavOrders()"]')?.classList.add('active');
         if (typeof goReturnsScreen1 === 'function') goReturnsScreen1();
     }
 }
