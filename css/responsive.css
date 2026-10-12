@@ -979,9 +979,9 @@
 }
 
 @media (min-width: 601px) and (max-width: 900px) and (orientation: portrait) {
-    /* Tablet portrait returns grid: 2 columns */
+    /* Tablet portrait returns grid: 1 column */
     .returns-orders-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
     }
 
     .returns-screen-container {

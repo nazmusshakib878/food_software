@@ -7,6 +7,20 @@ function switchView(viewName) {
     document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
 
+    const topBar = document.querySelector('.app-topbar');
+    const bottomNav = document.getElementById('posBottomNavBar');
+    const mobileBottom = document.getElementById('mobileBottomBar');
+
+    if (viewName === 'shifts') {
+        topBar?.classList.add('hide-on-shifts');
+        bottomNav?.classList.add('hide-on-shifts');
+        mobileBottom?.classList.add('hide-on-shifts');
+    } else {
+        topBar?.classList.remove('hide-on-shifts');
+        bottomNav?.classList.remove('hide-on-shifts');
+        mobileBottom?.classList.remove('hide-on-shifts');
+    }
+
     if (viewName === 'pos') {
         const posOrderPanel = document.getElementById('posOrderPanel');
         if (posOrderPanel) {
@@ -45,6 +59,13 @@ function switchView(viewName) {
         document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
         document.querySelector('.bottom-nav-btn[onclick="bottomNavOrders()"]')?.classList.add('active');
         if (typeof goReturnsScreen1 === 'function') goReturnsScreen1();
+    } else if (viewName === 'shifts') {
+        const posOrderPanel = document.getElementById('posOrderPanel');
+        if (posOrderPanel) {
+            document.querySelector('#posView .pos-layout')?.prepend(posOrderPanel);
+        }
+        document.getElementById('shiftsView')?.classList.add('active');
+        if (typeof renderShiftsScreen === 'function') renderShiftsScreen();
     }
 }
 

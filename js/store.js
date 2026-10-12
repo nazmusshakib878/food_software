@@ -147,6 +147,21 @@ var balancingRecords = (() => {
     }
 })();
 
+var shifts = (() => {
+    try {
+        let saved = JSON.parse(localStorage.getItem('nurpos_shifts') || 'null');
+        if (Array.isArray(saved) && saved.length > 0) {
+            return saved;
+        }
+        if (typeof DEFAULT_SHIFTS !== 'undefined' && Array.isArray(DEFAULT_SHIFTS)) {
+            return JSON.parse(JSON.stringify(DEFAULT_SHIFTS));
+        }
+        return [];
+    } catch (e) {
+        return (typeof DEFAULT_SHIFTS !== 'undefined') ? JSON.parse(JSON.stringify(DEFAULT_SHIFTS)) : [];
+    }
+})();
+
 var posPreferences = (() => {
     try {
         const saved = JSON.parse(localStorage.getItem('nurpos_preferences') || 'null');
@@ -273,6 +288,7 @@ function persistData() {
         localStorage.setItem('nurpos_inventory', JSON.stringify(inventoryRecords));
         localStorage.setItem('nurpos_internal_orders', JSON.stringify(internalOrders));
         localStorage.setItem('nurpos_balancing', JSON.stringify(balancingRecords));
+        localStorage.setItem('nurpos_shifts', JSON.stringify(shifts));
     } catch (e) {
         console.error("LocalStorage persistence error:", e);
         if (typeof showToast === 'function') {

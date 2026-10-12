@@ -344,6 +344,43 @@ const DEFAULT_PRINTERS = [
     { id: "prn_3", name: "Backoffice Reports Printer", nameAr: "طابعة تقارير الإدارة", role: "reports", ip: "192.168.1.102", status: "online", isDefault: true }
 ];
 
+/* Default Shifts Configuration (Matching reference system) */
+const DEFAULT_SHIFTS = [
+    {
+        id: "SH-101",
+        cashier: "نواف سعيد علي سعيد",
+        cashierEn: "Nawaf Saeed Ali Saeed",
+        cashierAr: "نواف سعيد علي سعيد",
+        openedAt: "2026-10-12T12:37:00",
+        closedAt: null,
+        status: "active",
+        openingCash: 500.00,
+        notes: ""
+    },
+    {
+        id: "SH-100",
+        cashier: "ريحان علي",
+        cashierEn: "Rayhan Ali",
+        cashierAr: "ريحان علي",
+        openedAt: "2026-10-12T12:41:00",
+        closedAt: "2026-10-12T16:30:00",
+        status: "closed",
+        openingCash: 300.00,
+        notes: ""
+    },
+    {
+        id: "SH-099",
+        cashier: "صدام زين",
+        cashierEn: "Saddam Zain",
+        cashierAr: "صدام زين",
+        openedAt: "2026-10-12T05:08:00",
+        closedAt: "2026-10-12T12:30:00",
+        status: "closed",
+        openingCash: 250.00,
+        notes: ""
+    }
+];
+
 /* Payment Methods & Categories */
 const DEFAULT_PAYMENT_METHODS = [
     { id: "cash", nameAr: "نقدي", nameEn: "Cash", categoryAr: "نقدي", categoryEn: "Cash" },
@@ -508,6 +545,17 @@ const i18n = {
         lbl_sync_data: "مزامنة البيانات",
         lbl_sync_printers: "مزامنة الطابعات",
         lbl_shifts: "إدارة الورديات",
+        shifts_title: "الورديات",
+        close_shift: "إغلاق الوردية",
+        print_shift: "طباعة الوردية",
+        view_invoices: "عرض الفواتير",
+        close_branch_shifts: "إغلاق ورديات الفرع",
+        print_branch_summary: "طباعة",
+        shift_status_active: "نشطة",
+        shift_status_closed: "مغلقة",
+        back_to_shifts: "العودة للورديات",
+        shift_invoices_title: "فواتير الوردية",
+        no_shift_invoices: "لا توجد فواتير مسجلة لهذه الوردية",
         lbl_printing_devices: "أجهزة الطباعة",
         lbl_logout: "تسجيل الخروج",
         btn_sync_now: "مزامنة الآن",
@@ -834,6 +882,17 @@ const i18n = {
         lbl_sync_data: "Sync Data",
         lbl_sync_printers: "Sync Printers",
         lbl_shifts: "Shift Management",
+        shifts_title: "Shifts",
+        close_shift: "Close Shift",
+        print_shift: "Print Shift",
+        view_invoices: "View Invoices",
+        close_branch_shifts: "Close Branch Shifts",
+        print_branch_summary: "Print",
+        shift_status_active: "Active",
+        shift_status_closed: "Closed",
+        back_to_shifts: "Back to Shifts",
+        shift_invoices_title: "Shift Invoices",
+        no_shift_invoices: "No invoices recorded for this shift",
         lbl_printing_devices: "Printing Devices",
         lbl_logout: "Log Out",
         btn_sync_now: "Sync Now",
@@ -1100,6 +1159,7 @@ function formatOrderType(type, lang = (typeof currentLang !== 'undefined' ? curr
 const SAMPLE_ORD_1013 = {
     id: "ORD-1013",
     seq: 1013,
+    shiftId: "SH-101",
     date: "2026-09-07T16:13:05",
     dateFormatted: "9/7/2026, 4:13:05 PM",
     type: "dine_in",

@@ -1,0 +1,521 @@
+/* =========================================================
+   SHIFTS.CSS - Cashier & Branch Shift Management Styling
+   Exact match to POS reference video
+   ========================================================= */
+
+/* Hide external navigation bars when in Shifts view */
+.hide-on-shifts {
+    display: none !important;
+}
+
+body:has(#shiftsView.active) .app-topbar,
+body:has(#shiftsView.active) .pos-bottom-nav-bar,
+body:has(#shiftsView.active) .mobile-bottom-bar {
+    display: none !important;
+}
+
+.shifts-screen-container {
+    display: none;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
+    background-color: #f1f3f6;
+    font-family: 'Inter', 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1f2937;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 999;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.shifts-screen-container.active {
+    display: flex;
+}
+
+/* Header Bar */
+.shifts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    background-color: transparent;
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.shifts-back-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #374151;
+    font-size: 18px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.shifts-back-btn:hover {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+    color: #111827;
+}
+
+.shifts-back-btn:active {
+    transform: scale(0.95);
+}
+
+.shifts-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #14918e;
+    margin: 0;
+    text-align: center;
+    flex: 1;
+    letter-spacing: -0.3px;
+}
+
+.shifts-header-spacer {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+}
+
+/* Main Content Wrapper */
+.shifts-main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 28px 24px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1360px;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* Shifts Card Container */
+.shifts-card {
+    background-color: #ffffff;
+    border-radius: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    margin-bottom: 24px;
+    flex-shrink: 0;
+}
+
+/* Individual Shift Row */
+.shift-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 32px;
+    border-bottom: 1px solid #edf2f7;
+    transition: background-color 0.15s ease;
+    gap: 20px;
+}
+
+.shift-row:last-child {
+    border-bottom: none;
+}
+
+.shift-row:hover {
+    background-color: #fafbfc;
+}
+
+/* Left: Action Pill Buttons */
+.shift-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.shift-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    border: 1.5px solid #2d3748;
+    color: #1a202c;
+    border-radius: 9999px;
+    padding: 10px 24px;
+    font-size: 14.5px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    outline: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.shift-pill-btn:hover {
+    background-color: #f7fafc;
+    border-color: #1a202c;
+    color: #000000;
+}
+
+.shift-pill-btn:active {
+    transform: scale(0.97);
+}
+
+/* Right: Shift Metadata */
+.shift-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    gap: 5px;
+    flex: 1;
+    min-width: 0;
+}
+
+.shift-cashier-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    font-family: 'Cairo', 'Inter', sans-serif;
+    line-height: 1.3;
+}
+
+.shift-date-time {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #4b5563;
+    font-family: 'Inter', sans-serif;
+    direction: ltr;
+}
+
+/* Bottom Action Bar */
+.shifts-bottom-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0;
+    background-color: transparent;
+    width: 100%;
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
+.btn-close-branch,
+.btn-print-branch {
+    flex: 1;
+    height: 56px;
+    background-color: #14918e;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'Inter', 'Cairo', sans-serif;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 4px 14px rgba(20, 145, 142, 0.25);
+}
+
+.btn-close-branch:hover,
+.btn-print-branch:hover {
+    background-color: #0f7875;
+}
+
+.btn-close-branch:active,
+.btn-print-branch:active {
+    transform: scale(0.98);
+}
+
+/* =========================================================
+   SHIFT INVOICES SUB-VIEW
+   ========================================================= */
+.shift-invoices-view {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.shift-invoices-view.active {
+    display: flex;
+}
+
+.shift-invoices-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    background-color: transparent;
+    flex-shrink: 0;
+}
+
+.shift-invoices-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.shift-summary-card {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 18px 22px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.shift-summary-card .card-lbl {
+    font-size: 13.5px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.shift-summary-card .card-val {
+    font-size: 22px;
+    color: #111827;
+    font-weight: 700;
+}
+
+.shift-summary-card.highlight {
+    background: linear-gradient(135deg, #14918e 0%, #0f7875 100%);
+    border: none;
+}
+
+.shift-summary-card.highlight .card-lbl {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.shift-summary-card.highlight .card-val {
+    color: #ffffff;
+}
+
+.shift-invoices-table-card {
+    background-color: #ffffff;
+    border-radius: 18px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.shift-invoices-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14.5px;
+}
+
+.shift-invoices-table th {
+    background-color: #f8fafc;
+    padding: 15px 20px;
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+html[dir="rtl"] .shift-invoices-table th {
+    text-align: right;
+}
+
+.shift-invoices-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+}
+
+.shift-invoices-table tr:hover td {
+    background-color: #fafbfc;
+}
+
+/* Confirmation Modal */
+.shift-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    z-index: 10500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.shift-modal-overlay.open {
+    display: flex;
+}
+
+.shift-modal-card {
+    background-color: #ffffff;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 480px;
+    padding: 30px 26px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    animation: shiftModalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes shiftModalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.shift-modal-title {
+    font-size: 21px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 10px;
+}
+
+.shift-modal-msg {
+    font-size: 15px;
+    color: #4b5563;
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
+
+.shift-modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.shift-modal-btn-confirm {
+    flex: 1;
+    height: 50px;
+    background-color: #14918e;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.shift-modal-btn-confirm:hover {
+    background-color: #0f7875;
+}
+
+.shift-modal-btn-cancel {
+    flex: 1;
+    height: 50px;
+    background-color: #ffffff;
+    color: #374151;
+    border: 1.5px solid #d1d5db;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.shift-modal-btn-cancel:hover {
+    background-color: #f3f4f6;
+}
+
+/* =========================================================
+   RESPONSIVE DESIGN (TABLET & MOBILE)
+   ========================================================= */
+
+/* Tablet Landscape (matching reference video tablet 1024x768) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .shifts-header {
+        padding: 14px 24px;
+    }
+    .shifts-main-content {
+        padding: 4px 24px 20px;
+    }
+    .shift-row {
+        padding: 20px 24px;
+    }
+    .shift-actions {
+        gap: 10px;
+    }
+    .shift-pill-btn {
+        padding: 9px 18px;
+        font-size: 14px;
+    }
+    .btn-close-branch,
+    .btn-print-branch {
+        height: 54px;
+        font-size: 17px;
+    }
+}
+
+/* Tablet Portrait & Mobile */
+@media (max-width: 768px) {
+    .shifts-header {
+        padding: 12px 16px;
+    }
+    .shifts-title {
+        font-size: 20px;
+    }
+    .shifts-main-content {
+        padding: 4px 16px 20px;
+    }
+    .shifts-card {
+        border-radius: 18px;
+    }
+    .shift-row {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        padding: 16px 18px;
+        gap: 14px;
+    }
+    .shift-meta {
+        align-items: flex-start;
+        text-align: left;
+    }
+    html[dir="rtl"] .shift-meta {
+        align-items: flex-end;
+        text-align: right;
+    }
+    .shift-actions {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    .shift-pill-btn {
+        padding: 8px 10px;
+        font-size: 13px;
+        min-width: 0;
+        text-align: center;
+    }
+    .shifts-bottom-bar {
+        flex-direction: column;
+        gap: 12px;
+    }
+    .btn-close-branch,
+    .btn-print-branch {
+        width: 100%;
+        height: 50px;
+        font-size: 16px;
+    }
+}

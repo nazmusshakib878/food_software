@@ -349,10 +349,12 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
         : null;
 
     let finalMethod = staffAllocation ? "Staff Expense" : method;
+    const activeShift = (typeof shifts !== 'undefined' && Array.isArray(shifts)) ? (shifts.find(s => s.status === 'active') || shifts[0]) : null;
 
     const orderRecord = {
         id: `ORD-${nextOrderSeq}`,
         seq: nextOrderSeq,
+        shiftId: activeShift ? activeShift.id : 'SH-101',
         date: new Date().toISOString(),
         dateFormatted: new Date().toLocaleString(currentLang === 'ar' ? 'ar-SA' : 'en-US'),
         type: currentOrderType,
