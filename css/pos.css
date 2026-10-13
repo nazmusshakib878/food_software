@@ -11,6 +11,78 @@
     overflow: hidden;
 }
 
+/* Orders Mode: 38-40% Left (Cart), 60-62% Right (Orders History) */
+.pos-layout.orders-mode,
+.pos-layout.orders-mode.catalog-mode-grid8,
+.pos-layout.orders-mode.catalog-mode-split,
+#posMainLayout.orders-mode {
+    display: grid !important;
+    grid-template-columns: minmax(320px, 39%) minmax(0, 1fr) !important;
+    flex-direction: row !important;
+    gap: 12px !important;
+    padding: 12px !important;
+    height: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+.pos-layout.orders-mode .pos-order-panel,
+.pos-layout.orders-mode.catalog-mode-grid8 .pos-order-panel,
+#posMainLayout.orders-mode #posOrderPanel {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+    height: 100% !important;
+    position: static !important;
+    box-sizing: border-box !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.pos-layout.orders-mode .pos-right-pane,
+#posMainLayout.orders-mode #posRightPane {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+.pos-layout.orders-mode #catalogFloatingCart {
+    display: none !important;
+}
+
+/* Right Working Area: holds Catalog OR Orders, and Bottom Nav Bar */
+.pos-right-pane {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.pos-right-pane > .pos-catalog-panel {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.pos-right-pane > .orders-history-panel {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
 /* Order / Cart Panel (Left on Desktop) */
 .pos-order-panel {
     flex: 0 0 380px;
@@ -1223,12 +1295,12 @@
 }
 
 /* 8-Column Full Width Catalog Mode (Matching Image 2 Exactly) */
-.pos-layout.catalog-mode-grid8 {
+.pos-layout.catalog-mode-grid8:not(.orders-mode) {
     display: flex !important;
     flex-direction: column !important;
 }
 
-.pos-layout.catalog-mode-grid8 .pos-order-panel {
+.pos-layout.catalog-mode-grid8:not(.orders-mode) .pos-order-panel {
     display: none !important;
 }
 
@@ -1346,17 +1418,19 @@
 
 /* POS Desktop/Tablet Bottom Navigation Bar */
 .pos-bottom-nav-bar {
-    position: fixed;
-    bottom: 24px;
-    right: 24px; /* Starting position */
+    position: static;
     display: flex;
+    justify-content: flex-end;
+    align-items: center;
     gap: 16px;
+    padding: 10px 16px 10px 16px;
+    margin-top: auto;
+    flex-shrink: 0;
     z-index: 1000;
 }
 
 html[dir="rtl"] .pos-bottom-nav-bar {
-    right: auto;
-    left: 24px;
+    justify-content: flex-end;
     flex-direction: row;
 }
 

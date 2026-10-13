@@ -126,7 +126,7 @@
         
         <!-- ================= VIEW 1: POS CASHIER VIEW ================= -->
         <div class="screen-view active" id="posView">
-            <div class="pos-layout">
+            <div class="pos-layout" id="posMainLayout">
                 
                 <!-- Left Panel: Live Cart / Ticket -->
                 <aside class="pos-order-panel" id="posOrderPanel">
@@ -219,108 +219,163 @@
                     </div>
                 </div>
 
-                <!-- Right Panel: Catalog, Categories & Main Touch Action Buttons -->
-                <main class="pos-catalog-panel">
+                <!-- Right Area Container (Catalog OR Orders) -->
+                <div class="pos-right-pane" id="posRightPane">
                     
-                    <!-- 4 MAIN POS ACTION BUTTONS (Cancel, Discounts, Notes, More) -->
-                    <div id="globalActionBar" class="pos-top-actions-bar">
-                        <button type="button" class="pos-action-btn btn-cancel" onclick="safeCancelOrder()" title="إلغاء الطلب الحالي" data-i18n-title="btn_cancel">
-                            <i class="fa-solid fa-ban"></i>
-                            <span data-i18n="btn_cancel">إلغاء</span>
-                        </button>
-                        <button type="button" class="pos-action-btn btn-discounts" onclick="openDiscountModal()" title="تطبيق خصم" data-i18n-title="btn_discount">
-                            <i class="fa-solid fa-tags"></i>
-                            <span data-i18n="btn_discount">الخصومات</span>
-                        </button>
-                        <button type="button" class="pos-action-btn btn-notes" onclick="openNotesModal()" title="ملاحظات الطلب والعميل" data-i18n-title="btn_notes">
-                            <i class="fa-solid fa-clipboard"></i>
-                            <span data-i18n="btn_notes">الملاحظات</span>
-                        </button>
-                        <button type="button" class="pos-action-btn btn-more" onclick="toggleMorePanel()" title="المزيد والإعدادات" data-i18n-title="btn_more">
-                            <i class="fa-solid fa-ellipsis-vertical"></i>
-                            <span data-i18n="btn_more">المزيد</span>
-                        </button>
-                    </div>
-
-                    <!-- ITEM LEVEL ACTION BAR -->
-                    <div id="itemActionBar" class="pos-top-actions-bar" style="display: none;">
-                        <button type="button" class="pos-action-btn btn-cancel" onclick="deleteActiveCartItem()" style="background: #e83e8c; color: white; border: none;" title="حذف الصنف">
-                            <i class="fa-solid fa-trash-can"></i>
-                            <span data-i18n="btn_delete">حذف</span>
-                        </button>
-                        <button type="button" class="pos-action-btn btn-quantity" onclick="openQuantityModal()" style="background: #007bff; color: white; border: none;" title="Quantity">
-                            <span>Quantity</span>
-                        </button>
-                        <button type="button" class="pos-action-btn btn-discounts" onclick="changeActiveCartQty(-1)" style="background: #6f42c1; color: white; border: none;" title="تقليل الكمية">
-                            <i class="fa-solid fa-minus"></i>
-                            <span>تقليل</span>
-                        </button>
-                        <button type="button" class="pos-action-btn btn-notes" onclick="changeActiveCartQty(1)" style="background: #17a2b8; color: white; border: none;" title="زيادة الكمية">
-                            <i class="fa-solid fa-plus"></i>
-                            <span>زيادة</span>
-                        </button>
-                    </div>
-
-                    <div id="catalogViewsContainer" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
-                    <!-- Search & Controls -->
-                    <!-- Catalog Mode & Quick Actions Toolbar (Image 1 & Image 2 Alignment) -->
-                    <div class="pos-catalog-header-bar">
-                        <div class="catalog-mode-switcher">
-                            <button type="button" class="catalog-mode-btn active" id="btnCatalogGrid8" onclick="setPosCatalogMode('grid8')" title="8-Column Catalog Grid (Image 2)">
-                                <i class="fa-solid fa-table-cells"></i> <span data-i18n="grid_8_col">8-Column Catalog</span>
+                    <!-- Right Panel A: Catalog, Categories & Main Touch Action Buttons -->
+                    <main class="pos-catalog-panel" id="posCatalogPanel">
+                        
+                        <!-- 4 MAIN POS ACTION BUTTONS (Cancel, Discounts, Notes, More) -->
+                        <div id="globalActionBar" class="pos-top-actions-bar">
+                            <button type="button" class="pos-action-btn btn-cancel" onclick="safeCancelOrder()" title="إلغاء الطلب الحالي" data-i18n-title="btn_cancel">
+                                <i class="fa-solid fa-ban"></i>
+                                <span data-i18n="btn_cancel">إلغاء</span>
                             </button>
-                            <button type="button" class="catalog-mode-btn" id="btnCatalogSplit" onclick="setPosCatalogMode('split')" title="POS Split View">
-                                <i class="fa-solid fa-table-columns"></i> <span data-i18n="split_pos">POS Split View</span>
+                            <button type="button" class="pos-action-btn btn-discounts" onclick="openDiscountModal()" title="تطبيق خصم" data-i18n-title="btn_discount">
+                                <i class="fa-solid fa-tags"></i>
+                                <span data-i18n="btn_discount">الخصومات</span>
+                            </button>
+                            <button type="button" class="pos-action-btn btn-notes" onclick="openNotesModal()" title="ملاحظات الطلب والعميل" data-i18n-title="btn_notes">
+                                <i class="fa-solid fa-clipboard"></i>
+                                <span data-i18n="btn_notes">الملاحظات</span>
+                            </button>
+                            <button type="button" class="pos-action-btn btn-more" onclick="toggleMorePanel()" title="المزيد والإعدادات" data-i18n-title="btn_more">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                                <span data-i18n="btn_more">المزيد</span>
                             </button>
                         </div>
-                        <div class="catalog-quick-actions">
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleInvoiceOrder()" title="Load Sample Invoice Order ORD-1013">
-                                <i class="fa-solid fa-cart-arrow-down"></i> <span data-i18n="load_sample_order">Load Order ORD-1013</span>
+
+                        <!-- ITEM LEVEL ACTION BAR -->
+                        <div id="itemActionBar" class="pos-top-actions-bar" style="display: none;">
+                            <button type="button" class="pos-action-btn btn-cancel" onclick="deleteActiveCartItem()" style="background: #e83e8c; color: white; border: none;" title="حذف الصنف">
+                                <i class="fa-solid fa-trash-can"></i>
+                                <span data-i18n="btn_delete">حذف</span>
                             </button>
-                            <button type="button" class="btn btn-primary btn-sm" onclick="previewSampleTaxInvoice()" title="Preview Official Tax Invoice (Image 1)">
-                                <i class="fa-solid fa-receipt"></i> <span data-i18n="view_sample_invoice">Tax Invoice (Image 1)</span>
+                            <button type="button" class="pos-action-btn btn-quantity" onclick="openQuantityModal()" style="background: #007bff; color: white; border: none;" title="Quantity">
+                                <span>Quantity</span>
+                            </button>
+                            <button type="button" class="pos-action-btn btn-discounts" onclick="changeActiveCartQty(-1)" style="background: #6f42c1; color: white; border: none;" title="تقليل الكمية">
+                                <i class="fa-solid fa-minus"></i>
+                                <span>تقليل</span>
+                            </button>
+                            <button type="button" class="pos-action-btn btn-notes" onclick="changeActiveCartQty(1)" style="background: #17a2b8; color: white; border: none;" title="زيادة الكمية">
+                                <i class="fa-solid fa-plus"></i>
+                                <span>زيادة</span>
                             </button>
                         </div>
-                    </div>
 
-                    <div class="catalog-controls">
-                        <div class="search-input-wrap">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            <input type="text" id="productSearchInput" placeholder="Search product or code..." data-i18n-placeholder="search_placeholder" oninput="filterProducts()">
+                        <div id="catalogViewsContainer" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                        <!-- Search & Controls -->
+                        <!-- Catalog Mode & Quick Actions Toolbar (Image 1 & Image 2 Alignment) -->
+                        <div class="pos-catalog-header-bar">
+                            <div class="catalog-mode-switcher">
+                                <button type="button" class="catalog-mode-btn active" id="btnCatalogGrid8" onclick="setPosCatalogMode('grid8')" title="8-Column Catalog Grid (Image 2)">
+                                    <i class="fa-solid fa-table-cells"></i> <span data-i18n="grid_8_col">8-Column Catalog</span>
+                                </button>
+                                <button type="button" class="catalog-mode-btn" id="btnCatalogSplit" onclick="setPosCatalogMode('split')" title="POS Split View">
+                                    <i class="fa-solid fa-table-columns"></i> <span data-i18n="split_pos">POS Split View</span>
+                                </button>
+                            </div>
+                            <div class="catalog-quick-actions">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleInvoiceOrder()" title="Load Sample Invoice Order ORD-1013">
+                                    <i class="fa-solid fa-cart-arrow-down"></i> <span data-i18n="load_sample_order">Load Order ORD-1013</span>
+                                </button>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="previewSampleTaxInvoice()" title="Preview Official Tax Invoice (Image 1)">
+                                    <i class="fa-solid fa-receipt"></i> <span data-i18n="view_sample_invoice">Tax Invoice (Image 1)</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Categories Ribbon / Cards -->
-                    <div class="categories-ribbon" id="categoriesRibbon">
-                        <!-- Rendered dynamically via js/pos.js -->
-                    </div>
+                        <div class="catalog-controls">
+                            <div class="search-input-wrap">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="productSearchInput" placeholder="Search product or code..." data-i18n-placeholder="search_placeholder" oninput="filterProducts()">
+                            </div>
+                        </div>
 
-                    <!-- Products Grid with Photos -->
-                    <div class="products-grid-scroll">
-                        <div class="products-grid" id="productsGrid">
+                        <!-- Categories Ribbon / Cards -->
+                        <div class="categories-ribbon" id="categoriesRibbon">
                             <!-- Rendered dynamically via js/pos.js -->
                         </div>
-                    </div>
-                    </div> <!-- /catalogViewsContainer -->
 
-                    <!-- ITEM MODIFIER PANEL -->
-                    <div id="itemModifierPanel" style="display: none; flex: 1; flex-direction: column; padding: 15px; background: var(--bg-color); min-height: 0; overflow-y: auto;">
-                        <h3 id="modifierPanelItemName" style="margin-top: 0; margin-bottom: 15px; font-weight: 800; font-size: 1.2rem; color: var(--primary);"></h3>
-                        
-                        <div class="form-group" style="margin-bottom: 20px;">
-                            <label><i class="fa-regular fa-comment-dots"></i> ملاحظات خاصة بالصنف:</label>
-                            <textarea id="modifierPanelItemNote" class="form-control-pos item-special-notes" placeholder="أضف ملاحظة لهذا الصنف فقط..." oninput="updateActiveItemNote(this.value)" rows="5" wrap="soft" autocomplete="off" onkeydown="if(event.key==='Enter') event.stopPropagation();"></textarea>
+                        <!-- Products Grid with Photos -->
+                        <div class="products-grid-scroll">
+                            <div class="products-grid" id="productsGrid">
+                                <!-- Rendered dynamically via js/pos.js -->
+                            </div>
+                        </div>
+                        </div> <!-- /catalogViewsContainer -->
+
+                        <!-- ITEM MODIFIER PANEL -->
+                        <div id="itemModifierPanel" style="display: none; flex: 1; flex-direction: column; padding: 15px; background: var(--bg-color); min-height: 0; overflow-y: auto;">
+                            <h3 id="modifierPanelItemName" style="margin-top: 0; margin-bottom: 15px; font-weight: 800; font-size: 1.2rem; color: var(--primary);"></h3>
+                            
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label><i class="fa-regular fa-comment-dots"></i> ملاحظات خاصة بالصنف:</label>
+                                <textarea id="modifierPanelItemNote" class="form-control-pos item-special-notes" placeholder="أضف ملاحظة لهذا الصنف فقط..." oninput="updateActiveItemNote(this.value)" rows="5" wrap="soft" autocomplete="off" onkeydown="if(event.key==='Enter') event.stopPropagation();"></textarea>
+                            </div>
+
+                            <div id="modifierPanelGroups" style="flex: 1;"></div>
+                            
+                            <button type="button" class="pos-action-btn btn-more" onclick="closeItemModifierPanel()" title="Done" style="background: #28a745; color: white; border: none; width: 100%; margin-top: 15px; padding: 15px; font-size: 1.2rem; border-radius: 8px; justify-content: center; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-check"></i>
+                                <span>Done</span>
+                            </button>
                         </div>
 
-                        <div id="modifierPanelGroups" style="flex: 1;"></div>
-                        
-                        <button type="button" class="pos-action-btn btn-more" onclick="closeItemModifierPanel()" title="Done" style="background: #28a745; color: white; border: none; width: 100%; margin-top: 15px; padding: 15px; font-size: 1.2rem; border-radius: 8px; justify-content: center; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-check"></i>
-                            <span>Done</span>
-                        </button>
-                    </div>
+                    </main>
 
-                </main>
+                    <!-- Right Panel B: Orders History View (Orders mode) -->
+                    <section class="orders-history-panel returns-screen-container" id="returnsView" style="display: none;">
+                        <div class="orders-screen-wrapper" id="returnsScreen1">
+                            <!-- Top Filter Tabs -->
+                            <div class="orders-top-tabs" id="ordersTopTabs">
+                                <button type="button" class="order-tab active" onclick="setReturnOrderTab('uncompleted', this)" data-i18n="tab_uncompleted">Uncompleted</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('all', this)" data-i18n="tab_all">All</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('offline', this)" data-i18n="tab_offline">Offline</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('outgoing', this)" data-i18n="tab_outgoing">Outgoing</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('returned', this)" data-i18n="tab_returned">Returned</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('active', this)" data-i18n="tab_active">Active</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('done', this)" data-i18n="tab_done">Done</button>
+                            </div>
+
+                            <!-- Orders Search Bar -->
+                            <div class="orders-search-bar-wrap">
+                                <div class="search-input-wrap">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="text" id="returnsSearchInput" placeholder="Search Invoice ID, Order Number, User Name..." oninput="filterReturnsOrders()">
+                                    <i class="fa-solid fa-xmark clear-search-icon" onclick="clearReturnsSearch()" title="Clear Search"></i>
+                                </div>
+                            </div>
+
+                            <!-- Orders Cards Grid -->
+                            <div class="returns-orders-grid" id="returnsOrdersGrid">
+                                <!-- Populated dynamically via js/returns.js -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- POS Desktop/Tablet Bottom Navigation Bar -->
+                    <nav class="pos-bottom-nav-bar" id="posBottomNavBar">
+                        <button type="button" class="bottom-nav-btn btn-main-screen" onclick="bottomNavMainScreen()">
+                            <span data-i18n="bottom_nav_main">Main Screen</span>
+                            <i class="fas fa-home"></i>
+                        </button>
+                        <button type="button" class="bottom-nav-btn" onclick="bottomNavTables()">
+                            <span data-i18n="bottom_nav_tables">Tables</span>
+                            <i class="fas fa-border-all"></i>
+                        </button>
+                        <button type="button" class="bottom-nav-btn" onclick="bottomNavOrders()">
+                            <span data-i18n="bottom_nav_orders">Orders</span>
+                            <i class="fas fa-layer-group"></i>
+                        </button>
+                        <button type="button" class="bottom-nav-btn btn-new-order" onclick="bottomNavNewOrder()">
+                            <span data-i18n="bottom_nav_new">New</span>
+                            <i class="far fa-file-alt"></i>
+                        </button>
+                    </nav>
+
+                </div>
             </div>
             
             
@@ -603,36 +658,6 @@
         <div class="screen-view reports-screen-container" id="reportsView">
             <div id="reportModuleContent">
                 <!-- Rendered dynamically via js/reports.js -->
-            </div>
-        </div>
-
-        <!-- ================= VIEW 5: RETURNS & ORDERS VIEW ================= -->
-        <div class="screen-view returns-screen-container" id="returnsView">
-            <div class="orders-screen-wrapper" id="returnsScreen1">
-                <!-- Top Filter Tabs -->
-                <div class="orders-top-tabs" id="ordersTopTabs">
-                    <button type="button" class="order-tab active" onclick="setReturnOrderTab('uncompleted', this)" data-i18n="tab_uncompleted">Uncompleted</button>
-                    <button type="button" class="order-tab" onclick="setReturnOrderTab('all', this)" data-i18n="tab_all">All</button>
-                    <button type="button" class="order-tab" onclick="setReturnOrderTab('offline', this)" data-i18n="tab_offline">Offline</button>
-                    <button type="button" class="order-tab" onclick="setReturnOrderTab('outgoing', this)" data-i18n="tab_outgoing">Outgoing</button>
-                    <button type="button" class="order-tab" onclick="setReturnOrderTab('returned', this)" data-i18n="tab_returned">Returned</button>
-                    <button type="button" class="order-tab" onclick="setReturnOrderTab('active', this)" data-i18n="tab_active">Active</button>
-                    <button type="button" class="order-tab" onclick="setReturnOrderTab('done', this)" data-i18n="tab_done">Done</button>
-                </div>
-
-                <!-- Orders Search Bar -->
-                <div class="orders-search-bar-wrap">
-                    <div class="search-input-wrap">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" id="returnsSearchInput" placeholder="Search Invoice ID, Order Number, User Name..." oninput="filterReturnsOrders()">
-                        <i class="fa-solid fa-xmark clear-search-icon" onclick="clearReturnsSearch()" title="Clear Search"></i>
-                    </div>
-                </div>
-
-                <!-- Orders Cards Grid -->
-                <div class="returns-orders-grid" id="returnsOrdersGrid">
-                    <!-- Populated dynamically via js/returns.js -->
-                </div>
             </div>
         </div>
 
@@ -1820,26 +1845,6 @@
 
 <!-- Toast Shelf -->
 <div class="toast-shelf" id="toastShelf"></div>
-
-<!-- POS Desktop/Tablet Bottom Navigation Bar -->
-<nav class="pos-bottom-nav-bar" id="posBottomNavBar">
-    <button type="button" class="bottom-nav-btn btn-main-screen" onclick="bottomNavMainScreen()">
-        <span data-i18n="bottom_nav_main">Main Screen</span>
-        <i class="fas fa-home"></i>
-    </button>
-    <button type="button" class="bottom-nav-btn" onclick="bottomNavTables()">
-        <span data-i18n="bottom_nav_tables">Tables</span>
-        <i class="fas fa-border-all"></i>
-    </button>
-    <button type="button" class="bottom-nav-btn" onclick="bottomNavOrders()">
-        <span data-i18n="bottom_nav_orders">Orders</span>
-        <i class="fas fa-layer-group"></i>
-    </button>
-    <button type="button" class="bottom-nav-btn btn-new-order" onclick="bottomNavNewOrder()">
-        <span data-i18n="bottom_nav_new">New</span>
-        <i class="far fa-file-alt"></i>
-    </button>
-</nav>
 
 <!-- Responsive Mobile Bottom Navigation Bar -->
 <nav class="mobile-bottom-bar" id="mobileBottomBar">

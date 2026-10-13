@@ -8,11 +8,11 @@
     padding: 0;
     background: #f8fafc;
     color: var(--text, #1e293b);
-    height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
+    min-height: 0;
+    overflow: hidden;
     display: none;
     flex-direction: column;
+    flex: 1;
 }
 
 .returns-screen-container.active {
@@ -23,9 +23,12 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-height: 0;
     width: 100%;
     max-width: 100%;
     background: #f8fafc;
+    overflow: hidden;
+    flex: 1;
 }
 
 /* =========================================================
@@ -150,9 +153,10 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: 16px;
-    padding: 20px;
+    padding: 16px 20px;
     overflow-y: auto;
     flex: 1;
+    min-height: 0;
     align-content: flex-start;
 }
 

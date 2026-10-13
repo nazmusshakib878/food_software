@@ -21,23 +21,53 @@ function switchView(viewName) {
         mobileBottom?.classList.remove('hide-on-shifts');
     }
 
+    const posLayout = document.getElementById('posMainLayout') || document.querySelector('#posView .pos-layout');
+    const posCatalogPanel = document.getElementById('posCatalogPanel') || document.querySelector('.pos-catalog-panel');
+    const returnsView = document.getElementById('returnsView');
+
     if (viewName === 'pos') {
-        const posOrderPanel = document.getElementById('posOrderPanel');
-        if (posOrderPanel) {
-            document.querySelector('#posView .pos-layout')?.prepend(posOrderPanel);
-        }
         document.getElementById('posView')?.classList.add('active');
         document.getElementById('tabPosBtn')?.classList.add('active');
         document.getElementById('mobileNavPos')?.classList.add('active');
+
+        posLayout?.classList.remove('orders-mode');
+        if (posCatalogPanel) posCatalogPanel.style.display = 'flex';
+        if (returnsView) {
+            returnsView.style.display = 'none';
+            returnsView.classList.remove('active');
+        }
+
+        document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.bottom-nav-btn.btn-main-screen')?.classList.add('active');
+
         renderProducts();
         if (typeof applyCatalogViewMode === 'function') applyCatalogViewMode();
         updatePosOrderBadge();
+    } else if (viewName === 'returns') {
+        document.getElementById('posView')?.classList.add('active');
+        document.getElementById('tabPosBtn')?.classList.add('active');
+        document.getElementById('tabReturnsBtn')?.classList.add('active');
+        document.getElementById('mobileNavReturns')?.classList.add('active');
+
+        posLayout?.classList.add('orders-mode');
+        if (posCatalogPanel) posCatalogPanel.style.display = 'none';
+        if (returnsView) {
+            returnsView.style.display = 'flex';
+            returnsView.classList.add('active');
+        }
+
+        document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.bottom-nav-btn[onclick="bottomNavOrders()"]')?.classList.add('active');
+
+        if (typeof goReturnsScreen1 === 'function') goReturnsScreen1();
     } else if (viewName === 'kds') {
+        posLayout?.classList.remove('orders-mode');
         document.getElementById('kdsView')?.classList.add('active');
         document.getElementById('tabKdsBtn')?.classList.add('active');
         document.getElementById('mobileNavKds')?.classList.add('active');
         renderKdsScreen();
     } else if (viewName === 'admin') {
+        posLayout?.classList.remove('orders-mode');
         document.getElementById('adminView')?.classList.add('active');
         document.getElementById('tabAdminBtn')?.classList.add('active');
         document.getElementById('mobileNavAdmin')?.classList.add('active');
@@ -46,24 +76,11 @@ function switchView(viewName) {
         renderAdminCategories();
         renderAllOrdersTable();
     } else if (viewName === 'reports_screen') {
+        posLayout?.classList.remove('orders-mode');
         document.getElementById('reportsView')?.classList.add('active');
         if (typeof renderActiveReport === 'function') renderActiveReport();
-    } else if (viewName === 'returns') {
-        const posOrderPanel = document.getElementById('posOrderPanel');
-        if (posOrderPanel) {
-            document.querySelector('#posView .pos-layout')?.prepend(posOrderPanel);
-        }
-        document.getElementById('returnsView')?.classList.add('active');
-        document.getElementById('tabReturnsBtn')?.classList.add('active');
-        document.getElementById('mobileNavReturns')?.classList.add('active');
-        document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector('.bottom-nav-btn[onclick="bottomNavOrders()"]')?.classList.add('active');
-        if (typeof goReturnsScreen1 === 'function') goReturnsScreen1();
     } else if (viewName === 'shifts') {
-        const posOrderPanel = document.getElementById('posOrderPanel');
-        if (posOrderPanel) {
-            document.querySelector('#posView .pos-layout')?.prepend(posOrderPanel);
-        }
+        posLayout?.classList.remove('orders-mode');
         document.getElementById('shiftsView')?.classList.add('active');
         if (typeof renderShiftsScreen === 'function') renderShiftsScreen();
     }
