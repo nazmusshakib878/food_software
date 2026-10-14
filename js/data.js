@@ -567,6 +567,17 @@ const i18n = {
         lbl_user_key: "رمز الدخول / المفتاح السري:",
         btn_verify: "تأكيد الدخول",
 
+        // Connection Id Modal
+        connection_id: "معرّف الاتصال",
+        connection_instruction: "الرجاء إدخال معرّف الاتصال الخاص بك:-",
+        account_number: "رقم الحساب",
+        btn_check: "تحقق",
+        user_key: "مفتاح المستخدم",
+        branch: "الفرع",
+        selected_branches: "الفروع المحددة:",
+        btn_save: "حفظ",
+        btn_cancel: "إلغاء",
+
         // Printing Devices
         printers_title: "إدارة أجهزة الطباعة",
         printers_auto_print: "الطباعة التلقائية عند إتمام الطلب",
@@ -903,6 +914,17 @@ const i18n = {
         passcode_subtitle: "Enter user key or admin PIN to access protected modules",
         lbl_user_key: "User Key / Security PIN:",
         btn_verify: "Verify PassCode",
+
+        // Connection Id Modal
+        connection_id: "Connection Id",
+        connection_instruction: "Please enter your Connection ID:-",
+        account_number: "Account Number",
+        btn_check: "Check",
+        user_key: "User Key",
+        branch: "Branch",
+        selected_branches: "Selected Branches:",
+        btn_save: "Save",
+        btn_cancel: "Cancel",
 
         // Printing Devices
         printers_title: "Printing Devices Management",

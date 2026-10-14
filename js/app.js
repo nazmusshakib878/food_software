@@ -626,6 +626,15 @@ function kioskSubmitLogin() {
 
 // Global Keyboard Listener for Kiosk Login
 document.addEventListener('keydown', (e) => {
+    // If Connection Modal is open or typing inside an input/textarea/select, do NOT process kiosk keys!
+    const connModal = document.getElementById('connectionModal');
+    if (connModal && (connModal.classList.contains('open') || connModal.getAttribute('aria-hidden') === 'false')) {
+        return;
+    }
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) {
+        return;
+    }
+
     const modal = document.getElementById('loginModal');
     if (!modal) return;
     const isModalVisible = modal.classList.contains('open') || modal.classList.contains('active') || modal.style.display === 'flex';
@@ -639,5 +648,393 @@ document.addEventListener('keydown', (e) => {
         kioskKeyPress('C');
     } else if (e.key === 'Enter') {
         kioskSubmitLogin();
+    }
+});
+
+/* =========================================================
+   CONNECTION ID POPUP & CONFIGURATION MODULE
+   ========================================================= */
+
+// In-memory working state
+const connectionModule = {
+    accountNumber: '',
+    selectedBranches: [],
+    hasKey: false,
+    sessionKey: '', // Kept securely in memory only, never logged or stored in plaintext localStorage
+    isSaving: false,
+    
+    // Default available branches
+    availableBranches: [
+        { id: 'branch_main', nameEn: 'Main Branch', nameAr: 'الفرع الرئيسي' },
+        { id: 'branch_olaya', nameEn: 'Branch 1 - Olaya', nameAr: 'فرع 1 - العليا' },
+        { id: 'branch_malaz', nameEn: 'Branch 2 - Malaz', nameAr: 'فرع 2 - الملز' },
+        { id: 'branch_rawdah', nameEn: 'Branch 3 - Rawdah', nameAr: 'فرع 3 - الروضة' },
+        { id: 'branch_express', nameEn: 'Express Kiosk', nameAr: 'كشك إكسبريس' }
+    ]
+};
+
+// Retrieve saved configuration from localStorage
+function getSavedConnectionConfig() {
+    try {
+        const raw = localStorage.getItem('nurpos_connection');
+        if (raw) {
+            return JSON.parse(raw);
+        }
+    } catch (e) {
+        // Safe fallback
+    }
+    return null;
+}
+
+// Populate branch dropdown
+function populateConnectionBranchDropdown() {
+    const select = document.getElementById('connBranchSelect');
+    if (!select) return;
+
+    const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar');
+    select.innerHTML = '';
+
+    // Add prompt option
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = isAr ? '-- اختر الفرع للإضافة --' : '-- Select Branch to Add --';
+    select.appendChild(defaultOption);
+
+    connectionModule.availableBranches.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b.nameEn;
+        opt.textContent = isAr ? `${b.nameAr} (${b.nameEn})` : `${b.nameEn} - ${b.nameAr}`;
+        select.appendChild(opt);
+    });
+}
+
+// Render selected branch chips
+function renderSelectedBranchChips() {
+    const container = document.getElementById('connSelectedChips');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar');
+
+    if (connectionModule.selectedBranches.length === 0) {
+        const emptyHint = document.createElement('span');
+        emptyHint.className = 'connection-chips-empty-hint';
+        emptyHint.textContent = isAr ? 'لم يتم تحديد أي فرع حتى الآن' : 'No branches selected yet';
+        container.appendChild(emptyHint);
+        return;
+    }
+
+    connectionModule.selectedBranches.forEach(branchName => {
+        const chip = document.createElement('span');
+        chip.className = 'connection-branch-chip';
+        chip.setAttribute('data-branch-name', branchName);
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'conn-chip-text';
+        textSpan.textContent = branchName;
+        chip.appendChild(textSpan);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'connection-chip-remove';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.title = isAr ? `إزالة ${branchName}` : `Remove ${branchName}`;
+        removeBtn.setAttribute('aria-label', `Remove ${branchName}`);
+        removeBtn.onclick = (e) => {
+            e.stopPropagation();
+            removeSelectedBranch(branchName);
+        };
+        chip.appendChild(removeBtn);
+
+        container.appendChild(chip);
+    });
+}
+
+// Add branch
+function addSelectedBranch() {
+    const select = document.getElementById('connBranchSelect');
+    if (!select) return;
+    const branchName = select.value.trim();
+    const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar');
+
+    if (!branchName) {
+        showConnectionGeneralFeedback(isAr ? 'يرجى اختيار فرع للإضافة' : 'Please select a branch to add', 'error');
+        return;
+    }
+
+    if (connectionModule.selectedBranches.includes(branchName)) {
+        showConnectionGeneralFeedback(isAr ? 'الفرع محدد بالفعل في القائمة' : 'This branch is already selected', 'info');
+        return;
+    }
+
+    connectionModule.selectedBranches.push(branchName);
+    renderSelectedBranchChips();
+    clearConnectionGeneralFeedback();
+    select.value = '';
+}
+
+// Remove single branch
+function removeSelectedBranch(branchName) {
+    connectionModule.selectedBranches = connectionModule.selectedBranches.filter(b => b !== branchName);
+    renderSelectedBranchChips();
+    clearConnectionGeneralFeedback();
+}
+
+// Check Account Number action
+function checkConnectionAccount() {
+    const input = document.getElementById('connAccountNumber');
+    const feedback = document.getElementById('connAccountFeedback');
+    if (!input || !feedback) return;
+
+    const val = input.value.trim();
+    const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar');
+
+    if (!val) {
+        feedback.className = 'connection-feedback error';
+        feedback.textContent = isAr ? 'يرجى إدخال رقم الحساب' : 'Please enter an Account Number';
+        input.focus();
+        return;
+    }
+
+    // Validate account format (e.g., minimum 4 digits)
+    const isValidFormat = /^[0-9A-Za-z-]{4,20}$/.test(val);
+    if (!isValidFormat) {
+        feedback.className = 'connection-feedback error';
+        feedback.textContent = isAr ? 'صيغة رقم الحساب غير صحيحة (4 خانات على الأقل)' : 'Invalid account format (minimum 4 characters/digits)';
+        input.focus();
+        return;
+    }
+
+    // Format is valid, but report realistic backend verification boundary:
+    feedback.className = 'connection-feedback info';
+    feedback.textContent = isAr 
+        ? '✓ صيغة الحساب مقبولة (ملاحظة: خدمة التحقق السحابية غير متصلة حالياً)' 
+        : '✓ Account format valid (Note: Remote verification service is not connected)';
+}
+
+// Toggle User Key visibility
+function toggleUserKeyVisibility() {
+    const input = document.getElementById('connUserKey');
+    const icon = document.getElementById('connEyeIcon');
+    if (!input || !icon) return;
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// Reset feedback elements
+function resetConnectionFeedback() {
+    const af = document.getElementById('connAccountFeedback');
+    const kf = document.getElementById('connKeyFeedback');
+    const gf = document.getElementById('connGeneralFeedback');
+    if (af) { af.className = 'connection-feedback'; af.textContent = ''; }
+    if (kf) { kf.className = 'connection-feedback'; kf.textContent = ''; }
+    if (gf) { gf.className = 'connection-general-feedback'; gf.textContent = ''; gf.style.display = 'none'; }
+}
+
+function showConnectionGeneralFeedback(msg, type = 'error') {
+    const gf = document.getElementById('connGeneralFeedback');
+    if (!gf) return;
+    gf.className = `connection-general-feedback ${type}`;
+    gf.textContent = msg;
+    gf.style.display = 'block';
+}
+
+function clearConnectionGeneralFeedback() {
+    const gf = document.getElementById('connGeneralFeedback');
+    if (!gf) return;
+    gf.className = 'connection-general-feedback';
+    gf.textContent = '';
+    gf.style.display = 'none';
+}
+
+// Load saved config into form
+function loadConnectionConfigIntoForm() {
+    resetConnectionFeedback();
+    populateConnectionBranchDropdown();
+
+    const saved = getSavedConnectionConfig();
+    const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar');
+
+    if (saved) {
+        connectionModule.accountNumber = saved.accountNumber || '';
+        connectionModule.selectedBranches = Array.isArray(saved.branches) ? [...saved.branches] : [];
+        connectionModule.hasKey = !!saved.hasKey;
+    } else {
+        connectionModule.accountNumber = '';
+        // Default to Main Branch if fresh
+        connectionModule.selectedBranches = [connectionModule.availableBranches[0].nameEn];
+        connectionModule.hasKey = false;
+        connectionModule.sessionKey = '';
+    }
+
+    const accInput = document.getElementById('connAccountNumber');
+    if (accInput) accInput.value = connectionModule.accountNumber;
+
+    const keyInput = document.getElementById('connUserKey');
+    if (keyInput) {
+        keyInput.type = 'password';
+        const eyeIcon = document.getElementById('connEyeIcon');
+        if (eyeIcon) {
+            eyeIcon.classList.remove('fa-eye-slash');
+            eyeIcon.classList.add('fa-eye');
+        }
+        if (connectionModule.sessionKey) {
+            keyInput.value = connectionModule.sessionKey;
+            keyInput.placeholder = '••••••••••••';
+        } else if (connectionModule.hasKey) {
+            keyInput.value = '';
+            keyInput.placeholder = isAr ? '•••••••• (محفوظ بأمان)' : '•••••••• (Saved securely)';
+        } else {
+            keyInput.value = '';
+            keyInput.placeholder = isAr ? 'أدخل مفتاح المستخدم' : 'Enter User Key';
+        }
+    }
+
+    renderSelectedBranchChips();
+}
+
+// Open Connection Modal
+function openConnectionModal() {
+    const modal = document.getElementById('connectionModal');
+    if (!modal) return;
+    
+    // Prevent opening multiple instances
+    if (modal.classList.contains('open')) return;
+
+    loadConnectionConfigIntoForm();
+
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+
+    // Accessibility: Focus first interactive input
+    setTimeout(() => {
+        const input = document.getElementById('connAccountNumber');
+        if (input) input.focus();
+    }, 60);
+}
+
+// Close Connection Modal (Cancel)
+function closeConnectionModal() {
+    const modal = document.getElementById('connectionModal');
+    if (!modal || !modal.classList.contains('open')) return;
+
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    resetConnectionFeedback();
+
+    // Accessibility: Return focus to trigger button
+    const trigger = document.getElementById('kioskConnectionBtn');
+    if (trigger) trigger.focus();
+}
+
+// Save Connection Settings
+function saveConnectionSettings() {
+    if (connectionModule.isSaving) return;
+
+    const accInput = document.getElementById('connAccountNumber');
+    const keyInput = document.getElementById('connUserKey');
+    const saveBtn = document.getElementById('connSaveBtn');
+    const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar');
+
+    resetConnectionFeedback();
+
+    const accountNumber = accInput ? accInput.value.trim() : '';
+    const userKey = keyInput ? keyInput.value.trim() : '';
+
+    // Validate Account Number
+    if (!accountNumber) {
+        showConnectionGeneralFeedback(isAr ? 'يرجى إدخال رقم الحساب' : 'Account Number is required', 'error');
+        if (accInput) accInput.focus();
+        return;
+    }
+
+    // Validate User Key (either new key entered or previously saved)
+    if (!userKey && !connectionModule.hasKey && !connectionModule.sessionKey) {
+        showConnectionGeneralFeedback(isAr ? 'يرجى إدخال مفتاح المستخدم' : 'User Key is required', 'error');
+        if (keyInput) keyInput.focus();
+        return;
+    }
+
+    // Validate Branches
+    if (connectionModule.selectedBranches.length === 0) {
+        showConnectionGeneralFeedback(isAr ? 'يرجى تحديد فرع واحد على الأقل' : 'Please select at least one branch', 'error');
+        return;
+    }
+
+    // Prevent duplicate submission
+    connectionModule.isSaving = true;
+    if (saveBtn) saveBtn.disabled = true;
+
+    // Securely hold session key in memory if provided
+    if (userKey) {
+        connectionModule.sessionKey = userKey;
+        connectionModule.hasKey = true;
+    }
+
+    // Persist non-sensitive configuration only (NO plaintext user keys in storage)
+    const configToPersist = {
+        accountNumber: accountNumber,
+        branches: [...connectionModule.selectedBranches],
+        hasKey: true,
+        savedAt: new Date().toISOString()
+    };
+
+    try {
+        localStorage.setItem('nurpos_connection', JSON.stringify(configToPersist));
+    } catch (e) {
+        showConnectionGeneralFeedback(isAr ? 'فشل حفظ الإعدادات في المتصفح' : 'Failed to save configuration locally', 'error');
+        connectionModule.isSaving = false;
+        if (saveBtn) saveBtn.disabled = false;
+        return;
+    }
+
+    connectionModule.accountNumber = accountNumber;
+
+    // Show success feedback
+    if (typeof showToast === 'function') {
+        showToast(isAr ? 'تم حفظ معرّف الاتصال بنجاح' : 'Connection ID saved successfully', 'success');
+    }
+
+    connectionModule.isSaving = false;
+    if (saveBtn) saveBtn.disabled = false;
+
+    // Close popup only after successful saving
+    closeConnectionModal();
+}
+
+// Trap focus & Escape handling inside Connection Modal
+document.addEventListener('keydown', (e) => {
+    const modal = document.getElementById('connectionModal');
+    if (!modal || !modal.classList.contains('open')) return;
+
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        closeConnectionModal();
+        return;
+    }
+
+    // Focus trap
+    if (e.key === 'Tab') {
+        const focusables = modal.querySelectorAll('input:not([disabled]), button:not([disabled]), select:not([disabled])');
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+        }
     }
 });

@@ -757,7 +757,9 @@
 
     <!-- Center Card -->
     <div class="kiosk-login-card">
-        <i class="fa-solid fa-link kiosk-logo-icon"></i>
+        <button type="button" class="kiosk-conn-trigger" id="kioskConnectionBtn" onclick="openConnectionModal()" aria-label="Connection ID" title="Connection ID">
+            <i class="fa-solid fa-link kiosk-logo-icon"></i>
+        </button>
         
         <!-- Logo -->
         <div class="kiosk-logo-container">
@@ -808,6 +810,80 @@
             <button type="button" class="kiosk-demo-pill" onclick="kioskFillDemoPin('0000')" title="Cashier Login">
                 <i class="fa-solid fa-cash-register"></i> <span>Cashier: <strong>0000</strong></span>
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CONNECTION ID POPUP -->
+<div class="connection-modal-overlay" id="connectionModal" role="dialog" aria-modal="true" aria-labelledby="connModalTitle" aria-hidden="true">
+    <div class="connection-modal-card">
+        <!-- Header -->
+        <div class="connection-modal-header">
+            <div class="connection-header-left">
+                <i class="fa-solid fa-link connection-header-icon" aria-hidden="true"></i>
+                <h2 id="connModalTitle" class="connection-modal-title" data-i18n="connection_id">Connection Id</h2>
+            </div>
+            <button type="button" class="connection-modal-close" onclick="closeConnectionModal()" aria-label="Close dialog">&times;</button>
+        </div>
+
+        <!-- Body -->
+        <div class="connection-modal-body">
+            <p class="connection-instruction" data-i18n="connection_instruction">Please enter your Connection ID:-</p>
+
+            <!-- Two-column row for Account Number & User Key on wide screens -->
+            <div class="connection-form-grid">
+                <!-- Account Number Field -->
+                <div class="connection-field-group">
+                    <label for="connAccountNumber" class="connection-label" data-i18n="account_number">Account Number</label>
+                    <div class="connection-input-action-row">
+                        <input type="text" id="connAccountNumber" class="connection-input" placeholder="e.g. 100234" autocomplete="off" />
+                        <button type="button" id="connCheckBtn" class="connection-action-btn connection-check-btn" onclick="checkConnectionAccount()" data-i18n="btn_check">Check</button>
+                    </div>
+                    <div id="connAccountFeedback" class="connection-feedback" role="alert" aria-live="polite"></div>
+                </div>
+
+                <!-- User Key Field -->
+                <div class="connection-field-group">
+                    <label for="connUserKey" class="connection-label" data-i18n="user_key">User Key</label>
+                    <div class="connection-input-action-row">
+                        <input type="password" id="connUserKey" class="connection-input" placeholder="••••••••••••" autocomplete="new-password" />
+                        <button type="button" id="connToggleEyeBtn" class="connection-action-btn connection-eye-btn" onclick="toggleUserKeyVisibility()" title="Toggle visibility" aria-label="Toggle password visibility">
+                            <i class="fa-solid fa-eye" id="connEyeIcon"></i>
+                        </button>
+                    </div>
+                    <div id="connKeyFeedback" class="connection-feedback" role="alert" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Branch Row -->
+            <div class="connection-field-group connection-branch-group">
+                <label for="connBranchSelect" class="connection-label" data-i18n="branch">Branch</label>
+                <div class="connection-input-action-row">
+                    <select id="connBranchSelect" class="connection-select">
+                        <!-- Populated dynamically via JS -->
+                    </select>
+                    <button type="button" id="connAddBranchBtn" class="connection-action-btn connection-add-btn" onclick="addSelectedBranch()" title="Add Branch" aria-label="Add Branch">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Selected Branches Chips Container -->
+            <div class="connection-selected-branches-section">
+                <span class="connection-chips-heading" data-i18n="selected_branches">Selected Branches:</span>
+                <div id="connSelectedChips" class="connection-chips-wrapper" aria-label="Selected branches list">
+                    <!-- Chips inserted here dynamically -->
+                </div>
+            </div>
+
+            <!-- General Status / Error Banner -->
+            <div id="connGeneralFeedback" class="connection-general-feedback" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Footer / Action Buttons -->
+        <div class="connection-modal-footer">
+            <button type="button" class="connection-footer-btn connection-cancel-btn" onclick="closeConnectionModal()" data-i18n="btn_cancel">Cancel</button>
+            <button type="button" id="connSaveBtn" class="connection-footer-btn connection-save-btn" onclick="saveConnectionSettings()" data-i18n="btn_save">Save</button>
         </div>
     </div>
 </div>
