@@ -212,7 +212,8 @@ function applyLanguage(lang) {
         const key = el.getAttribute('data-i18n');
         if (i18n[lang] && i18n[lang][key]) {
             if (key === 'tax_vat') {
-                el.innerText = `${i18n[lang][key]} (${storeSettings.taxRate}%)`;
+                const tr = (storeSettings.taxRate !== undefined && storeSettings.taxRate !== null) ? storeSettings.taxRate : 15;
+                el.innerText = `${i18n[lang][key]} (${tr}%)`;
             } else {
                 el.innerText = i18n[lang][key];
             }

@@ -573,7 +573,7 @@ function syncStoreSettingsForm() {
     document.getElementById('setStoreNameEn').value = storeSettings.nameEn || '';
     document.getElementById('setCompanyName').value = storeSettings.companyName || '';
     document.getElementById('setVatNumber').value = storeSettings.vatNumber || '';
-    document.getElementById('setTaxRate').value = storeSettings.taxRate || 15;
+    document.getElementById('setTaxRate').value = (storeSettings.taxRate !== undefined && storeSettings.taxRate !== null) ? storeSettings.taxRate : 15;
     document.getElementById('setCurrency').value = storeSettings.currency || 'SAR';
     document.getElementById('setAdminPin').value = storeSettings.adminPin || '123456';
     document.getElementById('setStaffPin').value = storeSettings.staffPin || '000000';

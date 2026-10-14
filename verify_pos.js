@@ -120,17 +120,18 @@ assert("Distinct stable lineIds assigned", currentCart[0].lineId !== currentCart
 
 let totals = calculateCartTotals();
 const expSubtotal = (itm1.price * 2) + itm2.price; // (2.00 * 2) + 18.50 = 22.50 SAR
-const expTax = Math.round(expSubtotal * 0.15 * 100) / 100; // 3.38 SAR
-const expGrand = Math.round((expSubtotal + expTax) * 100) / 100; // 25.88 SAR
+const expTax = Math.round(((expSubtotal * 0.15) / 1.15) * 100) / 100; // 22.50 * 15 / 115 = 2.93 SAR
+const expGrand = expSubtotal; // 22.50 SAR (Customer pays 22.50, VAT is included)
 assert("Subtotal is 22.50", totals.subtotal === expSubtotal);
-assert("Tax is 15% of 22.50 = 3.38", totals.tax === expTax);
-assert("Grand total is 25.88", totals.grandTotal === expGrand);
+assert("Tax is included 15% of 22.50 = 2.93", totals.tax === expTax);
+assert("Grand total is 22.50", totals.grandTotal === expGrand);
 
 // TEST 3: Applying Discounts (% and Fixed)
 discountType = 'fixed';
 discountValue = 5.00;
 totals = calculateCartTotals();
-assert("Fixed discount deducted: 22.50 - 5.00 = 17.50 taxable", totals.taxableAmount === 17.50);
+assert("Fixed discount deducted: 22.50 - 5.00 = 17.50 payable", totals.grandTotal === 17.50);
+assert("Taxable amount (net before VAT) is 15.22", totals.taxableAmount === 15.22);
 
 discountType = 'percent';
 discountValue = 10; // 10%
@@ -247,17 +248,17 @@ for (let i = 0; i < 2; i++) addToCart(items.find(x => x.enName === 'Large Fries'
 
 const img1Totals = calculateCartTotals();
 assert("Image 1 Subtotal is exactly 179.50", img1Totals.subtotal === 179.50);
-assert("Image 1 VAT 15% is exactly 26.93", img1Totals.tax === 26.93);
-assert("Image 1 Grand total is exactly 206.43", img1Totals.grandTotal === 206.43);
+assert("Image 1 Included VAT 15% is exactly 23.41", img1Totals.tax === 23.41);
+assert("Image 1 Grand total is exactly 179.50", img1Totals.grandTotal === 179.50);
 
 nextOrderSeq = 1013;
 currentOrderType = 'dine_in';
 currentOrderTypeId = 'local';
 selectedPayMethod = 'Cash';
-paymentInput = '206.43';
+paymentInput = '179.50';
 currentUser.name = 'Nawaf Saeed';
 
-completeOrderAndShowReceipt(null, 'Cash', {}, 206.43);
+completeOrderAndShowReceipt(null, 'Cash', {}, 179.50);
 renderReceipt(lastCompletedOrder);
 
 assert("Receipt store name is NUR FOODES", elements['recStoreName'].innerText === 'NUR FOODES');
@@ -267,9 +268,9 @@ assert("Receipt Order No is ORD-1013", elements['recOrderNum'].innerText === 'OR
 assert("Receipt Order Type is DINE-IN (Table 1)", elements['recOrderType'].innerText === 'DINE-IN (Table 1)');
 assert("Receipt Cashier is Nawaf Saeed", elements['recCashier'].innerText === 'Nawaf Saeed');
 assert("Receipt Subtotal is 179.50", elements['recSubtotal'].innerText === '179.50');
-assert("Receipt VAT is 26.93", elements['recTax'].innerText === '26.93');
-assert("Receipt Grand Total is SAR 206.43", elements['recGrandTotal'].innerText === 'SAR 206.43');
-assert("Receipt Paid is 206.43", elements['recPaid'].innerText === '206.43');
+assert("Receipt VAT is 23.41", elements['recTax'].innerText === '23.41');
+assert("Receipt Grand Total is SAR 179.50", elements['recGrandTotal'].innerText === 'SAR 179.50');
+assert("Receipt Paid is 179.50", elements['recPaid'].innerText === '179.50');
 assert("Receipt Change is 0.00", elements['recChange'].innerText === '0.00');
 
 const recHtml = elements['recItemsTbody'].innerHTML;
@@ -569,5 +570,202 @@ assert("Test 19: Return item 2 has line_ret_row_2 and modifier Mild", returnItem
 adjRetQty(1, 1);
 assert("Test 19: Return qty set on targeted item 2 only", returnItemsState[1].returnQty === 1 && returnItemsState[0].returnQty === 0);
 
+console.log("\n=======================================================");
+console.log("=== SECTION 20: MANDATORY VAT-INCLUSIVE TEST SUITE ====");
+console.log("=======================================================");
+
+const kebabVat = { id: 'item_kebab_vat_test', enName: 'Chicken Kebab', arName: 'كباب دجاج', price: 9.50, available: true, catId: 'meals' };
+items.push(kebabVat);
+storeSettings.taxRate = 15;
+
+// TEST A — Basic VAT Inclusive (9.50 @ 15% VAT)
+currentCart = [];
+discountType = 'fixed';
+discountValue = 0;
+addToCart(kebabVat.id);
+let tA = calculateCartTotals();
+assert("Test A: Single 9.50 item extracted VAT is 1.24", tA.tax === 1.24);
+assert("Test A: Customer payable total is 9.50 (NOT 10.74)", tA.grandTotal === 9.50);
+assert("Test A: Net before VAT is 8.26", tA.netBeforeVat === 8.26);
+
+// TEST B — Quantity 2
+selectCartItem(0);
+changeActiveCartQty(1); // qty 2
+let tB = calculateCartTotals();
+assert("Test B: Qty 2 extracted VAT is 2.48", tB.tax === 2.48);
+assert("Test B: Customer payable total is 19.00", tB.grandTotal === 19.00);
+assert("Test B: Net before VAT is 16.52", tB.netBeforeVat === 16.52);
+
+// TEST C — Quantity 3
+changeActiveCartQty(1); // qty 3
+let tC = calculateCartTotals();
+assert("Test C: Qty 3 extracted VAT is 3.72", tC.tax === 3.72);
+assert("Test C: Customer payable total is 28.50", tC.grandTotal === 28.50);
+assert("Test C: Net before VAT is 24.78", tC.netBeforeVat === 24.78);
+
+// TEST D — Fixed Discount (1.00 on 9.50)
+currentCart = [];
+addToCart(kebabVat.id);
+discountType = 'fixed';
+discountValue = 1.00;
+let tD = calculateCartTotals();
+assert("Test D: 1.00 fixed discount extracted VAT is 1.11", tD.tax === 1.11);
+assert("Test D: Customer payable total is 8.50", tD.grandTotal === 8.50);
+assert("Test D: Net before VAT is 7.39", tD.netBeforeVat === 7.39);
+
+// TEST E — Percentage Discount (10% on 9.50)
+currentCart = [];
+addToCart(kebabVat.id);
+discountType = 'percent';
+discountValue = 10; // 10% -> 0.95 discount -> 8.55 total
+let tE = calculateCartTotals();
+assert("Test E: 10% discount extracted VAT is 1.12", tE.tax === 1.12);
+assert("Test E: Customer payable total is 8.55", tE.grandTotal === 8.55);
+assert("Test E: Net before VAT is 7.43", tE.netBeforeVat === 7.43);
+
+// TEST F — Paid Addition (9.50 + 2.30)
+currentCart = [];
+discountType = 'fixed';
+discountValue = 0;
+addToCart(kebabVat.id);
+currentCart[0].addons = [{ id: 'addon_sauce_f', name: 'Garlic Mayo', price: 2.30 }];
+let tF = calculateCartTotals();
+assert("Test F: 2.30 addition extracted VAT is 1.54", tF.tax === 1.54);
+assert("Test F: Customer payable total is 11.80", tF.grandTotal === 11.80);
+assert("Test F: Net before VAT is 10.26", tF.netBeforeVat === 10.26);
+
+// TEST G — Zero VAT (0%)
+storeSettings.taxRate = 0;
+let tG = calculateCartTotals();
+assert("Test G: 0% VAT extracted VAT is 0.00", tG.tax === 0.00);
+assert("Test G: Customer payable total remains 11.80", tG.grandTotal === 11.80);
+assert("Test G: Net before VAT equals gross 11.80", tG.netBeforeVat === 11.80);
+
+// Single item with 0% VAT
+currentCart = [];
+addToCart(kebabVat.id);
+let tG2 = calculateCartTotals();
+assert("Test G: Single 9.50 with 0% VAT produces 0.00 tax", tG2.tax === 0.00);
+assert("Test G: Single 9.50 total remains 9.50", tG2.grandTotal === 9.50);
+
+// TEST H — Different VAT Rates (20% and 5%)
+storeSettings.taxRate = 20;
+let tH20 = calculateCartTotals();
+// 9.50 * 20 / 120 = 1.5833 -> 1.58
+assert("Test H: 20% VAT extracted VAT is 1.58", tH20.tax === 1.58);
+assert("Test H: 20% VAT customer payable total is 9.50", tH20.grandTotal === 9.50);
+
+storeSettings.taxRate = 5;
+let tH5 = calculateCartTotals();
+// 9.50 * 5 / 105 = 0.45238 -> 0.45
+assert("Test H: 5% VAT extracted VAT is 0.45", tH5.tax === 0.45);
+assert("Test H: 5% VAT customer payable total is 9.50", tH5.grandTotal === 9.50);
+
+// Restore storeSettings.taxRate = 15
+storeSettings.taxRate = 15;
+
+// TEST I — Cash Payment (Total 9.50, Paid 10.00 -> Change 0.50, Remaining 0.00)
+currentCart = [];
+addToCart(kebabVat.id); // 9.50
+const orderTotalI = calculateCartTotals().grandTotal;
+const cashPaidI = 10.00;
+const changeI = Math.round(Math.max(0, cashPaidI - orderTotalI) * 100) / 100;
+const remI = Math.round(Math.max(0, orderTotalI - cashPaidI) * 100) / 100;
+assert("Test I: Cash payment 10.00 on 9.50 -> Remaining is 0.00", remI === 0.00);
+assert("Test I: Cash payment 10.00 on 9.50 -> Change is 0.50", changeI === 0.50);
+
+// TEST J — Split Payment (Total 19.00: Cash 9.00 + Mada 10.00 -> Remaining 0.00)
+const orderTotalJ = 19.00;
+const splitCash = 9.00;
+const splitMada = 10.00;
+const totalSplitPaid = splitCash + splitMada;
+const remJ = Math.round(Math.max(0, orderTotalJ - totalSplitPaid) * 100) / 100;
+assert("Test J: Split payment remaining is 0.00", remJ === 0.00);
+
+// TEST K — Separate Order Rows (Repeated product creates separate lines, sums properly)
+currentCart = [];
+addToCart(kebabVat.id);
+addToCart(kebabVat.id);
+addToCart(kebabVat.id);
+assert("Test K: 3 separate rows created for repeated product", currentCart.length === 3 && currentCart.every(r => r.qty === 1));
+let tK = calculateCartTotals();
+assert("Test K: Combined subtotal is 28.50", tK.subtotal === 28.50);
+assert("Test K: Combined included VAT is 3.72", tK.tax === 3.72);
+assert("Test K: Customer payable total is 28.50", tK.grandTotal === 28.50);
+
+// TEST L — Customer Invoice & Saved Values
+currentCart = [];
+addToCart(kebabVat.id); // 9.50
+const tL = calculateCartTotals();
+nextOrderSeq = 8801;
+if (typeof isPrintSequenceRunning !== 'undefined') isPrintSequenceRunning = false;
+completeOrderAndShowReceipt(null, 'Cash', {}, 9.50);
+const savedOrderL = orders[0];
+assert("Test L: Saved order total matches cart grandTotal (9.50)", savedOrderL.grandTotal === 9.50);
+assert("Test L: Saved order tax matches cart tax (1.24)", savedOrderL.tax === 1.24);
+assert("Test L: Saved order net matches taxableAmount (8.26)", savedOrderL.taxableAmount === 8.26);
+renderReceipt(savedOrderL);
+assert("Test L: Rendered receipt Grand Total is SAR 9.50", elements['recGrandTotal'].innerText === 'SAR 9.50');
+assert("Test L: Rendered receipt Included VAT is 1.24", elements['recTax'].innerText === '1.24');
+assert("Test L: Rendered receipt Subtotal is 9.50", elements['recSubtotal'].innerText === '9.50');
+assert("Test L: Rendered receipt Net is 8.26", elements['recNet'].innerText === '8.26');
+
+// TEST M — QR Tax Values Match Order Total & Extracted VAT
+const qrBase64 = generateZatcaTlvBase64(
+    storeSettings.storeName,
+    storeSettings.vatNumber,
+    savedOrderL.date,
+    savedOrderL.grandTotal.toFixed(2),
+    (savedOrderL.tax || 0).toFixed(2)
+);
+assert("Test M: QR Base64 generated successfully", typeof qrBase64 === 'string' && qrBase64.length > 20);
+const qrBuf = Buffer.from(qrBase64, 'base64');
+let pos = 0;
+const tags = {};
+while (pos < qrBuf.length) {
+    const tag = qrBuf[pos++];
+    const len = qrBuf[pos++];
+    tags[tag] = qrBuf.slice(pos, pos + len).toString('utf8');
+    pos += len;
+}
+assert("Test M: QR Tag 4 (Total) encodes exactly '9.50'", tags[4] === '9.50');
+assert("Test M: QR Tag 5 (Tax) encodes exactly '1.24'", tags[5] === '1.24');
+
+// TEST N — Historical Orders Preservation
+const histOrder = {
+    id: 'ORD-HIST-999',
+    seq: 999,
+    date: '2025-01-01T10:00:00.000Z',
+    items: [{ id: 'itm_hist', enName: 'Hist Meal', price: 10.00, qty: 1 }],
+    total: 10.00,
+    tax: 1.50,
+    grandTotal: 11.50,
+    status: 'completed'
+};
+orders.unshift(histOrder);
+renderReceipt(histOrder);
+assert("Test N: Historical order values unmodified", histOrder.grandTotal === 11.50 && histOrder.tax === 1.50);
+assert("Test N: Historical receipt displays saved grand total SAR 11.50", elements['recGrandTotal'].innerText === 'SAR 11.50');
+assert("Test N: Historical receipt displays saved VAT 1.50", elements['recTax'].innerText === '1.50');
+
+// TEST O — Small Halalah Rounding Over Multiple Items
+currentCart = [];
+const pennyItem = { id: 'penny_item', enName: 'Penny Sauce', price: 1.15, available: true };
+items.push(pennyItem);
+for (let i = 0; i < 10; i++) addToCart(pennyItem.id);
+let tO = calculateCartTotals();
+// 10 items * 1.15 = 11.50. VAT = 11.50 * 15 / 115 = 1.50. Net = 10.00.
+assert("Test O: Multi-row fractional value grandTotal is exactly 11.50", tO.grandTotal === 11.50);
+assert("Test O: Multi-row fractional value VAT is exactly 1.50", tO.tax === 1.50);
+assert("Test O: Multi-row fractional value Net is exactly 10.00", tO.netBeforeVat === 10.00);
+
+// TEST P — Sales & Shift Reports Financial Consistency
+const reportOrders = [savedOrderL];
+const totalRevenue = reportOrders.reduce((sum, o) => sum + (o.grandTotal || o.total || 0), 0);
+const totalTax = reportOrders.reduce((sum, o) => sum + (o.tax || 0), 0);
+assert("Test P: Total sales in reports is 9.50 (NOT 10.74)", totalRevenue === 9.50);
+assert("Test P: Total extracted tax in reports is 1.24", totalTax === 1.24);
+
 console.log(`\n=== Verification Finished: ${passed} Passed, ${failed} Failed ===`);
 if (failed > 0) process.exit(1);
+else process.exit(0);

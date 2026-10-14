@@ -239,7 +239,7 @@ function formatCurrency(val) {
         : `${curr} ${Number(val || 0).toFixed(2)}`;
 }
 
-// Centralized Financial Calculation (Discount applied before VAT)
+// Centralized Financial Calculation (VAT-Inclusive Product Pricing)
 function calculateCartTotals() {
     let baseItemsSubtotal = 0;
     let additionsTotal = 0;
@@ -255,6 +255,8 @@ function calculateCartTotals() {
         }
     });
 
+    baseItemsSubtotal = Math.round(baseItemsSubtotal * 100) / 100;
+    additionsTotal = Math.round(additionsTotal * 100) / 100;
     const subtotal = Math.round((baseItemsSubtotal + additionsTotal) * 100) / 100;
     
     let validDiscount = 0;
@@ -262,22 +264,39 @@ function calculateCartTotals() {
         const pct = Math.min(100, Math.max(0, Number(discountValue) || 0));
         validDiscount = Math.round(((subtotal * pct) / 100) * 100) / 100;
     } else {
-        const val = Math.max(0, Number(discountValue || customDiscount) || 0);
+        const rawVal = (discountValue !== undefined && discountValue !== null && discountValue !== '') 
+            ? discountValue 
+            : customDiscount;
+        const val = Math.max(0, Number(rawVal) || 0);
         validDiscount = Math.min(subtotal, Math.round(val * 100) / 100);
     }
     customDiscount = validDiscount;
 
-    const taxableAmount = Math.max(0, Math.round((subtotal - validDiscount) * 100) / 100);
+    // Gross Amount (VAT-inclusive) after applying eligible discounts
+    const grossAfterDiscount = Math.max(0, Math.round((subtotal - validDiscount) * 100) / 100);
     const taxRate = Math.max(0, Number(storeSettings.taxRate) || 0);
-    const tax = Math.round(((taxableAmount * taxRate) / 100) * 100) / 100;
-    const grandTotal = Math.round((taxableAmount + tax) * 100) / 100;
+
+    // VAT-INCLUSIVE FORMULA:
+    // Product prices and paid additions are VAT-inclusive.
+    // Included VAT = Gross Amount × Tax Rate / (100 + Tax Rate)
+    // Customer Payable Total = Gross Amount (Tax is NOT added on top)
+    const tax = taxRate > 0 
+        ? Math.round(((grossAfterDiscount * taxRate) / (100 + taxRate)) * 100) / 100 
+        : 0;
+
+    // Net Amount Before VAT = Gross Amount - Included VAT
+    const netBeforeVat = Math.round((grossAfterDiscount - tax) * 100) / 100;
+    const grandTotal = grossAfterDiscount;
 
     return { 
-        baseItemsSubtotal: Math.round(baseItemsSubtotal * 100) / 100, 
-        additionsTotal: Math.round(additionsTotal * 100) / 100, 
+        baseItemsSubtotal, 
+        additionsTotal, 
         subtotal, 
         discount: validDiscount, 
-        taxableAmount, 
+        taxableAmount: netBeforeVat, // Net amount subject to VAT before tax
+        netBeforeVat,
+        grossTotal: grandTotal,
+        taxRate, 
         tax, 
         grandTotal 
     };

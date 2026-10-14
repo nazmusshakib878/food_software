@@ -122,11 +122,24 @@ function renderReceipt(order) {
     document.getElementById('recTax').innerText = (order.tax || 0).toFixed(2);
     document.getElementById('recDiscount').innerText = (order.discount || 0).toFixed(2);
     // Support both order.grandTotal (from payment.js) and order.total fallback
-    const grandTotal = Number(order.grandTotal || order.total || 0);
+    const grandTotal = Number(order.grandTotal !== undefined ? order.grandTotal : (order.total || 0));
     document.getElementById('recGrandTotal').innerText = `SAR ${grandTotal.toFixed(2)}`;
     document.getElementById('recMethod').innerText = order.method || order.paymentMethod || 'Cash';
-    document.getElementById('recPaid').innerText = Number(order.paid || order.amountPaid || order.grandTotal || order.total || 0).toFixed(2);
+    document.getElementById('recPaid').innerText = Number(order.paid || order.amountPaid || grandTotal || 0).toFixed(2);
     document.getElementById('recChange').innerText = Number(order.change || order.changeReturn || 0).toFixed(2);
+
+    // Net before VAT display
+    const netEl = document.getElementById('recNet');
+    if (netEl) {
+        const netVal = Number(order.netBeforeVat !== undefined ? order.netBeforeVat : (order.taxableAmount !== undefined ? order.taxableAmount : (grandTotal - (Number(order.tax) || 0))));
+        netEl.innerText = netVal.toFixed(2);
+    }
+
+    const trDisplay = order.taxRate !== undefined && order.taxRate !== null ? order.taxRate : (storeSettings.taxRate !== undefined ? storeSettings.taxRate : 15);
+    const taxLbl = document.getElementById('recTaxLabel');
+    if (taxLbl) {
+        taxLbl.innerText = currentLang === 'ar' ? `ضريبة القيمة المضافة المتضمنة (${trDisplay}%):` : `Included VAT (${trDisplay}%):`;
+    }
 
     // Dynamic ZATCA-compliant QR Code generation
     const qrContainer = document.getElementById('receiptQr');
@@ -136,7 +149,7 @@ function renderReceipt(order) {
             storeSettings.companyName || storeSettings.nameAr || 'Nur Foodes',
             storeSettings.vatNumber || '300987654300003',
             order.date || new Date().toISOString(),
-            (order.total || 0).toFixed(2),
+            grandTotal.toFixed(2),
             (order.tax || 0).toFixed(2)
         );
 
