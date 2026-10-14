@@ -1930,10 +1930,19 @@ html[dir="rtl"] .kiosk-about-app,
 
 .kiosk-logo-icon {
     position: absolute;
-    right: -24px;
-    top: 6px;
+    top: 20px;
+    right: 20px;
+    left: auto;
     color: #f59e0b;
     font-size: 20px;
+    line-height: 1;
+    z-index: 5;
+}
+
+html[dir="rtl"] .kiosk-logo-icon,
+[dir="rtl"] .kiosk-logo-icon {
+    right: 20px;
+    left: auto;
 }
 
 /* 4 PIN Boxes */
@@ -2159,6 +2168,11 @@ html[dir="rtl"] .kiosk-about-app,
     .kiosk-pin-box { width: 42px; height: 48px; font-size: 22px; }
     .kiosk-numpad-btn { height: 48px; font-size: 20px; }
     .kiosk-login-btn { height: 46px; font-size: 15px; }
+    .kiosk-logo-icon {
+        top: 16px;
+        right: 16px;
+        font-size: 18px;
+    }
 }
 
 @media (max-height: 700px) {
