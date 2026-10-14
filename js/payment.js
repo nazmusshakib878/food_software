@@ -368,6 +368,7 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
         status: 'new',
         cashier: currentUser.name || 'Cashier',
         items: currentCart.map(i => ({
+            lineId: i.lineId || generateCartLineId(),
             id: i.id,
             catId: i.catId || i.category || null, // Preserved for KOT category filter
             arName: i.arName,
@@ -422,6 +423,9 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
     if (tableSelect) tableSelect.value = 'Table 1';
 
     currentCart = [];
+    selectedCartLineId = null;
+    selectedCartItemIndex = null;
+    if (typeof closeItemModifierPanel === 'function') closeItemModifierPanel();
     currentOrderNotes = '';
     currentClientPhone = '';
     customDiscount = 0;

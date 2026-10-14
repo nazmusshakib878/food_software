@@ -264,6 +264,7 @@ function startReturnProcess(orderId) {
     // Build initial items state: Default Return Quantity is 0 as per Section 12!
     returnItemsState = (currentReturnOrder.items || []).map((item, index) => ({
         index: index,
+        lineId: item.lineId || `item_line_${index}`,
         id: item.id || `item_${index}`,
         name: currentLang === 'ar' ? (item.arName || item.name || item.enName) : (item.enName || item.name || item.arName),
         enName: item.enName || item.name || '',
@@ -273,7 +274,10 @@ function startReturnProcess(orderId) {
         returnQty: 0, // Default 0
         damagedQty: 0,
         selected: false,
-        isDamagedChecked: false
+        isDamagedChecked: false,
+        addons: item.addons || [],
+        modifiers: item.modifiers || [],
+        note: item.note || ''
     }));
 
     const masterCb = document.getElementById('retSelectAll');
@@ -582,6 +586,8 @@ function confirmCancellation() {
             : 'Authorized Manager';
 
         currentReturnOrder.cancelledItems = validItems.map(item => ({
+            lineId: item.lineId,
+            id: item.id,
             name: item.name,
             enName: item.enName,
             arName: item.arName,
@@ -590,7 +596,10 @@ function confirmCancellation() {
             originalQty: item.originalQty,
             damagedQty: item.damagedQty,
             totalDamage: item.damagedQty * item.price,
-            lineTotal: item.returnQty * item.price
+            lineTotal: item.returnQty * item.price,
+            addons: item.addons,
+            modifiers: item.modifiers,
+            note: item.note
         }));
 
         // Remove literal secret PIN from records

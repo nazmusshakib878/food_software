@@ -188,6 +188,19 @@ var currentLang = (() => {
 var activeCategory = null; // null = Category / Folder View
 var currentCart = [];
 var selectedCartItemIndex = null; // Used for item modifier panel
+var selectedCartLineId = null; // Stable line identifier for selected order line
+
+// Collision-resistant unique cart line ID generator
+var _cartLineSeq = 0;
+function generateCartLineId() {
+    _cartLineSeq++;
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        try {
+            return crypto.randomUUID();
+        } catch (e) {}
+    }
+    return 'line_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 9) + '_' + _cartLineSeq;
+}
 var currentOrderType = 'local';
 var currentOrderTypeId = 'local';
 var currentTable = 'Table 1';
@@ -326,6 +339,9 @@ function safeStartNewOrder() {
         if (!confirm(msg)) return false;
     }
     currentCart = [];
+    selectedCartLineId = null;
+    selectedCartItemIndex = null;
+    if (typeof closeItemModifierPanel === 'function') closeItemModifierPanel();
     currentOrderNotes = '';
     currentClientPhone = '';
     customDiscount = 0;
@@ -356,6 +372,9 @@ function safeCancelOrder() {
         : 'Are you sure you want to cancel this order and clear the cart?';
     if (confirm(msg)) {
         currentCart = [];
+        selectedCartLineId = null;
+        selectedCartItemIndex = null;
+        if (typeof closeItemModifierPanel === 'function') closeItemModifierPanel();
         currentOrderNotes = '';
         currentClientPhone = '';
         customDiscount = 0;

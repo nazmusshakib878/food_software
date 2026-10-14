@@ -410,14 +410,15 @@ function saveItemForm(e) {
             item.image = image;
             item.available = available;
 
-            // Also update any instance in active cart
-            const inCart = currentCart.find(c => c.id === editId);
-            if (inCart) {
-                inCart.price = price;
-                inCart.arName = arName;
-                inCart.enName = enName;
-                inCart.image = image;
-            }
+            // Also update all instances in active cart
+            currentCart.forEach(inCart => {
+                if (inCart.id === editId) {
+                    inCart.price = price;
+                    inCart.arName = arName;
+                    inCart.enName = enName;
+                    inCart.image = image;
+                }
+            });
 
             showToast(currentLang === 'ar' ? "تم تحديث بيانات الصنف بنجاح" : "Product updated successfully", "success");
         }

@@ -550,6 +550,37 @@ function handleOutOfStockClick(name) {
     showToast(currentLang === 'ar' ? `عذراً، الصنف "${name}" غير متوفر حالياً بالمطبخ` : `Sorry, "${name}" is currently out of stock`, "warning");
 }
 
+function getSelectedCartItem() {
+    if (selectedCartLineId) {
+        const found = currentCart.find(c => c.lineId === selectedCartLineId);
+        if (found) return found;
+    }
+    if (selectedCartItemIndex !== null && selectedCartItemIndex >= 0 && selectedCartItemIndex < currentCart.length) {
+        return currentCart[selectedCartItemIndex];
+    }
+    return null;
+}
+
+function syncSelectedCartIndex() {
+    if (selectedCartLineId) {
+        const idx = currentCart.findIndex(c => c.lineId === selectedCartLineId);
+        if (idx !== -1) {
+            selectedCartItemIndex = idx;
+        } else {
+            selectedCartLineId = null;
+            selectedCartItemIndex = null;
+            closeItemModifierPanel();
+        }
+    } else if (selectedCartItemIndex !== null) {
+        if (selectedCartItemIndex >= 0 && selectedCartItemIndex < currentCart.length) {
+            selectedCartLineId = currentCart[selectedCartItemIndex].lineId || null;
+        } else {
+            selectedCartItemIndex = null;
+            closeItemModifierPanel();
+        }
+    }
+}
+
 function addToCart(itemId) {
     const item = items.find(i => i.id === itemId);
     if (!item) return;
@@ -560,38 +591,31 @@ function addToCart(itemId) {
     }
 
     const currentQtyInCart = currentCart.filter(c => c.id === itemId).reduce((sum, c) => sum + c.qty, 0);
-    if (item.stock !== undefined && item.stock !== null && currentQtyInCart >= item.stock) {
+    if (item.stock !== undefined && item.stock !== null && currentQtyInCart + 1 > item.stock) {
         showToast(currentLang === 'ar' ? `لقد وصلت للحد الأقصى للكمية المتوفرة بالمطبخ (${item.stock})` : `Max kitchen stock limit reached (${item.stock})`, 'warning');
         soundWarning();
         return;
     }
 
-    const existing = currentCart.find(c => c.id === itemId && (!c.addons || c.addons.length === 0) && (!c.modifiers || c.modifiers.length === 0) && !c.note);
-    let targetIndex = -1;
-    if (existing) {
-        existing.qty += 1;
-        existing.price = item.price;
-        existing.arName = item.arName;
-        existing.enName = item.enName;
-        targetIndex = currentCart.indexOf(existing);
-    } else {
-        const newItem = {
-            id: item.id,
-            arName: item.arName,
-            enName: item.enName,
-            price: item.price,
-            image: item.image || getCategoryFallbackImage(getItemCategoryId(item) || item.catId),
-            catId: getItemCategoryId(item) || item.catId,
-            qty: 1,
-            addons: [],
-            modifiers: [],
-            note: ''
-        };
-        currentCart.push(newItem);
-        targetIndex = currentCart.length - 1;
-    }
+    // Every successful product click creates one completely new, independent order row
+    const lineId = generateCartLineId();
+    const newItem = {
+        lineId: lineId,
+        id: item.id,
+        arName: item.arName,
+        enName: item.enName,
+        price: item.price,
+        image: item.image || (typeof getCategoryFallbackImage === 'function' ? getCategoryFallbackImage(getItemCategoryId(item) || item.catId) : (item.image || '')),
+        catId: getItemCategoryId(item) || item.catId,
+        qty: 1,
+        addons: [],
+        modifiers: [],
+        note: ''
+    };
+    currentCart.push(newItem);
+    const targetIndex = currentCart.length - 1;
     
-    // Auto-select for Fast Order Entry Customization
+    // Auto-select newly added row for Fast Order Entry Customization
     selectCartItem(targetIndex);
 
     // Respect Stay at Selected Category Preference
@@ -603,6 +627,12 @@ function addToCart(itemId) {
     soundBeep();
     renderCart();
     renderProducts();
+
+    // Scroll cart table to keep latest newly added row visible
+    const scrollContainer = document.getElementById('posCartTableWrapper') || document.getElementById('cartItemsList');
+    if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    }
 }
 
 function changeCartQty(index, delta) {
@@ -623,13 +653,24 @@ function changeCartQty(index, delta) {
 
     cartItem.qty += delta;
     if (cartItem.qty <= 0) {
+        const removedLineId = cartItem.lineId;
         currentCart.splice(index, 1);
         soundTrash();
+        if (selectedCartLineId === removedLineId) {
+            selectedCartLineId = null;
+            selectedCartItemIndex = null;
+            closeItemModifierPanel();
+        } else {
+            syncSelectedCartIndex();
+        }
     } else if (delta > 0) {
         soundBeep();
     }
     if (currentCart.length === 0) {
         customDiscount = 0;
+        selectedCartLineId = null;
+        selectedCartItemIndex = null;
+        closeItemModifierPanel();
     }
 
     renderCart();
@@ -637,10 +678,23 @@ function changeCartQty(index, delta) {
 }
 
 function removeCartItem(index) {
+    const cartItem = currentCart[index];
+    if (!cartItem) return;
+    const removedLineId = cartItem.lineId;
     currentCart.splice(index, 1);
     soundTrash();
+    if (selectedCartLineId === removedLineId) {
+        selectedCartLineId = null;
+        selectedCartItemIndex = null;
+        closeItemModifierPanel();
+    } else {
+        syncSelectedCartIndex();
+    }
     if (currentCart.length === 0) {
         customDiscount = 0;
+        selectedCartLineId = null;
+        selectedCartItemIndex = null;
+        closeItemModifierPanel();
     }
     renderCart();
     renderProducts();
@@ -709,8 +763,11 @@ function renderCart() {
                             ? item.modifiers.map(m => `<div class="cart-modifier-line" style="font-size: 11px; color: var(--muted); padding-right: 5px;">${m.actionType === 'without' ? '-' : (m.actionType === 'extra' ? '+' : '*')} ${escapeHtml(currentLang === 'ar' ? m.labelAr : m.labelEn)}</div>`).join('')
                             : '';
 
+                        const isRowActive = selectedCartLineId ? (item.lineId === selectedCartLineId) : (selectedCartItemIndex === idx);
+                        const rowTarget = item.lineId ? item.lineId : idx;
+
                         return `
-                            <tr onclick="selectCartItem(${idx})" class="cart-row ${selectedCartItemIndex === idx ? 'active-row' : ''}" style="cursor: pointer;">
+                            <tr onclick="selectCartItem('${escapeHtml(String(rowTarget))}')" class="cart-row ${isRowActive ? 'active-row' : ''}" data-line-id="${escapeHtml(item.lineId || '')}" style="cursor: pointer;">
                                 <td class="cart-item-num">${item.qty}</td>
                                 <td class="cart-item-cell-name">
                                     <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -723,7 +780,7 @@ function renderCart() {
                                 <td class="col-price" style="text-align: center;">${unitPrice.toFixed(2)}</td>
                                 <td class="col-total" style="text-align: end; font-weight: 800;">${lineTotal.toFixed(2)}</td>
                                 <td class="col-del">
-                                    <button type="button" class="row-del-btn" onclick="removeCartItem(${idx})" title="${currentLang === 'ar' ? 'حذف' : 'Remove'}">
+                                    <button type="button" class="row-del-btn" onclick="event.stopPropagation(); removeCartItem(${idx})" title="${currentLang === 'ar' ? 'حذف' : 'Remove'}">
                                         <i class="fa-solid fa-xmark"></i>
                                     </button>
                                 </td>
@@ -793,12 +850,14 @@ function renderCart() {
 
 // 6. Item Modifiers / Addons Customizer
 let customizerActiveIndex = null;
+let customizerActiveLineId = null;
 let customizerSelectedAddonIds = [];
 
 function openItemCustomizer(index) {
     const item = currentCart[index];
     if (!item) return;
     customizerActiveIndex = index;
+    customizerActiveLineId = item.lineId || null;
     customizerSelectedAddonIds = (item.addons || []).map(a => a.id);
 
     const titleEl = document.getElementById('customizerItemTitle');
@@ -864,17 +923,18 @@ function insertQuickNote(text) {
 function closeItemCustomizer() {
     document.getElementById('customizerModal')?.classList.remove('open');
     customizerActiveIndex = null;
+    customizerActiveLineId = null;
 }
 
 function saveItemCustomizer(e) {
     if (e && e.preventDefault) e.preventDefault();
-    if (customizerActiveIndex === null || !currentCart[customizerActiveIndex]) {
+    const item = (customizerActiveLineId ? currentCart.find(c => c.lineId === customizerActiveLineId) : null) || (customizerActiveIndex !== null ? currentCart[customizerActiveIndex] : null);
+    if (!item) {
         closeItemCustomizer();
         return;
     }
 
-    const item = currentCart[customizerActiveIndex];
-    const selectedAddons = POPULAR_ADDONS.filter(a => customizerSelectedAddonIds.includes(a.id));
+    const selectedAddons = POPULAR_ADDONS.filter(a => customizerSelectedAddonIds.includes(a.id)).map(a => ({ ...a }));
     const note = (document.getElementById('customizerItemNote')?.value || '').trim();
 
     item.addons = selectedAddons;
@@ -1177,14 +1237,14 @@ function selectDineInTable(tblName) {
 
 function loadSampleInvoiceOrder() {
     currentCart = [
-        { id: "item_meat_burger", name: "Meat Burger", enName: "Meat Burger", arName: "برجر لحم", price: 13.50, qty: 5 },
-        { id: "item_chicken_strips_meal", name: "Chicken Strips Meal", enName: "Chicken Strips Meal", arName: "وجبة دجاج استربس", price: 18.50, qty: 1 },
-        { id: "item_tandoori", name: "Tandoori", enName: "Tandoori", arName: "تندوري", price: 10.50, qty: 1 },
-        { id: "item_fish_sandwich", name: "Fish sandwich", enName: "Fish sandwich", arName: "سمك", price: 9.50, qty: 1 },
-        { id: "item_shish_tawooq", name: "Shish Tawooq", enName: "Shish Tawooq", arName: "شيش طاووق", price: 9.50, qty: 5 },
-        { id: "item_chicken_strips_burger", name: "Chicken Strips Burger", enName: "Chicken Strips Burger", arName: "برجر دجاج استربس", price: 12.50, qty: 1 },
-        { id: "item_mineral_water", name: "Mineral Water", enName: "Mineral Water", arName: "مياه معدنية", price: 1.50, qty: 1 },
-        { id: "item_large_fries", name: "Large Fries", enName: "Large Fries", arName: "بطاطس كبير", price: 6.00, qty: 2 }
+        { lineId: generateCartLineId(), id: "item_meat_burger", name: "Meat Burger", enName: "Meat Burger", arName: "برجر لحم", price: 13.50, qty: 5, addons: [], modifiers: [], note: '' },
+        { lineId: generateCartLineId(), id: "item_chicken_strips_meal", name: "Chicken Strips Meal", enName: "Chicken Strips Meal", arName: "وجبة دجاج استربس", price: 18.50, qty: 1, addons: [], modifiers: [], note: '' },
+        { lineId: generateCartLineId(), id: "item_tandoori", name: "Tandoori", enName: "Tandoori", arName: "تندوري", price: 10.50, qty: 1, addons: [], modifiers: [], note: '' },
+        { lineId: generateCartLineId(), id: "item_fish_sandwich", name: "Fish sandwich", enName: "Fish sandwich", arName: "سمك", price: 9.50, qty: 1, addons: [], modifiers: [], note: '' },
+        { lineId: generateCartLineId(), id: "item_shish_tawooq", name: "Shish Tawooq", enName: "Shish Tawooq", arName: "شيش طاووق", price: 9.50, qty: 5, addons: [], modifiers: [], note: '' },
+        { lineId: generateCartLineId(), id: "item_chicken_strips_burger", name: "Chicken Strips Burger", enName: "Chicken Strips Burger", arName: "برجر دجاج استربس", price: 12.50, qty: 1, addons: [], modifiers: [], note: '' },
+        { lineId: generateCartLineId(), id: "item_mineral_water", name: "Mineral Water", enName: "Mineral Water", arName: "مياه معدنية", price: 1.50, qty: 1, addons: [], modifiers: [], note: '' },
+        { lineId: generateCartLineId(), id: "item_large_fries", name: "Large Fries", enName: "Large Fries", arName: "بطاطس كبير", price: 6.00, qty: 2, addons: [], modifiers: [], note: '' }
     ];
     currentOrderType = 'dine_in';
     currentOrderTypeId = 'local';
@@ -1247,11 +1307,29 @@ function bottomNavMainScreen() {
 // Fast Order Entry - Item Modifier / Ingredient System
 // -----------------------------------------------------------------------------
 
-function selectCartItem(index) {
-    if (selectedCartItemIndex === index) {
+function selectCartItem(target) {
+    let index = -1;
+    if (typeof target === 'string') {
+        index = currentCart.findIndex(c => c.lineId === target);
+        if (index === -1) {
+            const parsed = parseInt(target, 10);
+            if (!isNaN(parsed) && parsed >= 0 && parsed < currentCart.length) {
+                index = parsed;
+            }
+        }
+    } else if (typeof target === 'number') {
+        index = target;
+    } else if (target && target.lineId) {
+        index = currentCart.findIndex(c => c.lineId === target.lineId);
+    }
+    
+    const cartItem = currentCart[index];
+    if (!cartItem) {
         closeItemModifierPanel();
         return;
     }
+
+    selectedCartLineId = cartItem.lineId;
     selectedCartItemIndex = index;
     renderCart();
     
@@ -1266,12 +1344,12 @@ function selectCartItem(index) {
     if (catalogViewsContainer) catalogViewsContainer.style.display = 'none';
     if (itemModifierPanel) itemModifierPanel.style.display = 'flex';
     
-    const cartItem = currentCart[index];
-    if (!cartItem) return;
-    
     // Set item name and note
-    document.getElementById('modifierPanelItemName').innerText = currentLang === 'ar' ? cartItem.arName : cartItem.enName;
-    document.getElementById('modifierPanelItemNote').value = cartItem.note || '';
+    const nameEl = document.getElementById('modifierPanelItemName');
+    if (nameEl) nameEl.innerText = currentLang === 'ar' ? (cartItem.arName || cartItem.enName) : (cartItem.enName || cartItem.arName);
+    
+    const noteEl = document.getElementById('modifierPanelItemNote');
+    if (noteEl) noteEl.value = cartItem.note || '';
     
     // Generate and render groups
     const product = items.find(i => i.id === cartItem.id) || cartItem;
@@ -1281,6 +1359,7 @@ function selectCartItem(index) {
 
 function closeItemModifierPanel() {
     selectedCartItemIndex = null;
+    selectedCartLineId = null;
     renderCart();
     
     const globalActionBar = document.getElementById('globalActionBar');
@@ -1295,21 +1374,29 @@ function closeItemModifierPanel() {
 }
 
 function changeActiveCartQty(delta) {
-    if (selectedCartItemIndex !== null) {
-        changeCartQty(selectedCartItemIndex, delta);
+    const cartItem = getSelectedCartItem();
+    if (cartItem) {
+        const idx = currentCart.indexOf(cartItem);
+        if (idx !== -1) {
+            changeCartQty(idx, delta);
+        }
     }
 }
 
 function deleteActiveCartItem() {
-    if (selectedCartItemIndex !== null) {
-        removeCartItem(selectedCartItemIndex);
-        closeItemModifierPanel();
+    const cartItem = getSelectedCartItem();
+    if (cartItem) {
+        const idx = currentCart.indexOf(cartItem);
+        if (idx !== -1) {
+            removeCartItem(idx);
+        }
     }
 }
 
 function updateActiveItemNote(note) {
-    if (selectedCartItemIndex !== null && currentCart[selectedCartItemIndex]) {
-        currentCart[selectedCartItemIndex].note = note;
+    const cartItem = getSelectedCartItem();
+    if (cartItem) {
+        cartItem.note = note;
         renderCart();
     }
 }
@@ -1474,25 +1561,39 @@ function renderModifierGroups(groups, activeModifiers) {
     }).join('');
 }
 
-function toggleModifier(code, labelEn, labelAr, type) {
-    if (selectedCartItemIndex === null) return;
-    const cartItem = currentCart[selectedCartItemIndex];
+function toggleModifier(codeOrObj, labelEn, labelAr, type) {
+    const cartItem = getSelectedCartItem();
     if (!cartItem) return;
     
     if (!cartItem.modifiers) cartItem.modifiers = [];
+
+    let code, lEn, lAr, actionType, price = 0;
+    if (typeof codeOrObj === 'object' && codeOrObj !== null) {
+        code = codeOrObj.code || codeOrObj.id || 'mod';
+        lEn = codeOrObj.labelEn || codeOrObj.label || codeOrObj.nameEn || '';
+        lAr = codeOrObj.labelAr || codeOrObj.nameAr || lEn;
+        actionType = codeOrObj.actionType || codeOrObj.type || 'normal';
+        price = Number(codeOrObj.price || codeOrObj.priceDelta || 0);
+    } else {
+        code = String(codeOrObj || '');
+        lEn = labelEn || '';
+        lAr = labelAr || '';
+        actionType = type || 'normal';
+    }
     
-    const existingIndex = cartItem.modifiers.findIndex(m => m.code === code);
+    const existingIndex = cartItem.modifiers.findIndex(m => (m.code === code || m.id === code));
     if (existingIndex > -1) {
         // Remove it
         cartItem.modifiers.splice(existingIndex, 1);
     } else {
         // Add it. Also, conflict resolution (e.g. if adding "without onion", remove "extra onion")
-        const baseName = code.split('_')[1]; // e.g., 'onion' from 'no_onion'
+        const baseName = (code && typeof code === 'string' && code.includes('_')) ? code.split('_')[1] : null;
         if (baseName) {
             cartItem.modifiers = cartItem.modifiers.filter(m => {
-                const mBaseName = m.code.split('_')[1];
+                const mCode = m.code || m.id || '';
+                const mBaseName = (mCode && typeof mCode === 'string' && mCode.includes('_')) ? mCode.split('_')[1] : null;
                 // Remove if it affects the same ingredient but different type (e.g. 'no_onion' vs 'ex_onion')
-                if (mBaseName === baseName && m.type !== type) {
+                if (mBaseName === baseName && (m.actionType || m.type) !== actionType) {
                     return false; 
                 }
                 return true;
@@ -1500,18 +1601,22 @@ function toggleModifier(code, labelEn, labelAr, type) {
         }
         
         cartItem.modifiers.push({
+            id: code,
             code: code,
-            labelEn: labelEn,
-            labelAr: labelAr,
-            actionType: type,
-            priceDelta: 0
+            labelEn: lEn,
+            labelAr: lAr,
+            actionType: actionType,
+            price: price,
+            priceDelta: price
         });
     }
     
     renderCart(); // Re-render cart to show modifier lines
     // Re-render modifier panel
     const product = items.find(i => i.id === cartItem.id) || cartItem;
-    renderModifierGroups(getModifiersForProduct(product), cartItem.modifiers);
+    if (typeof renderModifierGroups === 'function' && typeof getModifiersForProduct === 'function') {
+        renderModifierGroups(getModifiersForProduct(product), cartItem.modifiers);
+    }
 }
 
 /* =========================================================
@@ -1521,6 +1626,8 @@ function toggleModifier(code, labelEn, labelAr, type) {
 let tempQuantityInput = "";
 
 function openQuantityModal() {
+    const cartItem = getSelectedCartItem();
+    if (!cartItem) return;
     tempQuantityInput = "";
     const inputEl = document.getElementById('quantityModalInput');
     if (inputEl) inputEl.value = tempQuantityInput;
@@ -1559,33 +1666,36 @@ function closeQuantityModal() {
 }
 
 function confirmQuantityModal() {
-    if (selectedCartItemIndex !== null) {
-        let newQty = parseInt(tempQuantityInput, 10);
-        if (isNaN(newQty) || newQty <= 0) {
-            // Invalid, don't apply
+    const cartItem = getSelectedCartItem();
+    if (!cartItem) {
+        closeQuantityModal();
+        return;
+    }
+
+    const inputEl = document.getElementById('quantityModalInput');
+    const rawVal = tempQuantityInput || (inputEl ? inputEl.value : '');
+    let newQty = parseInt(rawVal, 10);
+    if (isNaN(newQty) || newQty <= 0) {
+        // Invalid, don't apply
+        return;
+    }
+
+    // Check stock limitation if applicable
+    const item = items.find(i => i.id === cartItem.id);
+    if (item && item.stock !== undefined && item.stock !== null) {
+        const otherItemsInCart = currentCart.filter(c => c.id === item.id && c !== cartItem).reduce((sum, c) => sum + c.qty, 0);
+        if (otherItemsInCart + newQty > item.stock) {
+            showToast(currentLang === 'ar' ? `لقد وصلت للحد الأقصى للكمية المتوفرة بالمطبخ (${item.stock})` : `Max kitchen stock limit reached (${item.stock})`, 'warning');
+            soundWarning();
             return;
         }
-
-        const cartItem = currentCart[selectedCartItemIndex];
-        if (!cartItem) return;
-
-        // Check stock limitation if applicable
-        const item = items.find(i => i.id === cartItem.id);
-        if (item && item.stock !== undefined && item.stock !== null) {
-            const otherItemsInCart = currentCart.filter((c, i) => c.id === item.id && i !== selectedCartItemIndex).reduce((sum, c) => sum + c.qty, 0);
-            if (otherItemsInCart + newQty > item.stock) {
-                showToast(currentLang === 'ar' ? `لقد وصلت للحد الأقصى للكمية المتوفرة بالمطبخ (${item.stock})` : `Max kitchen stock limit reached (${item.stock})`, 'warning');
-                soundWarning();
-                return;
-            }
-        }
-
-        cartItem.qty = newQty;
-        soundBeep();
-        renderCart();
-        renderProducts();
-        closeQuantityModal();
     }
+
+    cartItem.qty = newQty;
+    soundBeep();
+    renderCart();
+    renderProducts();
+    closeQuantityModal();
 }
 
 document.addEventListener('keydown', function(e) {
