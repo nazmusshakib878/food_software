@@ -259,6 +259,7 @@ function renderCategoriesRibbon() {
 
 function openCategoryFolder(catId) {
     activeCategory = catId;
+    savedCatalogScrollTop = 0;
     const searchInput = document.getElementById('productSearchInput');
     if (searchInput) searchInput.value = '';
     renderCategoriesRibbon();
@@ -267,6 +268,7 @@ function openCategoryFolder(catId) {
 
 function backToFolderView() {
     activeCategory = null;
+    savedCatalogScrollTop = 0;
     const searchInput = document.getElementById('productSearchInput');
     if (searchInput) searchInput.value = '';
     renderCategoriesRibbon();
@@ -597,6 +599,12 @@ function addToCart(itemId) {
         return;
     }
 
+    // Capture catalog scroll position before modifier panel potentially hides the catalog
+    const scrollEl = document.querySelector ? document.querySelector('.products-grid-scroll') : null;
+    if (scrollEl && scrollEl.scrollTop !== undefined && scrollEl.scrollTop > 0) {
+        savedCatalogScrollTop = scrollEl.scrollTop;
+    }
+
     // Every successful product click creates one completely new, independent order row
     const lineId = generateCartLineId();
     const newItem = {
@@ -618,15 +626,14 @@ function addToCart(itemId) {
     // Auto-select newly added row for Fast Order Entry Customization
     selectCartItem(targetIndex);
 
-    // Respect Stay at Selected Category Preference
-    if (posPreferences.stayAtCategory === 'exit' && activeCategory) {
-        activeCategory = null;
-        renderCategoriesRibbon();
-    }
-
     soundBeep();
     renderCart();
-    renderProducts();
+
+    // Re-render products only if catalog container remains visible (avoid re-rendering while hidden by modifier panel)
+    const catalogViews = document.getElementById('catalogViewsContainer');
+    if (catalogViews && catalogViews.style.display !== 'none') {
+        renderProducts();
+    }
 
     // Scroll cart table to keep latest newly added row visible
     const scrollContainer = document.getElementById('posCartTableWrapper') || document.getElementById('cartItemsList');
@@ -1329,6 +1336,12 @@ function selectCartItem(target) {
         return;
     }
 
+    // Capture catalog scroll position before modifier panel hides the catalog view
+    const scrollEl = document.querySelector ? document.querySelector('.products-grid-scroll') : null;
+    if (scrollEl && scrollEl.scrollTop !== undefined && scrollEl.scrollTop > 0) {
+        savedCatalogScrollTop = scrollEl.scrollTop;
+    }
+
     selectedCartLineId = cartItem.lineId;
     selectedCartItemIndex = index;
     renderCart();
@@ -1371,6 +1384,15 @@ function closeItemModifierPanel() {
     if (itemActionBar) itemActionBar.style.display = 'none';
     if (catalogViewsContainer) catalogViewsContainer.style.display = 'flex';
     if (itemModifierPanel) itemModifierPanel.style.display = 'none';
+
+    // Restore active folder product view and update card badges/stock
+    renderProducts();
+
+    // Restore previous scroll position inside the active folder
+    const scrollEl = document.querySelector ? document.querySelector('.products-grid-scroll') : null;
+    if (scrollEl && savedCatalogScrollTop > 0) {
+        scrollEl.scrollTop = savedCatalogScrollTop;
+    }
 }
 
 function changeActiveCartQty(delta) {

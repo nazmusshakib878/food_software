@@ -165,11 +165,19 @@ var shifts = (() => {
 var posPreferences = (() => {
     try {
         const saved = JSON.parse(localStorage.getItem('nurpos_preferences') || 'null');
-        return Object.assign({
+        const prefs = Object.assign({
             ordersView: 'detailed', // 'briefly' | 'detailed'
             stayAtCategory: 'stay', // 'stay' | 'exit'
             autoPrint: true
         }, saved || {});
+        // Reconcile saved preference so legacy 'exit' cannot reactivate automatic folder exit
+        if (prefs.stayAtCategory === 'exit') {
+            prefs.stayAtCategory = 'stay';
+            try {
+                localStorage.setItem('nurpos_preferences', JSON.stringify(prefs));
+            } catch (e) {}
+        }
+        return prefs;
     } catch (e) {
         return { ordersView: 'detailed', stayAtCategory: 'stay', autoPrint: true };
     }
@@ -186,6 +194,7 @@ var currentLang = (() => {
     }
 })();
 var activeCategory = null; // null = Category / Folder View
+var savedCatalogScrollTop = 0; // Preserves folder catalog scroll position
 var currentCart = [];
 var selectedCartItemIndex = null; // Used for item modifier panel
 var selectedCartLineId = null; // Stable line identifier for selected order line

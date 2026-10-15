@@ -36,6 +36,8 @@ function createMockElement(id, tag = 'div') {
         innerText: '',
         value: '',
         checked: false,
+        scrollTop: 0,
+        scrollHeight: 1000,
         type: 'text',
         focus: () => {},
         setAttribute: (k, v) => {},
@@ -57,7 +59,17 @@ global.document = {
         return elements[id];
     },
     querySelectorAll: (sel) => [],
-    querySelector: (sel) => null,
+    querySelector: (sel) => {
+        if (sel === '.products-grid-scroll') {
+            if (!elements['productsGridScroll']) elements['productsGridScroll'] = createMockElement('productsGridScroll');
+            return elements['productsGridScroll'];
+        }
+        if (sel === '.pos-layout') {
+            if (!elements['posLayout']) elements['posLayout'] = createMockElement('posLayout');
+            return elements['posLayout'];
+        }
+        return null;
+    },
     createElement: (tag) => createMockElement('el_' + Math.random(), tag),
     body: { appendChild: () => {} },
     addEventListener: () => {}
@@ -766,6 +778,190 @@ const totalTax = reportOrders.reduce((sum, o) => sum + (o.tax || 0), 0);
 assert("Test P: Total sales in reports is 9.50 (NOT 10.74)", totalRevenue === 9.50);
 assert("Test P: Total extracted tax in reports is 1.24", totalTax === 1.24);
 
+console.log("\n=======================================================");
+console.log("=== SECTION 21: CODEX ITEM FOLDER NAVIGATION TESTS ====");
+console.log("=======================================================");
+
+// Ensure meatKebab and chickenKebab are available in 'meals' folder
+const meatKebab = { id: 'item_meat_kebab_test', enName: 'Meat Kebab', arName: 'كباب لحم', price: 16.00, available: true, catId: 'meals' };
+items.push(meatKebab);
+
+// TEST 1 — Same Folder After Done
+currentCart = [];
+openCategoryFolder('meals');
+assert("Test 1: Active category set to 'meals'", activeCategory === 'meals');
+addToCart(chickenKebab.id);
+assert("Test 1: Cart has 1 row after selecting Chicken Kebab", currentCart.length === 1);
+assert("Test 1: Active category remains 'meals' while modifier panel is open", activeCategory === 'meals');
+assert("Test 1: Modifier panel is visible", elements['itemModifierPanel'].style.display === 'flex');
+assert("Test 1: Catalog views container is hidden while modifying", elements['catalogViewsContainer'].style.display === 'none');
+closeItemModifierPanel(); // Cashier presses Done
+assert("Test 1: After Done, activeCategory remains 'meals'", activeCategory === 'meals');
+assert("Test 1: After Done, catalogViewsContainer is restored to flex", elements['catalogViewsContainer'].style.display === 'flex');
+assert("Test 1: After Done, itemModifierPanel is hidden", elements['itemModifierPanel'].style.display === 'none');
+assert("Test 1: Products grid shows items from 'meals' folder (not All Folders overview)", elements['productsGrid'].innerHTML.includes('Chicken Kebab') && !elements['productsGrid'].classList.contains('category-folders-view'));
+
+// TEST 2 — Multiple Items From One Folder (Without pressing Back)
+currentCart = [];
+openCategoryFolder('meals');
+// 1. Select Chicken Kebab
+addToCart(chickenKebab.id);
+closeItemModifierPanel();
+// 2. Select Meat Kebab
+addToCart(meatKebab.id);
+closeItemModifierPanel();
+// 3. Select Chicken Kebab again
+addToCart(chickenKebab.id);
+closeItemModifierPanel();
+
+assert("Test 2: All 3 product selections created their own separate cart rows", currentCart.length === 3);
+assert("Test 2: Each row starts with quantity 1", currentCart[0].qty === 1 && currentCart[1].qty === 1 && currentCart[2].qty === 1);
+assert("Test 2: Unique lineIds assigned to each row", new Set(currentCart.map(r => r.lineId)).size === 3);
+assert("Test 2: Row 1 is Chicken Kebab, Row 2 is Meat Kebab, Row 3 is Chicken Kebab", 
+    currentCart[0].id === chickenKebab.id && currentCart[1].id === meatKebab.id && currentCart[2].id === chickenKebab.id
+);
+assert("Test 2: Same 'meals' folder remains active throughout without extra folder selection", activeCategory === 'meals');
+assert("Test 2: Product grid still shows 'meals' folder items", elements['productsGrid'].innerHTML.includes('Meat Kebab'));
+
+// TEST 3 — Explicit Back
+backToFolderView(); // Cashier explicitly clicks Back button
+assert("Test 3: Pressing folder Back button resets activeCategory to null", activeCategory === null);
+assert("Test 3: Grid switches to category-folders-view (All Folders overview)", elements['productsGrid'].classList.contains('category-folders-view'));
+assert("Test 3: Cart items remain intact after explicit Back", currentCart.length === 3);
+const t3Totals = calculateCartTotals();
+assert("Test 3: Financial totals remain completely unchanged", t3Totals.subtotal === 15.00 + 16.00 + 15.00);
+
+// TEST 4 — Switch Folder
+openCategoryFolder('sandwiches');
+assert("Test 4: Opened sandwiches folder", activeCategory === 'sandwiches');
+addToCart(frenchFries.id);
+assert("Test 4: Modifier panel opened for item in sandwiches folder", elements['itemModifierPanel'].style.display === 'flex');
+assert("Test 4: Active category remains 'sandwiches'", activeCategory === 'sandwiches');
+closeItemModifierPanel();
+assert("Test 4: After Done, cashier returns to 'sandwiches' folder", activeCategory === 'sandwiches');
+assert("Test 4: Product grid displays items of 'sandwiches' folder", elements['productsGrid'].innerHTML.includes('French Fries'));
+
+// TEST 5 — Existing Exit Preference Ignored / Reconciled
+posPreferences.stayAtCategory = 'exit'; // Simulate old/saved 'exit' preference
+openCategoryFolder('meals');
+assert("Test 5: Set up folder with stayAtCategory='exit'", activeCategory === 'meals');
+addToCart(chickenKebab.id);
+assert("Test 5: activeCategory NOT reset on product addition when preference is 'exit'", activeCategory === 'meals');
+closeItemModifierPanel();
+assert("Test 5: activeCategory NOT reset on Done when preference is 'exit'", activeCategory === 'meals');
+assert("Test 5: Folder remains 'meals' after item customization", activeCategory === 'meals');
+posPreferences.stayAtCategory = 'stay'; // Restore standard setting
+
+// TEST 6 — Modifier Isolation Across Rows
+currentCart = [];
+openCategoryFolder('meals');
+// Row 1: Chicken Kebab with Full
+addToCart(chickenKebab.id);
+toggleModifier({ id: 'mod_full_t6', labelEn: 'Full', labelAr: 'كامل', price: 0, actionType: 'normal' });
+updateActiveItemNote("Well done");
+closeItemModifierPanel();
+
+// Row 2: Meat Kebab with Extra Sauce
+addToCart(meatKebab.id);
+toggleModifier({ id: 'mod_extra_sauce_t6', labelEn: 'Extra Sauce', labelAr: 'صوص زيادة', price: 2.00, actionType: 'extra' });
+updateActiveItemNote("Spicy");
+closeItemModifierPanel();
+
+// Row 3: Chicken Kebab with No Lettuce
+addToCart(chickenKebab.id);
+toggleModifier({ id: 'mod_no_lettuce_t6', labelEn: 'No Lettuce', labelAr: 'بدون خس', price: 0, actionType: 'remove' });
+updateActiveItemNote("No garlic");
+closeItemModifierPanel();
+
+assert("Test 6: Row 1 has Full modifier and 'Well done' note", currentCart[0].modifiers.some(m => m.id === 'mod_full_t6') && currentCart[0].note === "Well done");
+assert("Test 6: Row 2 has Extra Sauce (+2.00) and 'Spicy' note", currentCart[1].modifiers.some(m => m.id === 'mod_extra_sauce_t6') && currentCart[1].note === "Spicy");
+assert("Test 6: Row 3 has No Lettuce and 'No garlic' note", currentCart[2].modifiers.some(m => m.id === 'mod_no_lettuce_t6') && currentCart[2].note === "No garlic");
+assert("Test 6: Cashier is still in 'meals' folder after all customizations", activeCategory === 'meals');
+
+// TEST 7 — Scroll Restoration
+openCategoryFolder('meals');
+const scrollMock = document.querySelector('.products-grid-scroll');
+scrollMock.scrollTop = 450;
+addToCart(chickenKebab.id);
+assert("Test 7: Scroll position 450 captured before modifier panel opens", savedCatalogScrollTop === 450);
+closeItemModifierPanel();
+assert("Test 7: Scroll position restored to 450 after Done", scrollMock.scrollTop === 450);
+assert("Test 7: Active category remains 'meals'", activeCategory === 'meals');
+
+// TEST 8 — Folder Search Filter Preservation
+openCategoryFolder('meals');
+elements['productSearchInput'].value = 'Kebab';
+filterProducts();
+assert("Test 8: Search filter within folder displays matched results", elements['productsGrid'].innerHTML.includes('Kebab'));
+addToCart(chickenKebab.id);
+closeItemModifierPanel();
+assert("Test 8: Active folder remains 'meals'", activeCategory === 'meals');
+assert("Test 8: Search query 'Kebab' preserved in input", elements['productSearchInput'].value === 'Kebab');
+assert("Test 8: Filtered results preserved in grid after Done", elements['productsGrid'].innerHTML.includes('Chicken Kebab'));
+
+// TEST 9 — Stock Validation Does Not Reset Folder
+const outOfStockMeal = { id: 'item_oos_meal', enName: 'OOS Meal', arName: 'وجبة نافذة', price: 20.00, available: false, catId: 'meals' };
+items.push(outOfStockMeal);
+openCategoryFolder('meals');
+addToCart(outOfStockMeal.id);
+assert("Test 9: Out of stock item blocked and folder remains 'meals'", activeCategory === 'meals');
+
+// Over stock limit check
+openCategoryFolder('meals');
+currentCart = [];
+const limitedKebab = { id: 'item_limited_kebab', enName: 'Limited Kebab', arName: 'كباب محدود', price: 15.00, available: true, stock: 1, catId: 'meals' };
+items.push(limitedKebab);
+addToCart(limitedKebab.id);
+closeItemModifierPanel();
+assert("Test 9: Added 1 limited kebab to cart", currentCart.length === 1);
+addToCart(limitedKebab.id); // Blocked: stock is 1
+assert("Test 9: Adding 2nd limited kebab blocked and folder remains 'meals'", currentCart.length === 1 && activeCategory === 'meals');
+
+// TEST 10 — Catalog Modes (grid8 and split)
+openCategoryFolder('meals');
+setPosCatalogMode('grid8');
+assert("Test 10: Switched to grid8 mode and activeCategory preserved", activeCategory === 'meals');
+addToCart(chickenKebab.id);
+closeItemModifierPanel();
+assert("Test 10: After Done in grid8 mode, activeCategory is 'meals'", activeCategory === 'meals');
+
+setPosCatalogMode('split');
+assert("Test 10: Switched to split mode and activeCategory preserved", activeCategory === 'meals');
+addToCart(meatKebab.id);
+closeItemModifierPanel();
+assert("Test 10: After Done in split mode, activeCategory is 'meals'", activeCategory === 'meals');
+
+// TEST 11 — Responsive Layout Classes & Structure Integrity
+const cssContent = fs.readFileSync(path.join(__dirname, 'css', 'pos.css'), 'utf8');
+const responsiveCssContent = fs.readFileSync(path.join(__dirname, 'css', 'responsive.css'), 'utf8');
+assert("Test 11: .products-grid-scroll styled in pos.css", cssContent.includes('.products-grid-scroll'));
+assert("Test 11: .pos-folder-header-bar styled in pos.css", cssContent.includes('.pos-folder-header-bar'));
+assert("Test 11: .pos-folder-back-btn styled in pos.css", cssContent.includes('.pos-folder-back-btn'));
+assert("Test 11: Responsive grid layout handles multiple breakpoints in responsive.css", 
+    responsiveCssContent.includes('.products-grid') && responsiveCssContent.includes('.products-grid-scroll')
+);
+
+// TEST 12 — Full Regression: Totals, Payments, Printing, Receipts
+currentCart = [];
+openCategoryFolder('meals');
+addToCart(chickenKebab.id); // 15.00
+closeItemModifierPanel();
+addToCart(meatKebab.id);    // 16.00
+closeItemModifierPanel();
+
+const regTotals = calculateCartTotals();
+assert("Test 12: Subtotal calculated correctly (15 + 16 = 31.00)", regTotals.subtotal === 31.00);
+assert("Test 12: Included VAT calculated correctly (31 * 15 / 115 = 4.04)", regTotals.tax === 4.04);
+assert("Test 12: Grand total is 31.00", regTotals.grandTotal === 31.00);
+
+nextOrderSeq = 7001;
+completeOrderAndShowReceipt(null, 'Cash', {}, regTotals.grandTotal);
+assert("Test 12: Order successfully placed", orders[0].seq === 7001 && orders[0].grandTotal === 31.00);
+assert("Test 12: Saved order maintains 2 independent rows", orders[0].items.length === 2);
+const kot = getKitchenOrderTicketHtml(orders[0]);
+assert("Test 12: Kitchen ticket rendered properly with items", kot.includes('Chicken Kebab') && kot.includes('Meat Kebab'));
+
 console.log(`\n=== Verification Finished: ${passed} Passed, ${failed} Failed ===`);
 if (failed > 0) process.exit(1);
 else process.exit(0);
+
