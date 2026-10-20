@@ -113,11 +113,14 @@ button, input, select, textarea {
 }
 
 /* Top Application Bar */
-.app-topbar {
+.app-topbar,
+html[dir="rtl"] .app-topbar,
+[dir="rtl"] .app-topbar {
     height: 60px;
     background: linear-gradient(135deg, #011a17 0%, #043d35 45%, #0a5c53 100%);
     color: #fff;
     display: flex;
+    direction: ltr !important;
     align-items: center;
     justify-content: space-between;
     padding: 0 20px;
@@ -128,8 +131,11 @@ button, input, select, textarea {
     backdrop-filter: blur(20px);
 }
 
-.brand-zone {
+.brand-zone,
+html[dir="rtl"] .brand-zone,
+[dir="rtl"] .brand-zone {
     display: flex;
+    direction: ltr !important;
     align-items: center;
     gap: 12px;
     cursor: pointer;
@@ -188,8 +194,11 @@ button, input, select, textarea {
     font-weight: 600;
 }
 
-.topbar-center-nav {
+.topbar-center-nav,
+html[dir="rtl"] .topbar-center-nav,
+[dir="rtl"] .topbar-center-nav {
     display: flex;
+    direction: ltr !important;
     background: rgba(0, 0, 0, 0.24);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
@@ -231,8 +240,11 @@ button, input, select, textarea {
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.topbar-right-actions {
+.topbar-right-actions,
+html[dir="rtl"] .topbar-right-actions,
+[dir="rtl"] .topbar-right-actions {
     display: flex;
+    direction: ltr !important;
     align-items: center;
     gap: 8px;
 }

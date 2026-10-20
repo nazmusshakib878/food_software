@@ -517,6 +517,10 @@ const i18n = {
         nav_orders: "الطلبات",
         nav_tables: "الطاولات",
         nav_main: "الرئيسية",
+        bottom_nav_new: "جديد",
+        bottom_nav_orders: "الطلبات",
+        bottom_nav_tables: "الطاولات",
+        bottom_nav_main: "الرئيسية",
 
         // Notes Modal
         notes_modal_title: "ملاحظات الطلب ورقم العميل",
@@ -866,6 +870,10 @@ const i18n = {
         nav_orders: "Orders",
         nav_tables: "Tables",
         nav_main: "Main Screen",
+        bottom_nav_new: "New",
+        bottom_nav_orders: "Orders",
+        bottom_nav_tables: "Tables",
+        bottom_nav_main: "Main Screen",
 
         // Notes Modal
         notes_modal_title: "Order Notes & Client Phone",

@@ -217,7 +217,7 @@ function renderCategoriesRibbon() {
         ? (currentLang === 'ar' ? (activeCat.nameAr || activeCat.nameEn) : (activeCat.nameEn || activeCat.nameAr))
         : activeCategory;
     const folderCount = availableItems.filter(i => itemMatchesCategory(i, activeCategory)).length;
-    const backArrowIcon = currentLang === 'ar' ? 'fa-arrow-right' : 'fa-arrow-left';
+    const backArrowIcon = 'fa-arrow-left';
 
     let html = `
         <div class="pos-folder-header-bar">
@@ -413,7 +413,7 @@ function renderCategoryFoldersView(grid) {
                             <span>${currentLang === 'ar' ? 'عرض الأصناف' : 'Open Folder'}</span>
                         </span>
                         <div class="folder-chevron-circle">
-                            <i class="fa-solid ${currentLang === 'ar' ? 'fa-arrow-left' : 'fa-arrow-right'}"></i>
+                            <i class="fa-solid fa-arrow-right"></i>
                         </div>
                     </div>
                 </div>
@@ -462,7 +462,7 @@ function renderFolderItemsView(grid, rawQuery, normalizedQuery) {
                     : (currentLang === 'ar' ? 'لا توجد أصناف في هذا المجلد حالياً' : 'No products in this folder currently')
                 }</p>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="backToFolderView()" style="margin-top: 10px;">
-                    <i class="fa-solid ${currentLang === 'ar' ? 'fa-arrow-right' : 'fa-arrow-left'}"></i> ${currentLang === 'ar' ? 'الرجوع للمجلدات' : 'Back to Folders'}
+                    <i class="fa-solid fa-arrow-left"></i> ${currentLang === 'ar' ? 'الرجوع للمجلدات' : 'Back to Folders'}
                 </button>
             </div>
         `;

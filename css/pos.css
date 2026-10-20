@@ -5,6 +5,7 @@
     width: 100%;
     height: 100%;
     display: flex;
+    direction: ltr !important;
     flex-direction: row;
     gap: 12px;
     padding: 12px;
@@ -18,6 +19,7 @@
 #posMainLayout.orders-mode {
     display: grid !important;
     grid-template-columns: minmax(320px, 39%) minmax(0, 1fr) !important;
+    direction: ltr !important;
     flex-direction: row !important;
     gap: 12px !important;
     padding: 12px !important;
@@ -1420,6 +1422,8 @@
 .pos-bottom-nav-bar {
     position: static;
     display: flex;
+    direction: ltr !important;
+    flex-direction: row !important;
     justify-content: flex-end;
     align-items: center;
     gap: 16px;
@@ -1429,9 +1433,11 @@
     z-index: 1000;
 }
 
-html[dir="rtl"] .pos-bottom-nav-bar {
-    justify-content: flex-end;
-    flex-direction: row;
+html[dir="rtl"] .pos-bottom-nav-bar,
+[dir="rtl"] .pos-bottom-nav-bar {
+    direction: ltr !important;
+    flex-direction: row !important;
+    justify-content: flex-end !important;
 }
 
 .pos-bottom-nav-bar .bottom-nav-btn {
@@ -1474,15 +1480,21 @@ html[dir="rtl"] .pos-bottom-nav-bar {
         left: 0;
         border-radius: 0;
         background: #ffffff;
-        justify-content: space-between;
+        direction: ltr !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
         padding: 8px 12px;
         gap: 4px;
         box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
     }
     
-    html[dir="rtl"] .pos-bottom-nav-bar {
+    html[dir="rtl"] .pos-bottom-nav-bar,
+    [dir="rtl"] .pos-bottom-nav-bar {
         left: 0;
         right: 0;
+        direction: ltr !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
     }
 
     .pos-bottom-nav-bar .bottom-nav-btn {
@@ -1693,7 +1705,7 @@ html[dir="rtl"] .pos-bottom-nav-bar {
 }
 
 [dir="rtl"] .cart-row.active-row {
-    box-shadow: inset -4px 0 0 var(--teal, #0d9488) !important;
+    box-shadow: inset 4px 0 0 var(--teal, #0d9488) !important;
 }
 
 html[data-theme="dark"] .cart-row.active-row {
@@ -1702,7 +1714,7 @@ html[data-theme="dark"] .cart-row.active-row {
 }
 
 [dir="rtl"] html[data-theme="dark"] .cart-row.active-row {
-    box-shadow: inset -4px 0 0 var(--teal-light, #14b8a6) !important;
+    box-shadow: inset 4px 0 0 var(--teal-light, #14b8a6) !important;
 }
 
 /* =========================================================
@@ -1991,5 +2003,139 @@ html[data-theme="dark"] .discount-tab-btn.active {
     background: var(--purple) !important;
     color: #ffffff !important;
     border-color: var(--purple) !important;
+}
+
+/* =========================================================
+   STABLE LTR STRUCTURAL LAYOUT ARCHITECTURE
+   Prevents POS UI mirroring and layout reversal on Arabic/English toggle:
+   1. Left Panel = Live Cart | Right Panel = Product Catalog / Orders
+   2. Top Actions = Cancel -> Discount -> Notes -> More
+   3. Bottom Nav = New -> Orders -> Tables -> Main Screen
+   4. Category Folders & Products Grid = Left-to-Right columns
+   5. Cart Table = Qty -> Name -> Price -> Total -> Remove
+   ========================================================= */
+
+/* Main POS Flex Containers */
+.pos-layout,
+#posMainLayout,
+html[dir="rtl"] .pos-layout,
+html[dir="rtl"] #posMainLayout,
+[dir="rtl"] .pos-layout,
+[dir="rtl"] #posMainLayout {
+    direction: ltr !important;
+}
+
+/* Structural Left & Right Panels */
+.pos-order-panel,
+#posOrderPanel,
+.pos-right-pane,
+#posRightPane,
+.pos-catalog-panel,
+#posCatalogPanel,
+html[dir="rtl"] .pos-order-panel,
+html[dir="rtl"] #posOrderPanel,
+html[dir="rtl"] .pos-right-pane,
+html[dir="rtl"] #posRightPane,
+html[dir="rtl"] .pos-catalog-panel,
+html[dir="rtl"] #posCatalogPanel {
+    direction: ltr !important;
+}
+
+/* Top Action Buttons Bar (Cancel | Discount | Notes | More) */
+.pos-top-actions-bar,
+#globalActionBar,
+#itemActionBar,
+html[dir="rtl"] .pos-top-actions-bar,
+html[dir="rtl"] #globalActionBar,
+html[dir="rtl"] #itemActionBar,
+[dir="rtl"] .pos-top-actions-bar {
+    direction: ltr !important;
+    flex-direction: row !important;
+}
+
+/* Catalog Mode Switcher & Search Bar */
+.pos-catalog-header-bar,
+.catalog-mode-switcher,
+.catalog-controls,
+html[dir="rtl"] .pos-catalog-header-bar,
+html[dir="rtl"] .catalog-mode-switcher,
+html[dir="rtl"] .catalog-controls {
+    direction: ltr !important;
+}
+
+/* Category Folders & Products Grid (Columns 1..N Left to Right) */
+.products-grid-scroll,
+.products-grid,
+.products-grid.category-folders-view,
+html[dir="rtl"] .products-grid-scroll,
+html[dir="rtl"] .products-grid,
+html[dir="rtl"] .products-grid.category-folders-view {
+    direction: ltr !important;
+}
+
+/* Category Ribbon & Folder Navigation Header Bar */
+.categories-ribbon,
+.pos-folder-header-bar,
+.pos-folder-quick-chips,
+html[dir="rtl"] .categories-ribbon,
+html[dir="rtl"] .pos-folder-header-bar,
+html[dir="rtl"] .pos-folder-quick-chips {
+    direction: ltr !important;
+    flex-direction: row !important;
+}
+
+/* Cart Table & Header/Footer */
+.pos-cart-table-wrapper,
+.pos-cart-table,
+.pos-cart-footer,
+.totals-breakdown.order-summary-card,
+.order-panel-header,
+.order-meta-row,
+.pos-meta-selectors-card,
+.selector-field-row,
+.table-picker-row,
+html[dir="rtl"] .pos-cart-table-wrapper,
+html[dir="rtl"] .pos-cart-table,
+html[dir="rtl"] .pos-cart-footer,
+html[dir="rtl"] .totals-breakdown.order-summary-card,
+html[dir="rtl"] .order-panel-header,
+html[dir="rtl"] .order-meta-row,
+html[dir="rtl"] .pos-meta-selectors-card,
+html[dir="rtl"] .selector-field-row,
+html[dir="rtl"] .table-picker-row {
+    direction: ltr !important;
+}
+
+/* Item Modifier Panel */
+.item-modifier-panel,
+#itemModifierPanel,
+.modifier-panel-header,
+.modifier-panel-body,
+.modifier-panel-groups,
+.modifier-group,
+.modifier-group-options,
+.modifier-panel-footer,
+html[dir="rtl"] .item-modifier-panel,
+html[dir="rtl"] #itemModifierPanel,
+html[dir="rtl"] .modifier-panel-header,
+html[dir="rtl"] .modifier-panel-body,
+html[dir="rtl"] .modifier-panel-groups,
+html[dir="rtl"] .modifier-panel-footer {
+    direction: ltr !important;
+}
+
+/* Text Direction & Natural Arabic Text Handling */
+html[dir="rtl"] #productSearchInput {
+    text-align: right;
+}
+
+html[dir="rtl"] #modifierPanelItemNote {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .cart-note-text {
+    direction: rtl;
+    text-align: start;
 }
 
