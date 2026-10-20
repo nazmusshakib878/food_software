@@ -1555,25 +1555,22 @@ function renderModifierGroups(groups, activeModifiers) {
     
     container.innerHTML = groups.map(g => {
         const title = currentLang === 'ar' ? g.titleAr : g.titleEn;
-        let colorTheme = 'var(--primary)';
-        if (g.type === 'without') colorTheme = 'var(--danger)';
-        if (g.type === 'extra') colorTheme = 'var(--success)';
+        const gType = g.type || 'basic';
         
         return `
-            <div style="margin-bottom: 20px;">
-                <h4 style="margin-bottom: 10px; font-size: 13px; color: ${colorTheme}; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">${title}</h4>
-                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <div class="modifier-group">
+                <h4 class="modifier-group-heading group-${escapeHtml(gType)}">${escapeHtml(title)}</h4>
+                <div class="modifier-group-options">
                     ${g.items.map(item => {
                         const isSelected = activeCodes.includes(item.code);
                         const label = currentLang === 'ar' ? item.labelAr : item.labelEn;
                         return `
                             <button type="button" 
-                                onclick="toggleModifier('${item.code}', '${escapeHtml(item.labelEn)}', '${escapeHtml(item.labelAr)}', '${g.type}')" 
-                                style="padding: 8px 12px; border: 1px solid ${isSelected ? colorTheme : 'var(--border-color)'}; 
-                                       background: ${isSelected ? colorTheme : 'var(--bg-color)'}; 
-                                       color: ${isSelected ? '#fff' : 'var(--text-color)'}; 
-                                       border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: ${isSelected ? '700' : '500'};">
-                                ${isSelected ? '<i class="fa-solid fa-check"></i> ' : ''}${label}
+                                class="modifier-option-btn group-${escapeHtml(gType)} ${isSelected ? 'selected' : ''}" 
+                                data-code="${escapeHtml(item.code)}" 
+                                data-type="${escapeHtml(gType)}" 
+                                onclick="toggleModifier('${item.code}', '${escapeHtml(item.labelEn)}', '${escapeHtml(item.labelAr)}', '${g.type}')">
+                                ${isSelected ? '<i class="fa-solid fa-check mod-check-icon"></i> ' : ''}<span>${escapeHtml(label)}</span>
                             </button>
                         `;
                     }).join('')}

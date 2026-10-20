@@ -299,20 +299,26 @@
                         </div> <!-- /catalogViewsContainer -->
 
                         <!-- ITEM MODIFIER PANEL -->
-                        <div id="itemModifierPanel" style="display: none; flex: 1; flex-direction: column; padding: 15px; background: var(--bg-color); min-height: 0; overflow-y: auto;">
-                            <h3 id="modifierPanelItemName" style="margin-top: 0; margin-bottom: 15px; font-weight: 800; font-size: 1.2rem; color: var(--primary);"></h3>
-                            
-                            <div class="form-group" style="margin-bottom: 20px;">
-                                <label><i class="fa-regular fa-comment-dots"></i> ملاحظات خاصة بالصنف:</label>
-                                <textarea id="modifierPanelItemNote" class="form-control-pos item-special-notes" placeholder="أضف ملاحظة لهذا الصنف فقط..." oninput="updateActiveItemNote(this.value)" rows="5" wrap="soft" autocomplete="off" onkeydown="if(event.key==='Enter') event.stopPropagation();"></textarea>
+                        <div id="itemModifierPanel" class="item-modifier-panel" style="display: none;">
+                            <div class="modifier-panel-header">
+                                <h3 id="modifierPanelItemName" class="modifier-panel-item-name"></h3>
                             </div>
-
-                            <div id="modifierPanelGroups" style="flex: 1;"></div>
                             
-                            <button type="button" class="pos-action-btn btn-more" onclick="closeItemModifierPanel()" title="Done" style="background: #28a745; color: white; border: none; width: 100%; margin-top: 15px; padding: 15px; font-size: 1.2rem; border-radius: 8px; justify-content: center; display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-check"></i>
-                                <span>Done</span>
-                            </button>
+                            <div class="modifier-panel-body">
+                                <div class="form-group modifier-notes-group">
+                                    <label class="modifier-notes-label"><i class="fa-regular fa-comment-dots"></i> <span data-i18n="item_special_note">ملاحظات خاصة بالصنف:</span></label>
+                                    <textarea id="modifierPanelItemNote" class="form-control-pos item-special-notes" placeholder="أضف ملاحظة لهذا الصنف فقط..." oninput="updateActiveItemNote(this.value)" rows="3" wrap="soft" autocomplete="off" onkeydown="if(event.key==='Enter') event.stopPropagation();"></textarea>
+                                </div>
+
+                                <div id="modifierPanelGroups" class="modifier-panel-groups"></div>
+                            </div>
+                            
+                            <div class="modifier-panel-footer">
+                                <button type="button" id="modifierPanelDoneBtn" class="modifier-done-btn btn-done" onclick="closeItemModifierPanel()" title="Done">
+                                    <i class="fa-solid fa-check"></i>
+                                    <span data-i18n="btn_done">Done</span>
+                                </button>
+                            </div>
                         </div>
 
                     </main>

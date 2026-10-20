@@ -43,6 +43,13 @@
     --radius-full: 9999px;
     --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     --transition-slow: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    --bg-color: var(--bg);
+    --border-color: var(--border);
+    --text-color: var(--text);
+    --primary: var(--teal);
+    --surface-elevated: #ffffff;
+    --surface-selected: rgba(13, 148, 136, 0.10);
+    --surface-selected-border: #0d9488;
 }
 
 * {
@@ -595,16 +602,18 @@ button, input, select, textarea {
    OLED PRO DARK MODE
    ========================================================= */
 html[data-theme="dark"] {
-    --bg: #0b0f19;
+    --bg: #0b1220;
     --surface: #111827;
-    --surface-2: #1f293d;
-    --surface-3: #2a374e;
+    --surface-2: #1f2937;
+    --surface-3: #293548;
     --border: #334155;
-    --surface-hover: #1f293d;
+    --border-subtle: rgba(51, 65, 85, 0.7);
+    --surface-hover: #293548;
     --border-focus: #14b8a6;
     --text: #f1f5f9;
+    --text-secondary: #cbd5e1;
     --muted: #94a3b8;
-    --teal-dark: #093c37;
+    --teal-dark: #0f766e;
     --teal-soft: rgba(20, 184, 166, 0.15);
     --purple-soft: rgba(147, 51, 234, 0.15);
     --orange-soft: rgba(234, 88, 12, 0.15);
@@ -613,6 +622,13 @@ html[data-theme="dark"] {
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, .4);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, .5);
     --shadow-lg: 0 16px 40px rgba(0, 0, 0, .65);
+    --bg-color: var(--bg);
+    --border-color: var(--border);
+    --text-color: var(--text);
+    --primary: var(--teal-light);
+    --surface-elevated: #1f2937;
+    --surface-selected: rgba(20, 184, 166, 0.18);
+    --surface-selected-border: #14b8a6;
 }
 
 html[data-theme="dark"] .form-control {
@@ -643,6 +659,112 @@ html[data-theme="dark"] .pos-order-panel {
     border-color: var(--border);
 }
 
+html[data-theme="dark"] .pos-cart-table-wrapper {
+    background: var(--surface);
+}
+
+html[data-theme="dark"] .pos-cart-table thead {
+    background: var(--surface-2);
+    border-bottom: 2px solid var(--border);
+}
+
+html[data-theme="dark"] .pos-cart-table th {
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+}
+
+html[data-theme="dark"] .pos-cart-table tbody tr.cart-row {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .pos-cart-table tbody tr.cart-row:hover {
+    background: var(--surface-2);
+}
+
+html[data-theme="dark"] .pos-cart-table tbody tr.cart-row.active-row {
+    background: var(--surface-selected);
+    box-shadow: inset 4px 0 0 var(--teal-light);
+}
+
+html[data-theme="dark"] .cart-item-num {
+    color: var(--teal-light);
+}
+
+html[data-theme="dark"] .cart-item-cell-name {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .cart-item-cell-name span {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .cart-item-cell-name .cart-addons-list {
+    color: var(--teal-light);
+}
+
+html[data-theme="dark"] .cart-item-cell-name .cart-note-text {
+    color: var(--muted);
+}
+
+html[data-theme="dark"] .pos-cart-table .col-price {
+    color: var(--text-secondary);
+}
+
+html[data-theme="dark"] .pos-cart-table .col-total {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .pos-cart-footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+}
+
+html[data-theme="dark"] .totals-breakdown.order-summary-card {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .totals-breakdown.order-summary-card .row {
+    border-bottom: 1px solid var(--border);
+}
+
+html[data-theme="dark"] .totals-breakdown.order-summary-card .row .lbl {
+    color: var(--muted);
+}
+
+html[data-theme="dark"] .totals-breakdown.order-summary-card .row .lbl i {
+    color: var(--muted);
+}
+
+html[data-theme="dark"] .totals-breakdown.order-summary-card .row span[id^="cart"] {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .totals-breakdown.order-summary-card .total-row {
+    border-top: 2px solid var(--teal);
+    background: var(--surface-3);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .totals-breakdown.order-summary-card .total-row:hover {
+    background: var(--surface-hover);
+}
+
+html[data-theme="dark"] .totals-breakdown.order-summary-card .total-row .lbl {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .totals-breakdown.order-summary-card .total-row .lbl i {
+    color: var(--teal-light);
+}
+
+html[data-theme="dark"] .totals-breakdown.order-summary-card .total-row .grand-val {
+    color: var(--teal-light);
+}
+
 html[data-theme="dark"] .order-items-scroll {
     background: var(--surface);
 }
@@ -654,6 +776,23 @@ html[data-theme="dark"] .order-item-row {
 
 html[data-theme="dark"] .order-item-row:hover {
     background: var(--surface-3);
+}
+
+html[data-theme="dark"] .item-modifier-panel {
+    background: var(--surface);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .item-special-notes,
+html[data-theme="dark"] #modifierPanelItemNote {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .item-special-notes::placeholder,
+html[data-theme="dark"] #modifierPanelItemNote::placeholder {
+    color: var(--muted);
 }
 
 html[data-theme="dark"] .kpi-card,
@@ -709,6 +848,43 @@ html[data-theme="dark"] .mobile-bottom-bar {
     background: var(--surface);
     border-color: var(--border);
 }
+
+html[data-theme="dark"] #quantityModal .quantity-modal-card {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+}
+
+html[data-theme="dark"] #quantityModal .modal-header {
+    background: var(--surface-2) !important;
+    color: var(--text) !important;
+    border-bottom-color: var(--border) !important;
+}
+
+html[data-theme="dark"] #quantityModal .modal-header h3 {
+    color: var(--text) !important;
+}
+
+html[data-theme="dark"] #quantityModal label {
+    color: var(--text) !important;
+}
+
+html[data-theme="dark"] #quantityModal #quantityModalInput {
+    background: var(--surface-2) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] #quantityModal .qty-btn {
+    background: var(--surface-2) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] #quantityModal .qty-btn:active {
+    background: var(--surface-3) !important;
+}
+
 
 /* =========================================================
    ITEM MODIFIERS & CUSTOMIZER STYLES

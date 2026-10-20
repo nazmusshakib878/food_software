@@ -191,3 +191,67 @@
         padding-top: 0;
     }
 }
+
+/* Dark Mode Support for Payment Modal */
+html[data-theme="dark"] .checkout-header {
+    background: var(--surface);
+    border-bottom-color: var(--border);
+}
+
+html[data-theme="dark"] .checkout-remaining {
+    background: var(--surface-2);
+    border-color: var(--teal);
+    color: var(--teal-light);
+}
+
+html[data-theme="dark"] .numpad-key {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .numpad-key:active {
+    background: var(--surface-3);
+}
+
+html[data-theme="dark"] .numpad-key.accent {
+    background: var(--surface-3);
+    color: var(--text-secondary);
+}
+
+html[data-theme="dark"] .checkout-divider {
+    background: var(--border);
+}
+
+html[data-theme="dark"] .pay-accordion {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+}
+
+html[data-theme="dark"] .pay-accordion-header {
+    color: var(--teal-light);
+}
+
+html[data-theme="dark"] .pay-accordion.expanded {
+    background: rgba(20, 184, 166, 0.12);
+}
+
+html[data-theme="dark"] .pay-input-row span {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .pay-input-row input {
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--teal);
+}
+
+html[data-theme="dark"] .pay-input-row input.active-input {
+    background-color: var(--surface-2);
+}
+
+html[data-theme="dark"] .checkout-footer {
+    background: var(--surface);
+    border-top-color: var(--border);
+}
+

@@ -716,3 +716,71 @@
         width: 100%;
     }
 }
+
+/* Dark Mode Support for Orders History / Returns Screen */
+html[data-theme="dark"] .returns-screen-container,
+html[data-theme="dark"] .orders-screen-wrapper {
+    background: var(--bg);
+}
+
+html[data-theme="dark"] .orders-top-tabs {
+    background: var(--surface);
+    border-bottom-color: var(--border);
+}
+
+html[data-theme="dark"] .order-tab {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .order-tab:hover {
+    background: var(--surface-3);
+    border-color: var(--teal);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .order-tab.active {
+    background: var(--teal) !important;
+    color: #ffffff !important;
+    border-color: var(--teal) !important;
+}
+
+html[data-theme="dark"] .orders-search-bar-wrap {
+    background: var(--surface);
+    border-bottom-color: var(--border);
+}
+
+html[data-theme="dark"] .orders-search-bar-wrap .search-input-wrap input {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .ret-order-card {
+    background: var(--surface);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .ret-label {
+    color: var(--muted);
+}
+
+html[data-theme="dark"] .ret-value {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .ret-value.font-bold {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .ret-info-user {
+    border-top-color: var(--border);
+}
+
+html[data-theme="dark"] .cancel-invoice-modal-card {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text);
+}
+
