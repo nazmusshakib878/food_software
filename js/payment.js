@@ -470,56 +470,185 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
 }
 
 // --- STAFF MEAL EXPENSE LOGIC ---
+const STAFF_MEAL_FIELD_IDS = [
+    'staffManagementMeals',
+    'staffOwnerMeals',
+    'staffHospitality',
+    'staffEmployeeMeals'
+];
+
+let lastStaffTapTime = 0;
+let lastStaffTapFieldId = null;
+let lastStaffTouchAutoFillTime = 0;
+let isStaffMealProcessing = false;
+
 function openStaffMealExpenseModal() {
-    const totals = calculateCartTotals();
-    document.getElementById('staffMealRemaining').innerText = formatCurrency(totals.grandTotal);
-    document.getElementById('staffManagementMeals').value = '';
-    document.getElementById('staffOwnerMeals').value = '';
-    document.getElementById('staffHospitality').value = '';
-    document.getElementById('staffEmployeeMeals').value = '';
+    isStaffMealProcessing = false;
+    lastStaffTapTime = 0;
+    lastStaffTapFieldId = null;
+    lastStaffTouchAutoFillTime = 0;
+
+    // Ensure section body is expanded
+    const body = document.getElementById('staffMealSectionBody');
+    const icon = document.getElementById('wajbatToggleIcon');
+    if (body) body.classList.remove('collapsed');
+    if (icon) icon.classList.remove('rotated');
+
+    STAFF_MEAL_FIELD_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+
     calculateStaffMealRemaining();
     document.getElementById('staffMealExpenseModal').classList.add('open');
 }
 
 function closeStaffMealExpenseModal() {
+    isStaffMealProcessing = false;
+    lastStaffTapTime = 0;
+    lastStaffTapFieldId = null;
+    lastStaffTouchAutoFillTime = 0;
     document.getElementById('staffMealExpenseModal').classList.remove('open');
+}
+
+function toggleStaffMealWajbat() {
+    const body = document.getElementById('staffMealSectionBody');
+    const icon = document.getElementById('wajbatToggleIcon');
+    if (!body) return;
+    const isCollapsed = body.classList.toggle('collapsed');
+    if (icon) {
+        icon.classList.toggle('rotated', isCollapsed);
+    }
 }
 
 function calculateStaffMealRemaining() {
     const totals = calculateCartTotals();
-    const mgmt = parseFloat(document.getElementById('staffManagementMeals').value) || 0;
-    const owner = parseFloat(document.getElementById('staffOwnerMeals').value) || 0;
-    const hosp = parseFloat(document.getElementById('staffHospitality').value) || 0;
-    const emp = parseFloat(document.getElementById('staffEmployeeMeals').value) || 0;
-    
-    const allocated = mgmt + owner + hosp + emp;
-    const remaining = totals.grandTotal - allocated;
-    
+    const grandTotal = Math.max(0, totals.grandTotal || 0);
+
+    let allocated = 0;
+    STAFF_MEAL_FIELD_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value !== '') {
+            const val = parseFloat(el.value);
+            if (!isNaN(val)) {
+                allocated += val;
+            }
+        }
+    });
+
+    allocated = Math.round(allocated * 100) / 100;
+    const remaining = Math.round((grandTotal - allocated) * 100) / 100;
+
     const remainingEl = document.getElementById('staffMealRemaining');
     if (remainingEl) {
-        remainingEl.innerText = formatCurrency(remaining);
-        if (Math.abs(remaining) < 0.01) {
-            remainingEl.style.color = "var(--success)";
+        remainingEl.innerText = formatCurrency(Math.max(0, remaining));
+        if (Math.abs(remaining) < 0.005) {
+            remainingEl.style.color = "#0d9488"; // balanced (teal)
+        } else if (remaining < 0) {
+            remainingEl.style.color = "#ef4444"; // over-allocated (red)
         } else {
-            remainingEl.style.color = "var(--danger)";
+            remainingEl.style.color = "#0f766e"; // pending allocation
         }
+    }
+    return { grandTotal, allocated, remaining };
+}
+
+function autoFillStaffMealField(fieldId) {
+    if (!STAFF_MEAL_FIELD_IDS.includes(fieldId)) return;
+
+    const totals = calculateCartTotals();
+    const grandTotal = Math.max(0, totals.grandTotal || 0);
+
+    // Sum of all OTHER fields
+    let otherSum = 0;
+    STAFF_MEAL_FIELD_IDS.forEach(id => {
+        if (id !== fieldId) {
+            const el = document.getElementById(id);
+            if (el && el.value !== '') {
+                const val = parseFloat(el.value);
+                if (!isNaN(val) && val > 0) {
+                    otherSum += val;
+                }
+            }
+        }
+    });
+
+    otherSum = Math.round(otherSum * 100) / 100;
+    const maxAvailable = Math.max(0, Math.round((grandTotal - otherSum) * 100) / 100);
+
+    const targetEl = document.getElementById(fieldId);
+    if (targetEl) {
+        if (maxAvailable > 0) {
+            targetEl.value = maxAvailable.toFixed(2);
+        } else {
+            targetEl.value = '0.00';
+        }
+
+        calculateStaffMealRemaining();
+
+        targetEl.classList.add('autofill-highlight');
+        setTimeout(() => targetEl.classList.remove('autofill-highlight'), 400);
     }
 }
 
+function handleStaffMealTouchEnd(e, inputEl) {
+    if (!inputEl) return;
+    const now = Date.now();
+    const timeSinceLastTap = now - lastStaffTapTime;
+
+    // Two quick intentional taps on the same field
+    if (lastStaffTapFieldId === inputEl.id && timeSinceLastTap >= 80 && timeSinceLastTap <= 450) {
+        if (e && e.cancelable) {
+            e.preventDefault(); // Prevent double-tap zoom
+        }
+        lastStaffTapTime = 0;
+        lastStaffTapFieldId = null;
+        lastStaffTouchAutoFillTime = now;
+        autoFillStaffMealField(inputEl.id);
+        return;
+    }
+
+    // First tap or tap on different field: focus normally without auto-fill
+    lastStaffTapTime = now;
+    lastStaffTapFieldId = inputEl.id;
+}
+
+function handleStaffMealDblClick(inputEl) {
+    if (!inputEl) return;
+    const now = Date.now();
+    // Prevent synthetic duplicate execution if touch recently triggered it
+    if (now - lastStaffTouchAutoFillTime < 600) {
+        return;
+    }
+    autoFillStaffMealField(inputEl.id);
+}
+
 function confirmStaffMealExpense() {
+    if (isStaffMealProcessing) return; // Prevent double-click multiple orders
+
     const totals = calculateCartTotals();
-    const mgmt = parseFloat(document.getElementById('staffManagementMeals').value) || 0;
-    const owner = parseFloat(document.getElementById('staffOwnerMeals').value) || 0;
-    const hosp = parseFloat(document.getElementById('staffHospitality').value) || 0;
-    const emp = parseFloat(document.getElementById('staffEmployeeMeals').value) || 0;
-    
-    const allocated = mgmt + owner + hosp + emp;
-    
-    if (Math.abs(allocated - totals.grandTotal) > 0.01) {
+    const mgmt = parseFloat(document.getElementById('staffManagementMeals')?.value) || 0;
+    const owner = parseFloat(document.getElementById('staffOwnerMeals')?.value) || 0;
+    const hosp = parseFloat(document.getElementById('staffHospitality')?.value) || 0;
+    const emp = parseFloat(document.getElementById('staffEmployeeMeals')?.value) || 0;
+
+    // Negative values rejection
+    if (mgmt < 0 || owner < 0 || hosp < 0 || emp < 0) {
+        soundWarning && soundWarning();
+        showToast && showToast(currentLang === 'ar' ? 'لا يمكن إدخال قيم سالبة' : 'Negative values are not allowed', 'danger');
+        return;
+    }
+
+    const allocated = Math.round((mgmt + owner + hosp + emp) * 100) / 100;
+    const targetTotal = Math.round(totals.grandTotal * 100) / 100;
+
+    if (Math.abs(allocated - targetTotal) > 0.01) {
         soundWarning && soundWarning();
         showToast && showToast(currentLang === 'ar' ? 'يجب أن يساوي مجموع التخصيص الإجمالي' : 'Total allocated must equal order total', 'danger');
         return;
     }
+
+    isStaffMealProcessing = true;
 
     const staffAllocation = {
         management: mgmt,
@@ -527,9 +656,15 @@ function confirmStaffMealExpense() {
         hospitality: hosp,
         employee: emp
     };
-    
-    closeStaffMealExpenseModal();
-    completeOrderAndShowReceipt(staffAllocation);
+
+    try {
+        closeStaffMealExpenseModal();
+        completeOrderAndShowReceipt(staffAllocation);
+    } finally {
+        setTimeout(() => {
+            isStaffMealProcessing = false;
+        }, 1200);
+    }
 }
 
 // Keyboard events

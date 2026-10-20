@@ -255,3 +255,271 @@ html[data-theme="dark"] .checkout-footer {
     border-top-color: var(--border);
 }
 
+/* =========================================================
+   STAFF MEAL EXPENSE SCREEN (Reference Matched)
+   ========================================================= */
+.staff-meal-modal-card {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border-radius: 16px !important;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25) !important;
+    max-width: 680px !important;
+    width: 94% !important;
+    padding: 24px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    direction: ltr !important;
+    box-sizing: border-box !important;
+}
+
+/* Header: Back (Top-Left), Remaining (Top-Right) */
+.staff-meal-top-bar {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 20px !important;
+    direction: ltr !important;
+    width: 100% !important;
+}
+
+.staff-meal-back-btn {
+    background: #0d9488 !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 18px !important;
+    cursor: pointer !important;
+    transition: background 0.2s, transform 0.1s !important;
+}
+
+.staff-meal-back-btn:hover {
+    background: #0f766e !important;
+}
+
+.staff-meal-back-btn:active {
+    transform: scale(0.95) !important;
+}
+
+.staff-meal-remaining-box {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    border: 1.5px solid #0d9488 !important;
+    border-radius: 10px !important;
+    padding: 8px 18px !important;
+    background: #ffffff !important;
+    color: #0f766e !important;
+    font-weight: 800 !important;
+    font-size: 17px !important;
+    box-shadow: 0 1px 3px rgba(13, 148, 136, 0.1) !important;
+    direction: ltr !important;
+}
+
+.staff-meal-remaining-box .remaining-lbl {
+    font-weight: 700 !important;
+    color: #0f766e !important;
+    font-size: 15px !important;
+}
+
+.staff-meal-remaining-box .remaining-val {
+    font-weight: 900 !important;
+    font-size: 18px !important;
+    color: #0d9488 !important;
+}
+
+/* Main Expense Area: Light aqua/teal section */
+.staff-meal-section {
+    background: #e6fffa !important;
+    border: 1.5px solid #b2f5ea !important;
+    border-radius: 14px !important;
+    padding: 16px 20px !important;
+    margin-bottom: 24px !important;
+    direction: ltr !important;
+}
+
+/* Wajbat Header: Positioned at far right */
+.staff-meal-section-header {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    margin-bottom: 14px !important;
+    direction: ltr !important;
+}
+
+.staff-meal-wajbat-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: #ccfbf1 !important;
+    color: #0f766e !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    padding: 6px 14px !important;
+    border-radius: 8px !important;
+    border: 1px solid #99f6e4 !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    transition: background 0.2s, transform 0.1s !important;
+}
+
+.staff-meal-wajbat-badge:hover {
+    background: #99f6e4 !important;
+}
+
+.staff-meal-wajbat-badge .wajbat-toggle-icon {
+    font-size: 13px !important;
+    transition: transform 0.25s ease !important;
+}
+
+.staff-meal-wajbat-badge .wajbat-toggle-icon.rotated {
+    transform: rotate(180deg) !important;
+}
+
+/* Section Body & 2-Column Layout */
+.staff-meal-section-body {
+    transition: max-height 0.3s ease, opacity 0.25s ease !important;
+    max-height: 800px !important;
+    opacity: 1 !important;
+    overflow: hidden !important;
+}
+
+.staff-meal-section-body.collapsed {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none !important;
+}
+
+.staff-meal-columns {
+    display: flex !important;
+    gap: 20px !important;
+    direction: ltr !important;
+    width: 100% !important;
+}
+
+.staff-meal-col {
+    flex: 1 1 50% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    direction: ltr !important;
+}
+
+/* Individual Field Card */
+.staff-meal-field-card {
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    padding: 12px 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+    box-sizing: border-box !important;
+}
+
+.staff-meal-field-card:focus-within {
+    border-color: #0d9488 !important;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15) !important;
+}
+
+.staff-meal-field-card label {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    margin: 0 !important;
+    display: block !important;
+    user-select: none !important;
+}
+
+.staff-meal-input {
+    width: 100% !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 10px 12px !important;
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    background: #f8fafc !important;
+    outline: none !important;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s !important;
+    box-sizing: border-box !important;
+    -webkit-user-select: auto !important;
+    user-select: auto !important;
+    touch-action: manipulation !important;
+}
+
+.staff-meal-input:focus {
+    border-color: #0d9488 !important;
+    background: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18) !important;
+}
+
+.staff-meal-input.autofill-highlight {
+    animation: staffMealPulse 0.4s ease-out !important;
+}
+
+@keyframes staffMealPulse {
+    0% { background: #ccfbf1; }
+    50% { background: #99f6e4; transform: scale(1.02); }
+    100% { background: #ffffff; transform: scale(1); }
+}
+
+/* Bottom Full-Width Confirm Button */
+.staff-meal-confirm-btn {
+    width: 100% !important;
+    background: #0d9488 !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 16px 24px !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    cursor: pointer !important;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s !important;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3) !important;
+    box-sizing: border-box !important;
+}
+
+.staff-meal-confirm-btn:hover {
+    background: #0f766e !important;
+    box-shadow: 0 6px 18px rgba(13, 148, 136, 0.4) !important;
+}
+
+.staff-meal-confirm-btn:active {
+    transform: scale(0.99) !important;
+}
+
+/* Responsive Overrides */
+@media (max-width: 600px) {
+    .staff-meal-modal-card {
+        padding: 16px !important;
+        width: 96% !important;
+    }
+    .staff-meal-columns {
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+    .staff-meal-col {
+        flex: 1 1 100% !important;
+        gap: 12px !important;
+    }
+    .staff-meal-remaining-box {
+        font-size: 15px !important;
+        padding: 6px 12px !important;
+    }
+}
+
+

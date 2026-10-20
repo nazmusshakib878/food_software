@@ -1054,44 +1054,67 @@
 
 <!-- STAFF MEAL EXPENSE MODAL -->
 <div class="modal-overlay" id="staffMealExpenseModal">
-    <div class="modal-card" style="max-width: 500px;">
-        <div class="modal-header" style="background: linear-gradient(135deg, #1e293b, #334155);">
-            <h3><i class="fa-solid fa-users-gear"></i> Staff Meal Expense</h3>
-            <button class="modal-close-btn" onclick="closeStaffMealExpenseModal()"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="modal-body">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-                <span style="font-size: 18px; font-weight: bold; color: #475569;">Remaining:</span>
-                <span style="font-size: 24px; font-weight: 900; color: #ef4444;" id="staffMealRemaining">0.00</span>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div>
-                    <label style="font-weight: bold; font-size: 14px; color: #334155; margin-bottom: 5px; display: block;">Management Meals</label>
-                    <input type="number" step="0.01" min="0" id="staffManagementMeals" class="form-control" style="font-size: 18px; padding: 10px;" value="" oninput="calculateStaffMealRemaining()">
-                </div>
-                <div>
-                    <label style="font-weight: bold; font-size: 14px; color: #334155; margin-bottom: 5px; display: block;">Owner Meals</label>
-                    <input type="number" step="0.01" min="0" id="staffOwnerMeals" class="form-control" style="font-size: 18px; padding: 10px;" value="" oninput="calculateStaffMealRemaining()">
-                </div>
-                <div>
-                    <label style="font-weight: bold; font-size: 14px; color: #334155; margin-bottom: 5px; display: block;">Hospitality</label>
-                    <input type="number" step="0.01" min="0" id="staffHospitality" class="form-control" style="font-size: 18px; padding: 10px;" value="" oninput="calculateStaffMealRemaining()">
-                </div>
-                <div>
-                    <label style="font-weight: bold; font-size: 14px; color: #334155; margin-bottom: 5px; display: block;">Employee Meals</label>
-                    <input type="number" step="0.01" min="0" id="staffEmployeeMeals" class="form-control" style="font-size: 18px; padding: 10px;" value="" oninput="calculateStaffMealRemaining()">
-                </div>
+    <div class="modal-card staff-meal-modal-card" id="staffMealModalCard">
+        <!-- Top Bar: Back (Top-Left) & Remaining (Top-Right) -->
+        <div class="staff-meal-top-bar" id="staffMealTopBar">
+            <button type="button" class="staff-meal-back-btn" id="staffMealBackBtn" onclick="closeStaffMealExpenseModal()" title="Back">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="staff-meal-remaining-box" id="staffMealRemainingBox">
+                <span class="remaining-lbl" data-i18n="remaining_lbl">Remaining:</span>
+                <span class="remaining-val" id="staffMealRemaining">SAR 0.00</span>
             </div>
         </div>
-        <div class="modal-footer" style="display: flex; gap: 10px;">
-            <button type="button" class="btn-secondary" style="flex: 1;" onclick="closeStaffMealExpenseModal()">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </button>
-            <button type="button" class="btn-primary" style="flex: 1;" id="staffMealConfirmBtn" onclick="confirmStaffMealExpense()">
-                <i class="fa-solid fa-check"></i> Confirm
-            </button>
-        </div>
+
+        <!-- Main Expense Area -->
+        <section class="staff-meal-section" id="staffMealSection">
+            <!-- Wajbat Section Header (Far Right) -->
+            <div class="staff-meal-section-header">
+                <div class="staff-meal-wajbat-badge" id="staffMealWajbatToggle" onclick="toggleStaffMealWajbat()" title="Toggle Wajbat">
+                    <i class="fa-solid fa-utensils"></i>
+                    <span data-i18n="staff_meal_wajbat">Wajbat</span>
+                    <i class="fa-solid fa-chevron-up wajbat-toggle-icon" id="wajbatToggleIcon"></i>
+                </div>
+            </div>
+
+            <!-- 2-Column, 2-Row Arrangement -->
+            <div class="staff-meal-section-body" id="staffMealSectionBody">
+                <div class="staff-meal-columns">
+                    <!-- Physical Left Column -->
+                    <div class="staff-meal-col">
+                        <!-- Top: Management Meals -->
+                        <div class="staff-meal-field-card" id="cardStaffManagementMeals">
+                            <label for="staffManagementMeals" data-i18n="staff_management_meals">Management Meals</label>
+                            <input type="number" step="0.01" min="0" id="staffManagementMeals" class="form-control staff-meal-input" placeholder="0.00" value="" oninput="calculateStaffMealRemaining()" ondblclick="handleStaffMealDblClick(this)" ontouchend="handleStaffMealTouchEnd(event, this)">
+                        </div>
+                        <!-- Bottom: Owner Meals -->
+                        <div class="staff-meal-field-card" id="cardStaffOwnerMeals">
+                            <label for="staffOwnerMeals" data-i18n="staff_owner_meals">Owner Meals</label>
+                            <input type="number" step="0.01" min="0" id="staffOwnerMeals" class="form-control staff-meal-input" placeholder="0.00" value="" oninput="calculateStaffMealRemaining()" ondblclick="handleStaffMealDblClick(this)" ontouchend="handleStaffMealTouchEnd(event, this)">
+                        </div>
+                    </div>
+
+                    <!-- Physical Right Column -->
+                    <div class="staff-meal-col">
+                        <!-- Top: Hospitality -->
+                        <div class="staff-meal-field-card" id="cardStaffHospitality">
+                            <label for="staffHospitality" data-i18n="staff_hospitality">Hospitality</label>
+                            <input type="number" step="0.01" min="0" id="staffHospitality" class="form-control staff-meal-input" placeholder="0.00" value="" oninput="calculateStaffMealRemaining()" ondblclick="handleStaffMealDblClick(this)" ontouchend="handleStaffMealTouchEnd(event, this)">
+                        </div>
+                        <!-- Bottom: Employee Meals -->
+                        <div class="staff-meal-field-card" id="cardStaffEmployeeMeals">
+                            <label for="staffEmployeeMeals" data-i18n="staff_employee_meals">Employee Meals</label>
+                            <input type="number" step="0.01" min="0" id="staffEmployeeMeals" class="form-control staff-meal-input" placeholder="0.00" value="" oninput="calculateStaffMealRemaining()" ondblclick="handleStaffMealDblClick(this)" ontouchend="handleStaffMealTouchEnd(event, this)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom: Large Teal Confirm Button -->
+        <button type="button" class="staff-meal-confirm-btn" id="staffMealConfirmBtn" onclick="confirmStaffMealExpense()">
+            <i class="fa-solid fa-check"></i> <span data-i18n="staff_meal_confirm">Confirm</span>
+        </button>
     </div>
 </div>
 

@@ -522,6 +522,16 @@ const i18n = {
         bottom_nav_tables: "الطاولات",
         bottom_nav_main: "الرئيسية",
 
+        // Staff Meal Expense
+        staff_meal_title: "مصاريف وجبات الموظفين",
+        staff_meal_wajbat: "وجبات",
+        staff_management_meals: "وجبات الإدارة",
+        staff_owner_meals: "وجبات المالك",
+        staff_hospitality: "ضيافة",
+        staff_employee_meals: "وجبات الموظفين",
+        staff_meal_confirm: "تأكيد",
+        remaining_lbl: "المتبقي:",
+
         // Notes Modal
         notes_modal_title: "ملاحظات الطلب ورقم العميل",
         notes_label: "تعليمات وتجهيز الطلب",
@@ -874,6 +884,16 @@ const i18n = {
         bottom_nav_orders: "Orders",
         bottom_nav_tables: "Tables",
         bottom_nav_main: "Main Screen",
+
+        // Staff Meal Expense
+        staff_meal_title: "Staff Meal Expense",
+        staff_meal_wajbat: "Wajbat",
+        staff_management_meals: "Management Meals",
+        staff_owner_meals: "Owner Meals",
+        staff_hospitality: "Hospitality",
+        staff_employee_meals: "Employee Meals",
+        staff_meal_confirm: "Confirm",
+        remaining_lbl: "Remaining:",
 
         // Notes Modal
         notes_modal_title: "Order Notes & Client Phone",
