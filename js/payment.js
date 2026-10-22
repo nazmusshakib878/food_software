@@ -444,8 +444,9 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
     customDiscount = 0;
     resetPaymentState();
     currentCustomerId = 'cash';
-    currentOrderTypeId = 'local';
-    currentOrderType = 'local';
+    currentOrderTypeId = 'delivery';
+    currentOrderType = 'delivery';
+    if (typeof clearActiveOrderState === 'function') clearActiveOrderState();
     if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
     if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
     renderCart();

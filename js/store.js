@@ -210,10 +210,70 @@ function generateCartLineId() {
     }
     return 'line_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 9) + '_' + _cartLineSeq;
 }
-var currentOrderType = 'local';
-var currentOrderTypeId = 'local';
+var currentOrderType = 'delivery';
+var currentOrderTypeId = 'delivery';
 var currentTable = 'Table 1';
 var currentCustomerId = 'cash';
+
+// Active Order State Persistence (Scenario E: Preserve active order across page refreshes)
+function saveActiveOrderState() {
+    try {
+        if ((currentCart && currentCart.length > 0) || currentOrderNotes || currentClientPhone || (currentCustomerId && currentCustomerId !== 'cash') || (currentOrderTypeId && currentOrderTypeId !== 'delivery')) {
+            const state = {
+                cart: currentCart,
+                customerId: currentCustomerId,
+                orderTypeId: currentOrderTypeId,
+                orderType: currentOrderType,
+                table: currentTable,
+                notes: currentOrderNotes,
+                phone: currentClientPhone,
+                discountType: discountType,
+                discountValue: discountValue,
+                customDiscount: customDiscount
+            };
+            localStorage.setItem('nurpos_active_order', JSON.stringify(state));
+        } else {
+            localStorage.removeItem('nurpos_active_order');
+        }
+    } catch (e) {}
+}
+
+function restoreActiveOrderState() {
+    try {
+        const raw = localStorage.getItem('nurpos_active_order');
+        if (!raw) return false;
+        const state = JSON.parse(raw);
+        if (state && typeof state === 'object') {
+            if (Array.isArray(state.cart) && state.cart.length > 0) {
+                currentCart = state.cart;
+            }
+            if (state.customerId) {
+                currentCustomerId = state.customerId;
+            }
+            if (state.orderTypeId) {
+                currentOrderTypeId = state.orderTypeId;
+                currentOrderType = state.orderType || state.orderTypeId;
+            }
+            if (state.table) currentTable = state.table;
+            if (state.notes !== undefined) currentOrderNotes = state.notes;
+            if (state.phone !== undefined) currentClientPhone = state.phone;
+            if (state.discountType) discountType = state.discountType;
+            if (state.discountValue !== undefined) discountValue = state.discountValue;
+            if (state.customDiscount !== undefined) customDiscount = state.customDiscount;
+            return true;
+        }
+    } catch (e) {}
+    return false;
+}
+
+function clearActiveOrderState() {
+    try {
+        localStorage.removeItem('nurpos_active_order');
+    } catch (e) {}
+}
+
+// Attempt restoring active order if safely preserved; otherwise initial fresh defaults (Cash customer | Delivery) remain active
+restoreActiveOrderState();
 var currentOrderNotes = '';
 var currentClientPhone = '';
 var discountType = 'fixed'; // 'fixed' | 'percent'
@@ -376,8 +436,9 @@ function safeStartNewOrder() {
     discountValue = 0;
     discountType = 'fixed';
     currentCustomerId = 'cash';
-    currentOrderTypeId = 'local';
-    currentOrderType = 'local';
+    currentOrderTypeId = 'delivery';
+    currentOrderType = 'delivery';
+    if (typeof clearActiveOrderState === 'function') clearActiveOrderState();
     if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
     if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
     if (typeof renderCart === 'function') renderCart();
@@ -410,8 +471,9 @@ function safeCancelOrder() {
         discountValue = 0;
         discountType = 'fixed';
         currentCustomerId = 'cash';
-        currentOrderTypeId = 'local';
-        currentOrderType = 'local';
+        currentOrderTypeId = 'delivery';
+        currentOrderType = 'delivery';
+        if (typeof clearActiveOrderState === 'function') clearActiveOrderState();
         if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
         if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
         if (typeof renderCart === 'function') renderCart();

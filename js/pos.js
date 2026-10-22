@@ -56,9 +56,15 @@ function onPosCustomerChange(newId) {
         if (policy === 'ONLINE_PARTNER') {
             currentOrderTypeId = 'delivery';
             currentOrderType = 'delivery';
+        } else if (newId === 'cash') {
+            currentOrderTypeId = 'delivery';
+            currentOrderType = 'delivery';
+        } else if (cust.defaultOrderTypeId) {
+            currentOrderTypeId = cust.defaultOrderTypeId;
+            currentOrderType = cust.defaultOrderTypeId;
         } else {
-            currentOrderTypeId = 'local';
-            currentOrderType = 'local';
+            currentOrderTypeId = 'delivery';
+            currentOrderType = 'delivery';
         }
 
         renderOrderTypeSelector(); // This will re-render options and sync table picker
@@ -85,6 +91,7 @@ function onPosCustomerChange(newId) {
             }
         }
     }
+    if (typeof saveActiveOrderState === 'function') saveActiveOrderState();
 }
 
 function promptAddCustomer() {
@@ -128,7 +135,7 @@ function renderOrderTypeSelector() {
 
     const allowedIds = allowedList.map(t => t.id);
     if (!allowedIds.includes(currentOrderTypeId)) {
-        currentOrderTypeId = 'local';
+        currentOrderTypeId = 'delivery';
     }
     currentOrderType = currentOrderTypeId;
 
@@ -207,6 +214,7 @@ function onPosOrderTypeChange(newId) {
         }
         showToast(currentLang === 'ar' ? `نوع الطلب: ${label}` : `Order Type: ${label}`, 'info');
     }
+    if (typeof saveActiveOrderState === 'function') saveActiveOrderState();
 }
 
 function promptAddOrderType() {
@@ -723,6 +731,7 @@ function addToCart(itemId) {
     if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
     }
+    if (typeof saveActiveOrderState === 'function') saveActiveOrderState();
 }
 
 function changeCartQty(index, delta) {
@@ -765,6 +774,7 @@ function changeCartQty(index, delta) {
 
     renderCart();
     renderProducts();
+    if (typeof saveActiveOrderState === 'function') saveActiveOrderState();
 }
 
 function removeCartItem(index) {
@@ -788,6 +798,7 @@ function removeCartItem(index) {
     }
     renderCart();
     renderProducts();
+    if (typeof saveActiveOrderState === 'function') saveActiveOrderState();
 }
 
 function clearCartConfirm() {
@@ -1366,18 +1377,10 @@ function loadSampleInvoiceOrder() {
 // Bottom Navigation Actions
 function bottomNavNewOrder() {
     switchView('pos');
-    safeCancelOrder();
-    currentCustomerId = 'cash';
-    currentOrderTypeId = 'receive';
-    currentOrderType = 'receive';
+    const started = safeStartNewOrder();
+    if (!started) return;
     const select = document.getElementById('tableSelect');
     if (select) select.value = 'Table 1';
-    if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
-    if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
-    
-    if (typeof showToast === 'function') {
-        showToast(currentLang === 'ar' ? 'تم بدء طلب جديد' : 'New Order Started', 'success');
-    }
 }
 
 function bottomNavOrders() {

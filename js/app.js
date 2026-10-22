@@ -205,6 +205,7 @@ function changeLanguage(lang) {
 }
 
 function applyLanguage(lang) {
+    currentLang = lang;
     document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
     document.documentElement.setAttribute('lang', lang);
 
@@ -503,6 +504,9 @@ function toggleTheme() {
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     updateSoundBtnUI();
+    if (typeof restoreActiveOrderState === 'function') {
+        restoreActiveOrderState();
+    }
     applyLanguage(currentLang);
     updateUserBadge();
     updatePosOrderBadge();

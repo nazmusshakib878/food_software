@@ -1019,8 +1019,8 @@ assert("Section 22 Test 5: Dropdown 2 shows delivery", elements['posOrderTypeSel
 
 onPosCustomerChange('cash');
 assert("Section 22 Test 5: Selecting Cash Customer syncs customerId", currentCustomerId === 'cash');
-assert("Section 22 Test 5: Cash Customer defaults Order Type to local", currentOrderTypeId === 'local');
-assert("Section 22 Test 5: Dropdown 2 shows local", elements['posOrderTypeSelect'].value === 'local');
+assert("Section 22 Test 5: Cash Customer defaults Order Type to delivery", currentOrderTypeId === 'delivery');
+assert("Section 22 Test 5: Dropdown 2 shows delivery", elements['posOrderTypeSelect'].value === 'delivery');
 
 // TEST 6 — Order Type Persistence: Normal rerender or unrelated UI refresh does not reset Order Type
 onPosOrderTypeChange('receive');
@@ -1163,7 +1163,231 @@ assert("Section 22 Test 13: Legacy order KOT renders DINE-IN (Table 4)", legacyK
 // TEST 14 — Full Regression Reset to clean state
 safeStartNewOrder();
 assert("Section 22 Test 14: Safe start new order resets to cash customer", currentCustomerId === 'cash');
-assert("Section 22 Test 14: Safe start new order resets to local order type", currentOrderTypeId === 'local');
+assert("Section 22 Test 14: Safe start new order resets to delivery order type", currentOrderTypeId === 'delivery');
+
+// =========================================================
+// SECTION 23: CODEX MASTER ACCEPTANCE TESTS (Part 19)
+// =========================================================
+
+// Acceptance Test 1 — Fresh POS Initialization: Default is "Cash customer | Delivery"
+safeStartNewOrder();
+renderCustomerSelector();
+renderOrderTypeSelector();
+assert("Codex Test 1: Fresh order defaults customer to cash", currentCustomerId === 'cash');
+assert("Codex Test 1: Fresh order defaults order type to delivery", currentOrderTypeId === 'delivery');
+assert("Codex Test 1: Dropdown 1 shows cash customer", elements['posCustomerSelect'].value === 'cash');
+assert("Codex Test 1: Dropdown 2 shows delivery", elements['posOrderTypeSelect'].value === 'delivery');
+
+// Acceptance Test 2 — Exactly Five Options in Order Type dropdown
+currentLang = 'en';
+renderOrderTypeSelector();
+const codexOtOpts = parseOptions(elements['posOrderTypeSelect'].innerHTML);
+assert("Codex Test 2: Dropdown 2 contains exactly 5 options", codexOtOpts.length === 5);
+assert("Codex Test 2: Option 1 is Delivery", codexOtOpts[0].value === 'delivery' && codexOtOpts[0].text === 'Delivery');
+assert("Codex Test 2: Option 2 is local", codexOtOpts[1].value === 'local' && codexOtOpts[1].text === 'local');
+assert("Codex Test 2: Option 3 is Receive", codexOtOpts[2].value === 'receive' && codexOtOpts[2].text === 'Receive');
+assert("Codex Test 2: Option 4 is Cars", codexOtOpts[3].value === 'cars' && codexOtOpts[3].text === 'Cars');
+assert("Codex Test 2: Option 5 is Delivery D", codexOtOpts[4].value === 'delivery_d' && codexOtOpts[4].text === 'Delivery D');
+
+// Acceptance Test 3 — No extra options or customer records in Dropdown 2
+const prohibitedCustomers = ['cash', 'hungerstation', 'jahiz', 'ninja', 'management', 'keeta', 'mrsool', 'toyou', 'thechefz', 'mosque'];
+assert("Codex Test 3: No customer records in Dropdown 2", !codexOtOpts.some(o => prohibitedCustomers.includes(o.value)));
+assert("Codex Test 3: Exactly 5 options enforced", codexOtOpts.length === 5);
+
+// Acceptance Test 4 — Customer Dropdown retains all records
+renderCustomerSelector();
+const codexCustOpts = parseOptions(elements['posCustomerSelect'].innerHTML);
+assert("Codex Test 4: All customer records available", codexCustOpts.length >= 10);
+assert("Codex Test 4: Contains cash customer", codexCustOpts.some(c => c.value === 'cash'));
+assert("Codex Test 4: Contains jahiz", codexCustOpts.some(c => c.value === 'jahiz'));
+assert("Codex Test 4: Contains ninja", codexCustOpts.some(c => c.value === 'ninja'));
+
+// Acceptance Test 5 — Manual Order Type Change (Select Cars)
+onPosOrderTypeChange('cars');
+assert("Codex Test 5: Customer is cash", currentCustomerId === 'cash');
+assert("Codex Test 5: Order type is cars", currentOrderTypeId === 'cars');
+assert("Codex Test 5: Display shows Cash customer | Cars", elements['posCustomerSelect'].value === 'cash' && elements['posOrderTypeSelect'].value === 'cars');
+
+// Acceptance Test 6 — Product Addition preserves manual Order Type selection
+const sampleKebab = items.find(i => i.id === 'item_chicken_kebab') || items[0];
+addToCart(sampleKebab.id);
+assert("Codex Test 6: Cart has items", currentCart.length > 0);
+assert("Codex Test 6: Order type remains cars after product addition", currentOrderTypeId === 'cars');
+assert("Codex Test 6: Dropdown 2 value remains cars", elements['posOrderTypeSelect'].value === 'cars');
+
+// Acceptance Test 7 — Modifier Done preserves manual Order Type selection
+closeItemModifierPanel();
+assert("Codex Test 7: Order type remains cars after Modifier Done", currentOrderTypeId === 'cars');
+assert("Codex Test 7: Dropdown 2 value remains cars after Modifier Done", elements['posOrderTypeSelect'].value === 'cars');
+
+// Acceptance Test 8 — Customer Mapping (Jahiz -> Delivery without extra options)
+onPosCustomerChange('jahiz');
+assert("Codex Test 8: Customer updated to jahiz", currentCustomerId === 'jahiz');
+assert("Codex Test 8: Order type mapped to delivery", currentOrderTypeId === 'delivery');
+assert("Codex Test 8: Dropdown 2 value is delivery", elements['posOrderTypeSelect'].value === 'delivery');
+const jahizOtOpts = parseOptions(elements['posOrderTypeSelect'].innerHTML);
+assert("Codex Test 8: Dropdown 2 option count remains strictly 5", jahizOtOpts.length === 5);
+
+// Acceptance Test 9 — Customer Mapping (Ninja -> Delivery with online partner policy)
+onPosCustomerChange('ninja');
+assert("Codex Test 9: Customer updated to ninja", currentCustomerId === 'ninja');
+assert("Codex Test 9: Order type mapped to delivery", currentOrderTypeId === 'delivery');
+assert("Codex Test 9: Policy is ONLINE_PARTNER", getOrderChannelPolicy('ninja') === 'ONLINE_PARTNER');
+
+// Acceptance Test 10 — Manual Selection After Mapping (Select Cars after Ninja)
+onPosOrderTypeChange('cars');
+assert("Codex Test 10: Manual selection changes order type to cars", currentOrderTypeId === 'cars');
+assert("Codex Test 10: Customer remains ninja", currentCustomerId === 'ninja');
+// UI rerender
+renderOrderTypeSelector();
+assert("Codex Test 10: renderOrderTypeSelector preserves cars", currentOrderTypeId === 'cars' && elements['posOrderTypeSelect'].value === 'cars');
+
+// Acceptance Test 11 — New Order (Safe start new order restores Cash customer | Delivery)
+safeStartNewOrder();
+assert("Codex Test 11: New order restores cash customer", currentCustomerId === 'cash');
+assert("Codex Test 11: New order restores delivery", currentOrderTypeId === 'delivery');
+assert("Codex Test 11: Dropdown 1 is cash", elements['posCustomerSelect'].value === 'cash');
+assert("Codex Test 11: Dropdown 2 is delivery", elements['posOrderTypeSelect'].value === 'delivery');
+
+// Acceptance Test 12 — Cancelled New Order Confirmation
+// Setup order with items and Cars
+addToCart(sampleKebab.id);
+onPosOrderTypeChange('cars');
+assert("Codex Test 12: Initial cart has items", currentCart.length === 1);
+assert("Codex Test 12: Initial order type is cars", currentOrderTypeId === 'cars');
+// Mock confirm dialog returning false (cashier cancels confirmation)
+const origConfirm = global.confirm;
+global.confirm = () => false;
+const cancelResult = safeStartNewOrder();
+assert("Codex Test 12: safeStartNewOrder returned false", cancelResult === false);
+assert("Codex Test 12: Cart NOT cleared on cancel", currentCart.length === 1);
+assert("Codex Test 12: Customer remains cash", currentCustomerId === 'cash');
+assert("Codex Test 12: Order type remains cars", currentOrderTypeId === 'cars');
+global.confirm = origConfirm;
+
+// Acceptance Test 13 — Successful Checkout preserves completed order & resets NEXT to Cash | Delivery
+const checkoutSeq2 = 9100;
+nextOrderSeq = checkoutSeq2;
+currentCustomerId = 'ninja';
+currentOrderTypeId = 'cars';
+currentOrderType = 'cars';
+const chkTotals = calculateCartTotals();
+completeOrderAndShowReceipt(null, 'Cash', {}, chkTotals.grandTotal);
+const completedOrderRecord = orders[0];
+assert("Codex Test 13: Completed order preserves customerId ninja", completedOrderRecord.customerId === 'ninja');
+assert("Codex Test 13: Completed order preserves orderTypeId cars", completedOrderRecord.orderTypeId === 'cars');
+assert("Codex Test 13: NEXT order customer resets to cash", currentCustomerId === 'cash');
+assert("Codex Test 13: NEXT order orderTypeId resets to delivery", currentOrderTypeId === 'delivery');
+assert("Codex Test 13: Dropdown 1 shows cash", elements['posCustomerSelect'].value === 'cash');
+assert("Codex Test 13: Dropdown 2 shows delivery", elements['posOrderTypeSelect'].value === 'delivery');
+
+// Acceptance Test 14 — Failed/Cancelled Checkout preserves cart and state
+addToCart(sampleKebab.id);
+onPosOrderTypeChange('receive');
+assert("Codex Test 14: Cart has 1 item", currentCart.length === 1);
+// Attempt invalid payment with 0 amount
+completeOrderAndShowReceipt(null, 'Cash', {}, 0);
+assert("Codex Test 14: Cart preserved on payment failure", currentCart.length === 1);
+assert("Codex Test 14: Order type preserved as receive", currentOrderTypeId === 'receive');
+safeStartNewOrder();
+
+// Acceptance Test 15 — Language Switch (English <-> Arabic) preserves selected IDs and fixed positions
+currentLang = 'en';
+onPosCustomerChange('cash');
+onPosOrderTypeChange('cars');
+applyLanguage('ar');
+assert("Codex Test 15: Arabic customer ID remains cash", currentCustomerId === 'cash');
+assert("Codex Test 15: Arabic order type ID remains cars", currentOrderTypeId === 'cars');
+assert("Codex Test 15: Arabic Dropdown 2 value is cars", elements['posOrderTypeSelect'].value === 'cars');
+applyLanguage('en');
+assert("Codex Test 15: English customer ID remains cash", currentCustomerId === 'cash');
+assert("Codex Test 15: English order type ID remains cars", currentOrderTypeId === 'cars');
+assert("Codex Test 15: English Dropdown 2 value is cars", elements['posOrderTypeSelect'].value === 'cars');
+
+// Acceptance Test 16 — Both Dropdown Arrows present and functional
+assert("Codex Test 16: Customer select has select dropdown element", elements['posCustomerSelect'] !== undefined);
+assert("Codex Test 16: Order Type select has select dropdown element", elements['posOrderTypeSelect'] !== undefined);
+
+// Acceptance Test 17 — Both Settings Icons (Gear buttons)
+assert("Codex Test 17: Customer gear button bound to promptAddCustomer", posIndexHtml.includes('onclick="promptAddCustomer()"'));
+assert("Codex Test 17: Order type gear button bound to promptAddOrderType", posIndexHtml.includes('onclick="promptAddOrderType()"'));
+
+// Acceptance Test 18 — Customer and Order Type Independence
+onPosOrderTypeChange('delivery_d');
+assert("Codex Test 18: Order type is delivery_d", currentOrderTypeId === 'delivery_d');
+assert("Codex Test 18: Customer was not changed by order type change", currentCustomerId === 'cash');
+
+// Acceptance Test 19 — Table Selector responds to Order Types
+onPosOrderTypeChange('local');
+assert("Codex Test 19: Table visible for local", elements['tablePickerRow'].style.display === 'flex');
+onPosOrderTypeChange('delivery');
+assert("Codex Test 19: Table hidden for delivery", elements['tablePickerRow'].style.display === 'none');
+onPosOrderTypeChange('cars');
+assert("Codex Test 19: Table hidden for cars", elements['tablePickerRow'].style.display === 'none');
+
+// Acceptance Test 20 — Partner Payment Restrictions preserved across Order Types
+onPosCustomerChange('hungerstation');
+onPosOrderTypeChange('cars'); // Manually change to Cars
+assert("Codex Test 20: Hungerstation policy still ONLINE_PARTNER after order type change", getOrderChannelPolicy(currentCustomerId) === 'ONLINE_PARTNER');
+assert("Codex Test 20: Only credit payment allowed for online partner", JSON.stringify(getAllowedPaymentMethods('ONLINE_PARTNER')) === JSON.stringify(['credit']));
+
+// Acceptance Test 21 — Repeated Product Rows: Independent cart lines
+safeStartNewOrder();
+addToCart(sampleKebab.id);
+addToCart(sampleKebab.id);
+addToCart(sampleKebab.id);
+assert("Codex Test 21: 3 independent cart rows created", currentCart.length === 3);
+assert("Codex Test 21: Row 1 qty is 1", currentCart[0].qty === 1);
+assert("Codex Test 21: Row 2 qty is 1", currentCart[1].qty === 1);
+assert("Codex Test 21: Row 3 qty is 1", currentCart[2].qty === 1);
+assert("Codex Test 21: Unique line IDs", currentCart[0].lineId !== currentCart[1].lineId);
+safeStartNewOrder();
+
+// Acceptance Test 22 — Responsive layout: Side by side verified in CSS
+assert("Codex Test 22: Grid 2-column layout in CSS", posReportsCss.includes('grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important'));
+assert("Codex Test 22: Enforces ltr direction", posReportsCss.includes('direction: ltr !important'));
+
+// Acceptance Test 23 — Active Order Restoration across refresh
+// Mock an active order in localStorage
+const mockPreservedState = {
+    cart: [{ lineId: 'test_line_1', id: 'item_tandoori', enName: 'Tandoori', arName: 'تندوري', price: 10.50, qty: 1 }],
+    customerId: 'jahiz',
+    orderTypeId: 'cars',
+    orderType: 'cars',
+    table: 'Table 2'
+};
+localStorage.setItem('nurpos_active_order', JSON.stringify(mockPreservedState));
+const restored = restoreActiveOrderState();
+assert("Codex Test 23: restoreActiveOrderState returns true when active order exists", restored === true);
+assert("Codex Test 23: Preserved customerId jahiz restored", currentCustomerId === 'jahiz');
+assert("Codex Test 23: Preserved orderTypeId cars restored", currentOrderTypeId === 'cars');
+assert("Codex Test 23: Preserved cart restored", currentCart.length === 1 && currentCart[0].id === 'item_tandoori');
+clearActiveOrderState();
+safeStartNewOrder();
+
+// Acceptance Test 24 — Historical Compatibility: Legacy orders readable
+const legacyOrder2 = {
+    id: 'ORD-500',
+    seq: 500,
+    date: '2026-08-15T12:00:00Z',
+    dateFormatted: '8/15/2026, 12:00:00 PM',
+    type: 'takeaway',
+    orderType: 'Takeaway',
+    orderTypeId: 'receive',
+    table: '-',
+    customer: 'Cash Customer',
+    customerId: 'cash',
+    items: [{ id: 'item_shish_tawooq', arName: 'شيش طاووق', enName: 'Shish Tawooq', price: 9.50, qty: 2 }],
+    grandTotal: 19.00,
+    paid: 19.00
+};
+renderReceipt(legacyOrder2);
+assert("Codex Test 24: Legacy takeaway receipt renders TAKEAWAY", elements['recOrderType'].innerText === 'TAKEAWAY');
+
+// Acceptance Test 25 — Final Clean State
+safeStartNewOrder();
+assert("Codex Test 25: Final clean state customer is cash", currentCustomerId === 'cash');
+assert("Codex Test 25: Final clean state order type is delivery", currentOrderTypeId === 'delivery');
 
 console.log(`\n=== Verification Finished: ${passed} Passed, ${failed} Failed ===`);
 if (failed > 0) process.exit(1);
