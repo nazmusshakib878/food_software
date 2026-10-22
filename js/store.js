@@ -377,6 +377,7 @@ function safeStartNewOrder() {
     discountType = 'fixed';
     currentCustomerId = 'cash';
     currentOrderTypeId = 'local';
+    currentOrderType = 'local';
     if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
     if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
     if (typeof renderCart === 'function') renderCart();
@@ -409,6 +410,8 @@ function safeCancelOrder() {
         discountValue = 0;
         discountType = 'fixed';
         currentCustomerId = 'cash';
+        currentOrderTypeId = 'local';
+        currentOrderType = 'local';
         if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
         if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
         if (typeof renderCart === 'function') renderCart();

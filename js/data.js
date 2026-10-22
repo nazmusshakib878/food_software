@@ -328,13 +328,22 @@ const DEFAULT_CUSTOMERS = [
     { id: "mosque", nameAr: "عميل مسجد", nameEn: "عميل مسجد" }
 ];
 
+/* Fixed Allowed POS Order Types (Exact 5 options in required order) */
+const POS_ORDER_TYPES = [
+    { id: "delivery", nameEn: "Delivery", nameAr: "توصيل", icon: "fa-motorcycle" },
+    { id: "local", nameEn: "local", nameAr: "محلي", icon: "fa-utensils" },
+    { id: "receive", nameEn: "Receive", nameAr: "استلام", icon: "fa-bag-shopping" },
+    { id: "cars", nameEn: "Cars", nameAr: "خدمة السيارات", icon: "fa-car" },
+    { id: "delivery_d", nameEn: "Delivery D", nameAr: "توصيل سريع", icon: "fa-truck-fast" }
+];
+
 /* Order Types */
 const DEFAULT_ORDER_TYPES = [
-    { id: "local", nameAr: "محلي", nameEn: "Dine-in", icon: "fa-utensils" },
     { id: "delivery", nameAr: "توصيل", nameEn: "Delivery", icon: "fa-motorcycle" },
-    { id: "receive", nameAr: "استلام", nameEn: "Pickup", icon: "fa-bag-shopping" },
-    { id: "cars", nameAr: "خدمة السيارات", nameEn: "Drive-thru", icon: "fa-car" },
-    { id: "delivery_d", nameAr: "توصيل سريع", nameEn: "Express Delivery", icon: "fa-truck-fast" }
+    { id: "local", nameAr: "محلي", nameEn: "local", icon: "fa-utensils" },
+    { id: "receive", nameAr: "استلام", nameEn: "Receive", icon: "fa-bag-shopping" },
+    { id: "cars", nameAr: "خدمة السيارات", nameEn: "Cars", icon: "fa-car" },
+    { id: "delivery_d", nameAr: "توصيل سريع", nameEn: "Delivery D", icon: "fa-truck-fast" }
 ];
 
 /* Printers Configuration */

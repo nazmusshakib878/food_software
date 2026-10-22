@@ -114,7 +114,7 @@ function renderReturnsOrdersList() {
         } else if (currentReturnTab === 'offline') {
             matchTab = (order.type === 'offline' || order.isOffline === true);
         } else if (currentReturnTab === 'outgoing') {
-            matchTab = (order.type === 'delivery' || order.type === 'takeaway' || order.orderTypeId === 'delivery' || order.orderTypeId === 'receive');
+            matchTab = (order.type === 'delivery' || order.type === 'takeaway' || order.type === 'receive' || order.type === 'cars' || order.type === 'delivery_d' || order.orderTypeId === 'delivery' || order.orderTypeId === 'receive' || order.orderTypeId === 'cars' || order.orderTypeId === 'delivery_d');
         } else if (currentReturnTab === 'returned') {
             matchTab = isCancelled;
         } else if (currentReturnTab === 'active') {

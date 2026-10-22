@@ -337,16 +337,26 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
         return;
     }
 
-    const tableVal = (currentOrderTypeId === 'local' || currentOrderType === 'dine_in')
+    const tableVal = (currentOrderTypeId === 'local' || currentOrderType === 'dine_in' || currentOrderType === 'local')
         ? (document.getElementById('tableSelect')?.value || 'Table 1')
         : '-';
 
     const customerObj = (typeof customers !== 'undefined' && Array.isArray(customers)) 
         ? customers.find(c => c.id === currentCustomerId) 
         : null;
+    const posTypeObj = (typeof POS_ORDER_TYPES !== 'undefined' && Array.isArray(POS_ORDER_TYPES))
+        ? POS_ORDER_TYPES.find(t => t.id === currentOrderTypeId)
+        : null;
     const orderTypeObj = (typeof orderTypes !== 'undefined' && Array.isArray(orderTypes)) 
         ? orderTypes.find(t => t.id === currentOrderTypeId) 
         : null;
+
+    let resolvedOrderTypeName;
+    if (currentLang === 'ar') {
+        resolvedOrderTypeName = (orderTypeObj && orderTypeObj.nameAr) || (posTypeObj && posTypeObj.nameAr) || 'محلي';
+    } else {
+        resolvedOrderTypeName = (posTypeObj && posTypeObj.nameEn) || (orderTypeObj && orderTypeObj.nameEn) || 'local';
+    }
 
     let finalMethod = staffAllocation ? "Staff Expense" : method;
     const activeShift = (typeof shifts !== 'undefined' && Array.isArray(shifts)) ? (shifts.find(s => s.status === 'active') || shifts[0]) : null;
@@ -361,7 +371,7 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
         table: tableVal,
         customer: customerObj ? (currentLang === 'ar' ? customerObj.nameAr : customerObj.nameEn) : (currentLang === 'ar' ? 'عميل نقدي' : 'Cash Customer'),
         customerId: currentCustomerId,
-        orderType: orderTypeObj ? (currentLang === 'ar' ? orderTypeObj.nameAr : orderTypeObj.nameEn) : (currentLang === 'ar' ? 'محلي' : 'Dine-in'),
+        orderType: resolvedOrderTypeName,
         orderTypeId: currentOrderTypeId,
         notes: currentOrderNotes,
         phone: currentClientPhone,
@@ -434,6 +444,8 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
     customDiscount = 0;
     resetPaymentState();
     currentCustomerId = 'cash';
+    currentOrderTypeId = 'local';
+    currentOrderType = 'local';
     if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
     if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
     renderCart();

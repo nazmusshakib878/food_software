@@ -160,8 +160,9 @@ assert("Client phone saved correctly", currentClientPhone === "+966501234567");
 onPosCustomerChange("hungerstation");
 assert("Current customer updated to hungerstation", currentCustomerId === "hungerstation");
 assert("Hungerstation automatically suggested delivery", currentOrderTypeId === "delivery");
-// onPosOrderTypeChange was repurposed to mirror customers array.
 currentCustomerId = 'cash'; // Reset to cash so downstream tests (like Image 1 receipt) don't fail due to ONLINE_PARTNER policy
+currentOrderTypeId = 'local';
+currentOrderType = 'local';
 
 // TEST 6: Preferences (Orders view & Stay at category)
 setOrdersViewPreference("briefly");
@@ -960,6 +961,209 @@ assert("Test 12: Order successfully placed", orders[0].seq === 7001 && orders[0]
 assert("Test 12: Saved order maintains 2 independent rows", orders[0].items.length === 2);
 const kot = getKitchenOrderTicketHtml(orders[0]);
 assert("Test 12: Kitchen ticket rendered properly with items", kot.includes('Chicken Kebab') && kot.includes('Meat Kebab'));
+
+// =======================================================
+// === SECTION 22: CODEX POS ORDER TYPE EXACT 5 OPTIONS ==
+// =======================================================
+
+function parseOptions(html) {
+    const matches = [...html.matchAll(/<option\s+value="([^"]*)"[^>]*>(.*?)<\/option>/g)];
+    return matches.map(m => ({ value: m[1], text: m[2] }));
+}
+
+// TEST 1 — Exact Options: 5 options in exact order with exact English labels & capitalization
+currentLang = 'en';
+currentOrderTypeId = 'local';
+renderOrderTypeSelector();
+let otOptions = parseOptions(elements['posOrderTypeSelect'].innerHTML);
+assert("Section 22 Test 1: Exactly 5 options in Order Type dropdown", otOptions.length === 5);
+assert("Section 22 Test 1: Option 1 is Delivery", otOptions[0].value === 'delivery' && otOptions[0].text === 'Delivery');
+assert("Section 22 Test 1: Option 2 is local", otOptions[1].value === 'local' && otOptions[1].text === 'local');
+assert("Section 22 Test 1: Option 3 is Receive", otOptions[2].value === 'receive' && otOptions[2].text === 'Receive');
+assert("Section 22 Test 1: Option 4 is Cars", otOptions[3].value === 'cars' && otOptions[3].text === 'Cars');
+assert("Section 22 Test 1: Option 5 is Delivery D", otOptions[4].value === 'delivery_d' && otOptions[4].text === 'Delivery D');
+
+// TEST 2 — No Old Options: Verify Customer records or extra order types do NOT appear
+const prohibitedValues = ['cash', 'hungerstation', 'jahiz', 'ninja', 'management', 'keeta', 'mrsool', 'toyou', 'thechefz', 'mosque'];
+const hasProhibited = otOptions.some(opt => prohibitedValues.includes(opt.value) || opt.text.toLowerCase().includes('customer') || opt.text.toLowerCase().includes('staff'));
+assert("Section 22 Test 2: No customer records appear in Order Type dropdown", !hasProhibited);
+
+// Verify adding a custom 6th order type via orderTypes array does NOT pollute the POS dropdown
+orderTypes.push({ id: 'ot_custom_extra', nameEn: 'Extra VIP Type', nameAr: 'نوع إضافي', icon: 'fa-star' });
+renderOrderTypeSelector();
+otOptions = parseOptions(elements['posOrderTypeSelect'].innerHTML);
+assert("Section 22 Test 2: POS dropdown strictly preserves exactly 5 options when extra orderTypes exist", otOptions.length === 5);
+assert("Section 22 Test 2: Extra VIP Type is not shown in POS dropdown", !otOptions.some(opt => opt.value === 'ot_custom_extra'));
+
+// TEST 3 — Customer Unchanged: Customer dropdown retains all customers
+renderCustomerSelector();
+const custOptions = parseOptions(elements['posCustomerSelect'].innerHTML);
+assert("Section 22 Test 3: Customer dropdown options preserved", custOptions.length >= 10);
+assert("Section 22 Test 3: Customer dropdown contains cash customer", custOptions.some(c => c.value === 'cash'));
+assert("Section 22 Test 3: Customer dropdown contains hungerstation", custOptions.some(c => c.value === 'hungerstation'));
+
+// TEST 4 — Independent Selection: Selecting Cars updates Order Type without modifying Customer
+currentCustomerId = 'cash';
+elements['posCustomerSelect'].value = 'cash';
+onPosOrderTypeChange('cars');
+assert("Section 22 Test 4: currentOrderTypeId is cars", currentOrderTypeId === 'cars');
+assert("Section 22 Test 4: Order Type select value is cars", elements['posOrderTypeSelect'].value === 'cars');
+assert("Section 22 Test 4: Customer remains cash customer", currentCustomerId === 'cash');
+assert("Section 22 Test 4: Customer select element remains cash", elements['posCustomerSelect'].value === 'cash');
+
+// TEST 5 — Customer Synchronization: Selecting an online partner defaults to delivery, cash defaults to local
+onPosCustomerChange('hungerstation');
+assert("Section 22 Test 5: Selecting Hungerstation syncs customerId", currentCustomerId === 'hungerstation');
+assert("Section 22 Test 5: Hungerstation defaults Order Type to delivery", currentOrderTypeId === 'delivery');
+assert("Section 22 Test 5: Dropdown 2 shows delivery", elements['posOrderTypeSelect'].value === 'delivery');
+
+onPosCustomerChange('cash');
+assert("Section 22 Test 5: Selecting Cash Customer syncs customerId", currentCustomerId === 'cash');
+assert("Section 22 Test 5: Cash Customer defaults Order Type to local", currentOrderTypeId === 'local');
+assert("Section 22 Test 5: Dropdown 2 shows local", elements['posOrderTypeSelect'].value === 'local');
+
+// TEST 6 — Order Type Persistence: Normal rerender or unrelated UI refresh does not reset Order Type
+onPosOrderTypeChange('receive');
+assert("Section 22 Test 6: Receive selected", currentOrderTypeId === 'receive');
+renderOrderTypeSelector();
+assert("Section 22 Test 6: renderOrderTypeSelector preserves Receive", currentOrderTypeId === 'receive' && elements['posOrderTypeSelect'].value === 'receive');
+updateOrderPanelMeta();
+assert("Section 22 Test 6: updateOrderPanelMeta preserves Receive", currentOrderTypeId === 'receive' && elements['posOrderTypeSelect'].value === 'receive');
+
+// TEST 7 — All Five Options: Individually select each option
+const expectedFive = [
+    { id: 'delivery', label: 'Delivery' },
+    { id: 'local', label: 'local' },
+    { id: 'receive', label: 'Receive' },
+    { id: 'cars', label: 'Cars' },
+    { id: 'delivery_d', label: 'Delivery D' }
+];
+expectedFive.forEach(item => {
+    onPosOrderTypeChange(item.id);
+    assert(`Section 22 Test 7: Selecting ${item.id} sets internal ID`, currentOrderTypeId === item.id);
+    assert(`Section 22 Test 7: Selecting ${item.id} sets select element value`, elements['posOrderTypeSelect'].value === item.id);
+});
+
+// TEST 8 — Gear and Arrow Controls
+const posIndexHtml = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+assert("Section 22 Test 8: Customer select present in markup", posIndexHtml.includes('id="posCustomerSelect"'));
+assert("Section 22 Test 8: Order Type select present in markup", posIndexHtml.includes('id="posOrderTypeSelect"'));
+assert("Section 22 Test 8: Customer gear button present", posIndexHtml.includes('onclick="promptAddCustomer()"'));
+assert("Section 22 Test 8: Order Type gear button present", posIndexHtml.includes('onclick="promptAddOrderType()"'));
+// Test promptAddOrderType feedback and preservation of fixed 5 options
+const prevOtCount = orderTypes.length;
+promptAddOrderType();
+assert("Section 22 Test 8: promptAddOrderType added item to data collection", orderTypes.length === prevOtCount + 1);
+otOptions = parseOptions(elements['posOrderTypeSelect'].innerHTML);
+assert("Section 22 Test 8: POS dropdown remains strictly 5 options after gear action", otOptions.length === 5);
+
+// TEST 9 — Table Selector: Responds to applicable Order Types
+onPosOrderTypeChange('local');
+assert("Section 22 Test 9: Table selector displayed for local", elements['tablePickerRow'].style.display === 'flex');
+onPosOrderTypeChange('delivery');
+assert("Section 22 Test 9: Table selector hidden for delivery", elements['tablePickerRow'].style.display === 'none');
+onPosOrderTypeChange('receive');
+assert("Section 22 Test 9: Table selector hidden for receive", elements['tablePickerRow'].style.display === 'none');
+onPosOrderTypeChange('cars');
+assert("Section 22 Test 9: Table selector hidden for cars", elements['tablePickerRow'].style.display === 'none');
+onPosOrderTypeChange('delivery_d');
+assert("Section 22 Test 9: Table selector hidden for delivery_d", elements['tablePickerRow'].style.display === 'none');
+
+// TEST 10 — Checkout and Saving: Order saving, receipts, KOT for all 5 types + Payment policies
+expectedFive.forEach((item, idx) => {
+    currentCart = [
+        { lineId: generateCartLineId(), id: "item_chicken_kebab", enName: "Chicken Kebab", arName: "كباب دجاج", price: 10.00, qty: 1, addons: [], modifiers: [], note: '' }
+    ];
+    currentCustomerId = 'cash';
+    onPosOrderTypeChange(item.id);
+    const checkoutSeq = 8000 + idx;
+    nextOrderSeq = checkoutSeq;
+    const checkoutTotals = calculateCartTotals();
+    completeOrderAndShowReceipt(null, 'Cash', {}, checkoutTotals.grandTotal);
+    
+    const saved = orders[0];
+    assert(`Section 22 Test 10: Order saved with seq ${checkoutSeq}`, saved.seq === checkoutSeq);
+    assert(`Section 22 Test 10: Order saved with orderTypeId ${item.id}`, saved.orderTypeId === item.id);
+    assert(`Section 22 Test 10: Order saved with orderType label ${item.label}`, saved.orderType === item.label);
+    if (item.id === 'local') {
+        assert("Section 22 Test 10: local order records table number", saved.table !== '-');
+    } else {
+        assert(`Section 22 Test 10: ${item.id} order sets table to '-'`, saved.table === '-');
+    }
+    
+    renderReceipt(saved);
+    const receiptType = elements['recOrderType'].innerText;
+    if (item.id === 'local') assert("Section 22 Test 10: Receipt displays DINE-IN", receiptType.includes('DINE-IN'));
+    if (item.id === 'delivery') assert("Section 22 Test 10: Receipt displays DELIVERY", receiptType === 'DELIVERY');
+    if (item.id === 'receive') assert("Section 22 Test 10: Receipt displays TAKEAWAY", receiptType === 'TAKEAWAY');
+    if (item.id === 'cars') assert("Section 22 Test 10: Receipt displays CARS", receiptType === 'CARS');
+    if (item.id === 'delivery_d') assert("Section 22 Test 10: Receipt displays DELIVERY D", receiptType === 'DELIVERY D');
+
+    const kotHtml = getKitchenOrderTicketHtml(saved);
+    if (item.id === 'local') assert("Section 22 Test 10: KOT displays DINE-IN", kotHtml.includes('DINE-IN'));
+    if (item.id === 'delivery') assert("Section 22 Test 10: KOT displays DELIVERY", kotHtml.includes('DELIVERY'));
+    if (item.id === 'receive') assert("Section 22 Test 10: KOT displays TAKEAWAY", kotHtml.includes('TAKEAWAY'));
+    if (item.id === 'cars') assert("Section 22 Test 10: KOT displays CARS", kotHtml.includes('CARS'));
+    if (item.id === 'delivery_d') assert("Section 22 Test 10: KOT displays DELIVERY D", kotHtml.includes('DELIVERY D'));
+});
+
+// Verify Customer Payment Restrictions are preserved
+assert("Section 22 Test 10: Hungerstation policy is ONLINE_PARTNER", getOrderChannelPolicy('hungerstation') === 'ONLINE_PARTNER');
+assert("Section 22 Test 10: Online partner only allows credit payment", JSON.stringify(getAllowedPaymentMethods('ONLINE_PARTNER')) === JSON.stringify(['credit']));
+assert("Section 22 Test 10: Management staff policy is STAFF_EXPENSE", getOrderChannelPolicy('management') === 'STAFF_EXPENSE');
+assert("Section 22 Test 10: Staff expense routes to expense screen", getCheckoutDestination('STAFF_EXPENSE') === 'STAFF_EXPENSE_SCREEN');
+
+// TEST 11 — Language: Switch English <-> Arabic
+onPosOrderTypeChange('receive');
+currentLang = 'ar';
+renderOrderTypeSelector();
+const arOtOptions = parseOptions(elements['posOrderTypeSelect'].innerHTML);
+assert("Section 22 Test 11: Arabic dropdown has 5 options", arOtOptions.length === 5);
+assert("Section 22 Test 11: Arabic Option 1 is delivery / توصيل", arOtOptions[0].value === 'delivery' && arOtOptions[0].text === 'توصيل');
+assert("Section 22 Test 11: Arabic Option 2 is local / محلي", arOtOptions[1].value === 'local' && arOtOptions[1].text === 'محلي');
+assert("Section 22 Test 11: Arabic Option 3 is receive / استلام", arOtOptions[2].value === 'receive' && arOtOptions[2].text === 'استلام');
+assert("Section 22 Test 11: Arabic Option 4 is cars / خدمة السيارات", arOtOptions[3].value === 'cars' && arOtOptions[3].text === 'خدمة السيارات');
+assert("Section 22 Test 11: Arabic Option 5 is delivery_d / توصيل سريع", arOtOptions[4].value === 'delivery_d' && arOtOptions[4].text === 'توصيل سريع');
+assert("Section 22 Test 11: Arabic selection remains receive", currentOrderTypeId === 'receive' && elements['posOrderTypeSelect'].value === 'receive');
+
+currentLang = 'en';
+renderOrderTypeSelector();
+const enOtOptions = parseOptions(elements['posOrderTypeSelect'].innerHTML);
+assert("Section 22 Test 11: English Option 2 is local", enOtOptions[1].text === 'local');
+assert("Section 22 Test 11: English selection remains receive", currentOrderTypeId === 'receive' && elements['posOrderTypeSelect'].value === 'receive');
+
+// TEST 12 — Responsive Design: Verify CSS rules keep selectors side-by-side
+const posReportsCss = fs.readFileSync(path.join(__dirname, 'css', 'reports.css'), 'utf8');
+assert("Section 22 Test 12: pos-meta-selectors-card has 2-column grid in CSS", posReportsCss.includes('grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important'));
+assert("Section 22 Test 12: pos-meta-selectors-card enforces ltr direction in CSS", posReportsCss.includes('direction: ltr !important'));
+
+// TEST 13 — Historical Data: Verify legacy orders remain readable
+const historicalLegacyOrder = {
+    id: 'ORD-999',
+    seq: 999,
+    date: '2026-09-01T10:00:00Z',
+    dateFormatted: '9/1/2026, 10:00:00 AM',
+    type: 'dine_in',
+    orderType: 'Dine-in',
+    orderTypeId: 'local',
+    table: 'Table 4',
+    customer: 'Cash Customer',
+    customerId: 'cash',
+    items: [
+        { id: 'item_meat_kebab', arName: 'كباب لحم', enName: 'Meat Kebab', price: 9.50, qty: 1 }
+    ],
+    grandTotal: 9.50,
+    paid: 9.50
+};
+renderReceipt(historicalLegacyOrder);
+assert("Section 22 Test 13: Legacy order receipt renders DINE-IN (Table 4)", elements['recOrderType'].innerText === 'DINE-IN (Table 4)');
+const legacyKot = getKitchenOrderTicketHtml(historicalLegacyOrder);
+assert("Section 22 Test 13: Legacy order KOT renders DINE-IN (Table 4)", legacyKot.includes('DINE-IN (Table 4)'));
+
+// TEST 14 — Full Regression Reset to clean state
+safeStartNewOrder();
+assert("Section 22 Test 14: Safe start new order resets to cash customer", currentCustomerId === 'cash');
+assert("Section 22 Test 14: Safe start new order resets to local order type", currentOrderTypeId === 'local');
 
 console.log(`\n=== Verification Finished: ${passed} Passed, ${failed} Failed ===`);
 if (failed > 0) process.exit(1);

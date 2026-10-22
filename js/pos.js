@@ -42,6 +42,8 @@ function renderCustomerSelector() {
         const selected = (c.id === currentCustomerId) ? 'selected' : '';
         return `<option value="${escapeHtml(c.id)}" ${selected}>${escapeHtml(name)}</option>`;
     }).join('');
+
+    select.value = currentCustomerId;
 }
 
 function onPosCustomerChange(newId) {
@@ -61,7 +63,7 @@ function onPosCustomerChange(newId) {
 
         renderOrderTypeSelector(); // This will re-render options and sync table picker
         
-        // Sync Dropdown 1 value in case this function was called from Dropdown 2
+        // Sync Dropdown 1 value in case this function was called from elsewhere
         const select1 = document.getElementById('posCustomerSelect');
         if (select1 && select1.value !== newId) {
             select1.value = newId;
@@ -105,17 +107,46 @@ function promptAddCustomer() {
     }
 }
 
-// 2. Dynamic Order Type Selector (Repurposed as Secondary Order Channel Selector)
+// 2. Dynamic Order Type Selector (Fixed Exactly 5 Allowed Options in Strict Order)
 function renderOrderTypeSelector() {
     const select = document.getElementById('posOrderTypeSelect');
     if (!select) return;
 
-    // Repurposed to mirror customers array instead of orderTypes
-    select.innerHTML = customers.map(c => {
-        const name = currentLang === 'ar' ? c.nameAr : c.nameEn;
-        const selected = (c.id === currentCustomerId) ? 'selected' : '';
-        return `<option value="${escapeHtml(c.id)}" ${selected}>${escapeHtml(name)}</option>`;
+    // Normalize legacy type identifiers to valid allowed POS IDs
+    if (currentOrderTypeId === 'dine_in') currentOrderTypeId = 'local';
+    if (currentOrderTypeId === 'takeaway') currentOrderTypeId = 'receive';
+
+    const allowedList = (typeof POS_ORDER_TYPES !== 'undefined' && Array.isArray(POS_ORDER_TYPES))
+        ? POS_ORDER_TYPES
+        : [
+            { id: "delivery", nameEn: "Delivery", nameAr: "توصيل" },
+            { id: "local", nameEn: "local", nameAr: "محلي" },
+            { id: "receive", nameEn: "Receive", nameAr: "استلام" },
+            { id: "cars", nameEn: "Cars", nameAr: "خدمة السيارات" },
+            { id: "delivery_d", nameEn: "Delivery D", nameAr: "توصيل سريع" }
+        ];
+
+    const allowedIds = allowedList.map(t => t.id);
+    if (!allowedIds.includes(currentOrderTypeId)) {
+        currentOrderTypeId = 'local';
+    }
+    currentOrderType = currentOrderTypeId;
+
+    select.innerHTML = allowedList.map(ot => {
+        let label;
+        if (currentLang === 'ar') {
+            const found = (typeof orderTypes !== 'undefined' && Array.isArray(orderTypes))
+                ? orderTypes.find(t => t.id === ot.id)
+                : null;
+            label = (found && found.nameAr) ? found.nameAr : ot.nameAr;
+        } else {
+            label = ot.nameEn;
+        }
+        const selected = (ot.id === currentOrderTypeId) ? 'selected' : '';
+        return `<option value="${escapeHtml(ot.id)}" ${selected}>${escapeHtml(label)}</option>`;
     }).join('');
+
+    select.value = currentOrderTypeId;
 
     const tablePicker = document.getElementById('tablePickerRow');
     if (tablePicker) {
@@ -124,8 +155,58 @@ function renderOrderTypeSelector() {
 }
 
 function onPosOrderTypeChange(newId) {
-    // Simply route to the central customer change handler to maintain single source of truth
-    onPosCustomerChange(newId);
+    const allowedList = (typeof POS_ORDER_TYPES !== 'undefined' && Array.isArray(POS_ORDER_TYPES))
+        ? POS_ORDER_TYPES
+        : [
+            { id: "delivery", nameEn: "Delivery", nameAr: "توصيل" },
+            { id: "local", nameEn: "local", nameAr: "محلي" },
+            { id: "receive", nameEn: "Receive", nameAr: "استلام" },
+            { id: "cars", nameEn: "Cars", nameAr: "خدمة السيارات" },
+            { id: "delivery_d", nameEn: "Delivery D", nameAr: "توصيل سريع" }
+        ];
+    const allowedIds = allowedList.map(t => t.id);
+    if (!allowedIds.includes(newId)) return;
+
+    currentOrderTypeId = newId;
+    currentOrderType = newId;
+
+    // Synchronize Table Picker visibility (shown only for local / dine-in)
+    const tablePicker = document.getElementById('tablePickerRow');
+    if (tablePicker) {
+        tablePicker.style.display = (currentOrderTypeId === 'local') ? 'flex' : 'none';
+    }
+
+    // Keep POS Order Type select in sync
+    const select = document.getElementById('posOrderTypeSelect');
+    if (select && select.value !== newId) {
+        select.value = newId;
+    }
+
+    // Update active tab buttons if present in DOM
+    document.querySelectorAll('.order-type-tabs .order-type-btn').forEach(b => {
+        const bType = b.getAttribute('data-type') || b.dataset?.type;
+        if (bType === newId || (newId === 'local' && bType === 'dine_in') || (newId === 'receive' && bType === 'takeaway')) {
+            b.classList.add('active');
+        } else {
+            b.classList.remove('active');
+        }
+    });
+
+    if (typeof showToast === 'function') {
+        const item = allowedList.find(t => t.id === newId);
+        let label = newId;
+        if (item) {
+            if (currentLang === 'ar') {
+                const found = (typeof orderTypes !== 'undefined' && Array.isArray(orderTypes))
+                    ? orderTypes.find(t => t.id === item.id)
+                    : null;
+                label = (found && found.nameAr) ? found.nameAr : item.nameAr;
+            } else {
+                label = item.nameEn;
+            }
+        }
+        showToast(currentLang === 'ar' ? `نوع الطلب: ${label}` : `Order Type: ${label}`, 'info');
+    }
 }
 
 function promptAddOrderType() {
@@ -140,11 +221,13 @@ function promptAddOrderType() {
         icon: "fa-bag-shopping"
     };
     orderTypes.push(newOt);
-    currentOrderTypeId = newOt.id;
     persistData();
     renderOrderTypeSelector();
     if (typeof showToast === 'function') {
-        showToast(currentLang === 'ar' ? 'تمت إضافة نوع الطلب' : 'Order type added', 'success');
+        const msg = currentLang === 'ar'
+            ? 'تم حفظ نوع الطلب في الإعدادات. تقتصر قائمة نقطة البيع السريعة على الـ 5 خيارات المعتمدة.'
+            : 'Order type saved in settings. POS quick selector is fixed to the 5 approved types.';
+        showToast(msg, 'info');
     }
 }
 
@@ -712,14 +795,23 @@ function clearCartConfirm() {
 }
 
 function setOrderType(type, btn) {
-    currentOrderType = type;
-    currentOrderTypeId = type;
+    let normalized = type;
+    if (type === 'dine_in') normalized = 'local';
+    if (type === 'takeaway') normalized = 'receive';
+
+    currentOrderType = normalized;
+    currentOrderTypeId = normalized;
     document.querySelectorAll('.order-type-tabs .order-type-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
 
     const tablePicker = document.getElementById('tablePickerRow');
     if (tablePicker) {
-        tablePicker.style.display = (type === 'dine_in' || type === 'local') ? 'flex' : 'none';
+        tablePicker.style.display = (currentOrderTypeId === 'local') ? 'flex' : 'none';
+    }
+
+    const select = document.getElementById('posOrderTypeSelect');
+    if (select && select.value !== currentOrderTypeId) {
+        select.value = currentOrderTypeId;
     }
 }
 
@@ -1295,6 +1387,7 @@ function bottomNavOrders() {
 function bottomNavTables() {
     switchView('pos');
     currentOrderTypeId = 'local';
+    currentOrderType = 'local';
     if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
     if (typeof showToast === 'function') {
         showToast(currentLang === 'ar' ? 'الرجاء اختيار الطاولة من القائمة العلوية' : 'Please select a table from the top menu', 'info');

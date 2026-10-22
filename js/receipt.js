@@ -57,13 +57,17 @@ function renderReceipt(order) {
 
     // Clean order type display (matching Image 1 e.g. DINE-IN (Table 1))
     let typeDisplay;
-    if (order.type === 'dine_in' || order.orderTypeId === 'local') {
+    if (order.type === 'dine_in' || order.type === 'local' || order.orderTypeId === 'local') {
         const tableNum = (order.table && order.table !== '-') ? order.table : 'Table 1';
         typeDisplay = `DINE-IN (${tableNum})`;
-    } else if (order.type === 'takeaway' || order.orderTypeId === 'receive') {
+    } else if (order.type === 'takeaway' || order.type === 'receive' || order.orderTypeId === 'receive') {
         typeDisplay = `TAKEAWAY`;
     } else if (order.type === 'delivery' || order.orderTypeId === 'delivery') {
         typeDisplay = `DELIVERY`;
+    } else if (order.type === 'cars' || order.orderTypeId === 'cars') {
+        typeDisplay = `CARS`;
+    } else if (order.type === 'delivery_d' || order.orderTypeId === 'delivery_d') {
+        typeDisplay = `DELIVERY D`;
     } else {
         typeDisplay = String(order.type || order.orderType || 'DINE-IN').toUpperCase();
     }
@@ -220,13 +224,17 @@ function getKitchenOrderTicketHtml(targetOrder) {
     const orderId = rawOrderNum.replace(/^#/, '');
 
     let typeDisplay;
-    if (order.type === 'dine_in' || order.orderTypeId === 'local') {
+    if (order.type === 'dine_in' || order.type === 'local' || order.orderTypeId === 'local') {
         const tableNum = (order.table && order.table !== '-') ? order.table : 'Table 1';
         typeDisplay = `DINE-IN (${tableNum})`;
-    } else if (order.type === 'takeaway' || order.orderTypeId === 'receive') {
+    } else if (order.type === 'takeaway' || order.type === 'receive' || order.orderTypeId === 'receive') {
         typeDisplay = `TAKEAWAY`;
     } else if (order.type === 'delivery' || order.orderTypeId === 'delivery') {
         typeDisplay = `DELIVERY`;
+    } else if (order.type === 'cars' || order.orderTypeId === 'cars') {
+        typeDisplay = `CARS`;
+    } else if (order.type === 'delivery_d' || order.orderTypeId === 'delivery_d') {
+        typeDisplay = `DELIVERY D`;
     } else {
         typeDisplay = String(order.type || order.orderType || 'DINE-IN').toUpperCase();
     }
