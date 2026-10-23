@@ -212,18 +212,22 @@ function generateCartLineId() {
 }
 var currentOrderType = 'delivery';
 var currentOrderTypeId = 'delivery';
+var orderTypeSelectionSource = 'default'; // 'default' | 'automatic' | 'manual'
+var orderTypeDisplayLabel = null;
 var currentTable = 'Table 1';
 var currentCustomerId = 'cash';
 
 // Active Order State Persistence (Scenario E: Preserve active order across page refreshes)
 function saveActiveOrderState() {
     try {
-        if ((currentCart && currentCart.length > 0) || currentOrderNotes || currentClientPhone || (currentCustomerId && currentCustomerId !== 'cash') || (currentOrderTypeId && currentOrderTypeId !== 'delivery')) {
+        if ((currentCart && currentCart.length > 0) || currentOrderNotes || currentClientPhone || (currentCustomerId && currentCustomerId !== 'cash') || (currentOrderTypeId && currentOrderTypeId !== 'delivery') || (orderTypeSelectionSource && orderTypeSelectionSource !== 'default')) {
             const state = {
                 cart: currentCart,
                 customerId: currentCustomerId,
                 orderTypeId: currentOrderTypeId,
                 orderType: currentOrderType,
+                selectionSource: orderTypeSelectionSource,
+                displayLabel: orderTypeDisplayLabel,
                 table: currentTable,
                 notes: currentOrderNotes,
                 phone: currentClientPhone,
@@ -254,6 +258,20 @@ function restoreActiveOrderState() {
                 currentOrderTypeId = state.orderTypeId;
                 currentOrderType = state.orderType || state.orderTypeId;
             }
+            if (state.selectionSource) {
+                orderTypeSelectionSource = state.selectionSource;
+            } else if (state.customerId && state.customerId !== 'cash') {
+                orderTypeSelectionSource = 'automatic';
+            } else if (state.orderTypeId && state.orderTypeId !== 'delivery') {
+                orderTypeSelectionSource = 'manual';
+            } else {
+                orderTypeSelectionSource = 'default';
+            }
+            if (state.displayLabel !== undefined) {
+                orderTypeDisplayLabel = state.displayLabel;
+            } else {
+                orderTypeDisplayLabel = null;
+            }
             if (state.table) currentTable = state.table;
             if (state.notes !== undefined) currentOrderNotes = state.notes;
             if (state.phone !== undefined) currentClientPhone = state.phone;
@@ -270,6 +288,8 @@ function clearActiveOrderState() {
     try {
         localStorage.removeItem('nurpos_active_order');
     } catch (e) {}
+    orderTypeSelectionSource = 'default';
+    orderTypeDisplayLabel = null;
 }
 
 // Attempt restoring active order if safely preserved; otherwise initial fresh defaults (Cash customer | Delivery) remain active
@@ -438,6 +458,8 @@ function safeStartNewOrder() {
     currentCustomerId = 'cash';
     currentOrderTypeId = 'delivery';
     currentOrderType = 'delivery';
+    orderTypeSelectionSource = 'default';
+    orderTypeDisplayLabel = null;
     if (typeof clearActiveOrderState === 'function') clearActiveOrderState();
     if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
     if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
@@ -473,6 +495,8 @@ function safeCancelOrder() {
         currentCustomerId = 'cash';
         currentOrderTypeId = 'delivery';
         currentOrderType = 'delivery';
+        orderTypeSelectionSource = 'default';
+        orderTypeDisplayLabel = null;
         if (typeof clearActiveOrderState === 'function') clearActiveOrderState();
         if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
         if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();

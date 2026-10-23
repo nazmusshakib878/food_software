@@ -46,28 +46,67 @@ function renderCustomerSelector() {
     select.value = currentCustomerId;
 }
 
+function getPosOrderTypeDisplayedLabel() {
+    // 1. If manual selection was made, return canonical localized label
+    if (typeof orderTypeSelectionSource !== 'undefined' && orderTypeSelectionSource === 'manual') {
+        const allowedList = (typeof POS_ORDER_TYPES !== 'undefined' && Array.isArray(POS_ORDER_TYPES))
+            ? POS_ORDER_TYPES
+            : [
+                { id: "delivery", nameEn: "Delivery", nameAr: "توصيل" },
+                { id: "local", nameEn: "local", nameAr: "محلي" },
+                { id: "receive", nameEn: "Receive", nameAr: "استلام" },
+                { id: "cars", nameEn: "Cars", nameAr: "خدمة السيارات" },
+                { id: "delivery_d", nameEn: "Delivery D", nameAr: "توصيل سريع" }
+            ];
+        const match = allowedList.find(t => t.id === currentOrderTypeId);
+        if (match) {
+            if (currentLang === 'ar') {
+                const found = (typeof orderTypes !== 'undefined' && Array.isArray(orderTypes))
+                    ? orderTypes.find(t => t.id === match.id)
+                    : null;
+                return (found && found.nameAr) ? found.nameAr : match.nameAr;
+            }
+            return match.nameEn;
+        }
+        return currentOrderTypeId;
+    }
+
+    // 2. If automatic customer mapping
+    if (typeof orderTypeSelectionSource !== 'undefined' && orderTypeSelectionSource === 'automatic') {
+        const mapping = (typeof getCustomerDeliveryMapping === 'function')
+            ? getCustomerDeliveryMapping(currentCustomerId)
+            : null;
+        if (mapping) {
+            if (currentLang === 'ar') {
+                return mapping.displayAr || mapping.displayEn || 'توصيل';
+            }
+            return mapping.displayEn || mapping.displayAr || 'Delivery';
+        }
+    }
+
+    // 3. Fresh default (Cash customer | Delivery)
+    return currentLang === 'ar' ? 'توصيل' : 'Delivery';
+}
+
 function onPosCustomerChange(newId) {
     currentCustomerId = newId;
+    if (typeof orderTypeSelectionSource !== 'undefined') {
+        orderTypeSelectionSource = 'automatic';
+    }
     
-    const cust = customers.find(c => c.id === newId);
+    const cust = (typeof customers !== 'undefined' && Array.isArray(customers)) ? customers.find(c => c.id === newId) : null;
     if (cust) {
-        // Evaluate central policy for background order type assignment
-        const policy = (typeof getOrderChannelPolicy === 'function') ? getOrderChannelPolicy(newId) : 'NORMAL';
-        if (policy === 'ONLINE_PARTNER') {
-            currentOrderTypeId = 'delivery';
-            currentOrderType = 'delivery';
-        } else if (newId === 'cash') {
-            currentOrderTypeId = 'delivery';
-            currentOrderType = 'delivery';
-        } else if (cust.defaultOrderTypeId) {
-            currentOrderTypeId = cust.defaultOrderTypeId;
-            currentOrderType = cust.defaultOrderTypeId;
-        } else {
-            currentOrderTypeId = 'delivery';
-            currentOrderType = 'delivery';
+        const mapping = (typeof getCustomerDeliveryMapping === 'function')
+            ? getCustomerDeliveryMapping(newId)
+            : { orderTypeId: 'delivery', displayEn: 'Delivery', displayAr: 'توصيل' };
+
+        currentOrderTypeId = mapping.orderTypeId || 'delivery';
+        currentOrderType = currentOrderTypeId;
+        if (typeof orderTypeDisplayLabel !== 'undefined') {
+            orderTypeDisplayLabel = (currentLang === 'ar' ? (mapping.displayAr || mapping.displayEn) : (mapping.displayEn || mapping.displayAr));
         }
 
-        renderOrderTypeSelector(); // This will re-render options and sync table picker
+        renderOrderTypeSelector(); // This will re-render options and sync table picker & display overlay
         
         // Sync Dropdown 1 value in case this function was called from elsewhere
         const select1 = document.getElementById('posCustomerSelect');
@@ -106,6 +145,9 @@ function promptAddCustomer() {
     };
     customers.push(newCust);
     currentCustomerId = newCust.id;
+    if (typeof orderTypeSelectionSource !== 'undefined') {
+        orderTypeSelectionSource = 'automatic';
+    }
     persistData();
     renderCustomerSelector();
     renderOrderTypeSelector();
@@ -155,6 +197,27 @@ function renderOrderTypeSelector() {
 
     select.value = currentOrderTypeId;
 
+    // Update partner-specific display label overlay while keeping exactly 5 standard options in native select
+    const displayLabel = getPosOrderTypeDisplayedLabel();
+    if (!select.dataset) select.dataset = {};
+    select.dataset.displayLabel = displayLabel;
+    if (typeof select.setAttribute === 'function') {
+        select.setAttribute('data-display-label', displayLabel);
+    }
+
+    let badge = document.getElementById('posOrderTypeDisplayBadge');
+    if (!badge && select.parentElement) {
+        badge = document.createElement('div');
+        badge.id = 'posOrderTypeDisplayBadge';
+        badge.className = 'pos-select-display-overlay';
+        badge.setAttribute('aria-hidden', 'true');
+        select.parentElement.insertBefore(badge, select);
+    }
+    if (badge) {
+        badge.innerHTML = `<bdi>${escapeHtml(displayLabel)}</bdi>`;
+        badge.title = displayLabel;
+    }
+
     const tablePicker = document.getElementById('tablePickerRow');
     if (tablePicker) {
         tablePicker.style.display = (currentOrderTypeId === 'local') ? 'flex' : 'none';
@@ -176,6 +239,12 @@ function onPosOrderTypeChange(newId) {
 
     currentOrderTypeId = newId;
     currentOrderType = newId;
+    if (typeof orderTypeSelectionSource !== 'undefined') {
+        orderTypeSelectionSource = 'manual';
+    }
+    if (typeof orderTypeDisplayLabel !== 'undefined') {
+        orderTypeDisplayLabel = null;
+    }
 
     // Synchronize Table Picker visibility (shown only for local / dine-in)
     const tablePicker = document.getElementById('tablePickerRow');
@@ -187,6 +256,21 @@ function onPosOrderTypeChange(newId) {
     const select = document.getElementById('posOrderTypeSelect');
     if (select && select.value !== newId) {
         select.value = newId;
+    }
+
+    // Update display label overlay
+    const displayLabel = getPosOrderTypeDisplayedLabel();
+    if (select) {
+        if (!select.dataset) select.dataset = {};
+        select.dataset.displayLabel = displayLabel;
+        if (typeof select.setAttribute === 'function') {
+            select.setAttribute('data-display-label', displayLabel);
+        }
+    }
+    const badge = document.getElementById('posOrderTypeDisplayBadge');
+    if (badge) {
+        badge.innerHTML = `<bdi>${escapeHtml(displayLabel)}</bdi>`;
+        badge.title = displayLabel;
     }
 
     // Update active tab buttons if present in DOM
@@ -812,6 +896,12 @@ function setOrderType(type, btn) {
 
     currentOrderType = normalized;
     currentOrderTypeId = normalized;
+    if (typeof orderTypeSelectionSource !== 'undefined') {
+        orderTypeSelectionSource = 'manual';
+    }
+    if (typeof orderTypeDisplayLabel !== 'undefined') {
+        orderTypeDisplayLabel = null;
+    }
     document.querySelectorAll('.order-type-tabs .order-type-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
 
@@ -824,6 +914,8 @@ function setOrderType(type, btn) {
     if (select && select.value !== currentOrderTypeId) {
         select.value = currentOrderTypeId;
     }
+    renderOrderTypeSelector();
+    if (typeof saveActiveOrderState === 'function') saveActiveOrderState();
 }
 
 // 5. Cart Table Rendering (Columns: # | Name | Qty | Price | Total)
@@ -1391,6 +1483,12 @@ function bottomNavTables() {
     switchView('pos');
     currentOrderTypeId = 'local';
     currentOrderType = 'local';
+    if (typeof orderTypeSelectionSource !== 'undefined') {
+        orderTypeSelectionSource = 'manual';
+    }
+    if (typeof orderTypeDisplayLabel !== 'undefined') {
+        orderTypeDisplayLabel = null;
+    }
     if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
     if (typeof showToast === 'function') {
         showToast(currentLang === 'ar' ? 'الرجاء اختيار الطاولة من القائمة العلوية' : 'Please select a table from the top menu', 'info');
@@ -1400,6 +1498,7 @@ function bottomNavTables() {
         tablePicker.style.display = 'flex';
         tablePicker.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+    if (typeof saveActiveOrderState === 'function') saveActiveOrderState();
 }
 
 function bottomNavMainScreen() {

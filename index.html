@@ -153,8 +153,11 @@
                             </div>
                             <div class="selector-field-row">
                                 <label><i class="fa-solid fa-truck-ramp-box"></i> <span data-i18n="order_type_lbl">نوع الطلب:</span></label>
-                                <div class="select-wrap">
-                                    <select id="posOrderTypeSelect" class="form-select-pos" onchange="onPosOrderTypeChange(this.value)"></select>
+                                <div class="select-wrap order-type-select-wrap">
+                                    <div class="select-box-wrap">
+                                        <div id="posOrderTypeDisplayBadge" class="pos-select-display-overlay" aria-hidden="true"><bdi>Delivery</bdi></div>
+                                        <select id="posOrderTypeSelect" class="form-select-pos" onchange="onPosOrderTypeChange(this.value)"></select>
+                                    </div>
                                     <button type="button" class="btn-gear-icon" onclick="promptAddOrderType()" title="إضافة نوع طلب" data-i18n-title="add_order_type_title"><i class="fa-solid fa-gear"></i></button>
                                 </div>
                             </div>

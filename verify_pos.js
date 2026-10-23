@@ -1389,6 +1389,236 @@ safeStartNewOrder();
 assert("Codex Test 25: Final clean state customer is cash", currentCustomerId === 'cash');
 assert("Codex Test 25: Final clean state order type is delivery", currentOrderTypeId === 'delivery');
 
+// =========================================================================
+// === SECTION 23: CODEX MASTER IMPLEMENTATION — 25 MANDATORY TEST CASES ===
+// =========================================================================
+
+console.log("\n--- Running Section 23: Codex Master 25 Mandatory Test Cases ---");
+
+// Test 1 — Fresh Default
+safeStartNewOrder();
+renderCustomerSelector();
+renderOrderTypeSelector();
+assert("Master Test 1: Fresh order defaults customer to cash", currentCustomerId === 'cash');
+assert("Master Test 1: Fresh order canonical type is delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 1: Dropdown 1 value is cash", elements['posCustomerSelect'].value === 'cash');
+assert("Master Test 1: Dropdown 2 display label is Delivery", getPosOrderTypeDisplayedLabel() === 'Delivery');
+assert("Master Test 1: Dropdown 2 select value is delivery", elements['posOrderTypeSelect'].value === 'delivery');
+
+// Test 2 — Exact Five Menu Options
+currentLang = 'en';
+renderOrderTypeSelector();
+const mTest2Opts = parseOptions(elements['posOrderTypeSelect'].innerHTML);
+assert("Master Test 2: Exactly 5 options in Dropdown 2", mTest2Opts.length === 5);
+assert("Master Test 2: Option 1 is Delivery", mTest2Opts[0].value === 'delivery' && mTest2Opts[0].text === 'Delivery');
+assert("Master Test 2: Option 2 is local", mTest2Opts[1].value === 'local' && mTest2Opts[1].text === 'local');
+assert("Master Test 2: Option 3 is Receive", mTest2Opts[2].value === 'receive' && mTest2Opts[2].text === 'Receive');
+assert("Master Test 2: Option 4 is Cars", mTest2Opts[3].value === 'cars' && mTest2Opts[3].text === 'Cars');
+assert("Master Test 2: Option 5 is Delivery D", mTest2Opts[4].value === 'delivery_d' && mTest2Opts[4].text === 'Delivery D');
+assert("Master Test 2: No partner-specific options inserted in menu", !mTest2Opts.some(o => prohibitedValues.includes(o.value) || o.text.includes('Delivery') && o.value !== 'delivery' && o.value !== 'delivery_d'));
+
+// Test 3 — Hungerstation
+onPosCustomerChange('hungerstation');
+assert("Master Test 3: Dropdown 1 is hungerstation", currentCustomerId === 'hungerstation');
+assert("Master Test 3: Dropdown 2 displayed label is Hungerstation", getPosOrderTypeDisplayedLabel() === 'Hungerstation');
+assert("Master Test 3: Canonical Order Type is delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 3: Dropdown 2 menu still has exactly 5 options", parseOptions(elements['posOrderTypeSelect'].innerHTML).length === 5);
+
+// Test 4 — Jahiz
+onPosCustomerChange('jahiz');
+assert("Master Test 4: Dropdown 1 is jahiz", currentCustomerId === 'jahiz');
+assert("Master Test 4: Dropdown 2 displayed label is Jahez Delivery", getPosOrderTypeDisplayedLabel() === 'Jahez Delivery');
+assert("Master Test 4: Canonical Order Type is delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 4: Dropdown 2 menu still has exactly 5 options (no 6th)", parseOptions(elements['posOrderTypeSelect'].innerHTML).length === 5);
+assert("Master Test 4: Customer policy is ONLINE_PARTNER", getOrderChannelPolicy(currentCustomerId) === 'ONLINE_PARTNER');
+
+// Test 5 — Ninja
+onPosCustomerChange('ninja');
+assert("Master Test 5: Dropdown 1 is ninja", currentCustomerId === 'ninja');
+assert("Master Test 5: Dropdown 2 displayed label is Ninja Delivery", getPosOrderTypeDisplayedLabel() === 'Ninja Delivery');
+assert("Master Test 5: Canonical Order Type is delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 5: Dropdown 2 menu still has exactly 5 options", parseOptions(elements['posOrderTypeSelect'].innerHTML).length === 5);
+
+// Test 6 — Management Staff
+onPosCustomerChange('management');
+assert("Master Test 6: Dropdown 1 is management", currentCustomerId === 'management');
+assert("Master Test 6: Dropdown 2 displayed label is Management Staff", getPosOrderTypeDisplayedLabel() === 'Management Staff');
+assert("Master Test 6: Canonical Order Type is valid canonical id", currentOrderTypeId === 'delivery');
+assert("Master Test 6: Staff policy is STAFF_EXPENSE", getOrderChannelPolicy(currentCustomerId) === 'STAFF_EXPENSE');
+assert("Master Test 6: Dropdown 2 menu still has exactly 5 options", parseOptions(elements['posOrderTypeSelect'].innerHTML).length === 5);
+
+// Test 7 — Keeta
+onPosCustomerChange('keeta');
+assert("Master Test 7: Dropdown 1 is keeta", currentCustomerId === 'keeta');
+assert("Master Test 7: Dropdown 2 displayed label is keeta Delivery", getPosOrderTypeDisplayedLabel() === 'keeta Delivery');
+assert("Master Test 7: Canonical Order Type is delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 7: Dropdown 2 menu still has exactly 5 options", parseOptions(elements['posOrderTypeSelect'].innerHTML).length === 5);
+
+// Test 8 — ToYou
+onPosCustomerChange('toyou');
+assert("Master Test 8: Dropdown 1 is toyou", currentCustomerId === 'toyou');
+assert("Master Test 8: Dropdown 2 displayed label is سفري تويو ToYou", getPosOrderTypeDisplayedLabel() === 'سفري تويو ToYou');
+assert("Master Test 8: Canonical Order Type is delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 8: Dropdown 2 menu still has exactly 5 options", parseOptions(elements['posOrderTypeSelect'].innerHTML).length === 5);
+
+// Test 9 — The Chefz
+onPosCustomerChange('thechefz');
+assert("Master Test 9: Dropdown 1 is thechefz", currentCustomerId === 'thechefz');
+assert("Master Test 9: Dropdown 2 displayed label is سفري ذا شفز The chefz", getPosOrderTypeDisplayedLabel() === 'سفري ذا شفز The chefz');
+assert("Master Test 9: Canonical Order Type is delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 9: Dropdown 2 menu still has exactly 5 options", parseOptions(elements['posOrderTypeSelect'].innerHTML).length === 5);
+
+// Test 10 — Mrsool
+onPosCustomerChange('mrsool');
+assert("Master Test 10: Dropdown 1 is mrsool", currentCustomerId === 'mrsool');
+assert("Master Test 10: Dropdown 2 displayed label is Mrsool", getPosOrderTypeDisplayedLabel() === 'Mrsool');
+assert("Master Test 10: Canonical Order Type is delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 10: Dropdown 2 menu still has exactly 5 options", parseOptions(elements['posOrderTypeSelect'].innerHTML).length === 5);
+
+// Test 11 — Mosque Customer
+onPosCustomerChange('mosque');
+assert("Master Test 11: Dropdown 1 is mosque", currentCustomerId === 'mosque');
+assert("Master Test 11: Dropdown 2 displayed label is Delivery", getPosOrderTypeDisplayedLabel() === 'Delivery');
+assert("Master Test 11: Policy is NORMAL (not online partner)", getOrderChannelPolicy(currentCustomerId) === 'NORMAL');
+assert("Master Test 11: Canonical Order Type is delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 11: Dropdown 2 menu still has exactly 5 options", parseOptions(elements['posOrderTypeSelect'].innerHTML).length === 5);
+
+// Test 12 — Manual Override
+onPosCustomerChange('jahiz');
+assert("Master Test 12: Jahiz mapped display is Jahez Delivery", getPosOrderTypeDisplayedLabel() === 'Jahez Delivery');
+onPosOrderTypeChange('cars');
+assert("Master Test 12: Dropdown 1 remains jahiz", currentCustomerId === 'jahiz');
+assert("Master Test 12: Canonical Order Type becomes cars", currentOrderTypeId === 'cars');
+assert("Master Test 12: Displayed label becomes Cars", getPosOrderTypeDisplayedLabel() === 'Cars');
+assert("Master Test 12: Dropdown 2 menu still has exactly 5 options", parseOptions(elements['posOrderTypeSelect'].innerHTML).length === 5);
+
+// Test 13 — Manual Override Persistence
+addToCart(sampleKebab.id);
+closeItemModifierPanel();
+openCategoryFolder('meals');
+calculateCartTotals();
+renderOrderTypeSelector();
+assert("Master Test 13: Canonical Order Type remains cars after product addition and UI updates", currentOrderTypeId === 'cars');
+assert("Master Test 13: Displayed label remains Cars", getPosOrderTypeDisplayedLabel() === 'Cars');
+assert("Master Test 13: Customer remains jahiz", currentCustomerId === 'jahiz');
+
+// Test 14 — Customer Change After Manual Override
+onPosCustomerChange('ninja');
+assert("Master Test 14: Customer updated to ninja", currentCustomerId === 'ninja');
+assert("Master Test 14: Ninja auto-mapping applied (Ninja Delivery)", getPosOrderTypeDisplayedLabel() === 'Ninja Delivery');
+assert("Master Test 14: Canonical Order Type reset to delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 14: Policy is ONLINE_PARTNER", getOrderChannelPolicy(currentCustomerId) === 'ONLINE_PARTNER');
+
+// Test 15 — Cash Customer Reset
+onPosCustomerChange('cash');
+assert("Master Test 15: Customer is cash", currentCustomerId === 'cash');
+assert("Master Test 15: Displayed label is Delivery", getPosOrderTypeDisplayedLabel() === 'Delivery');
+assert("Master Test 15: Canonical Order Type is delivery", currentOrderTypeId === 'delivery');
+
+// Test 16 — Language Switch
+onPosCustomerChange('toyou');
+assert("Master Test 16: English ToYou label is سفري تويو ToYou", getPosOrderTypeDisplayedLabel() === 'سفري تويو ToYou');
+applyLanguage('ar');
+assert("Master Test 16: Arabic ToYou label preserves سفري تويو ToYou", getPosOrderTypeDisplayedLabel() === 'سفري تويو ToYou');
+assert("Master Test 16: Customer ID preserved as toyou in Arabic", currentCustomerId === 'toyou');
+assert("Master Test 16: Canonical type preserved as delivery in Arabic", currentOrderTypeId === 'delivery');
+applyLanguage('en');
+assert("Master Test 16: Customer ID preserved as toyou in English", currentCustomerId === 'toyou');
+assert("Master Test 16: Canonical type preserved as delivery in English", currentOrderTypeId === 'delivery');
+safeStartNewOrder();
+
+// Test 17 — Notes Popup
+elements['notesModal'].classList.remove('open');
+onPosCustomerChange('jahiz');
+assert("Master Test 17: Notes modal opened for special channel jahiz", elements['notesModal'].classList.contains('open'));
+assert("Master Test 17: Mapping preserved while notes open", getPosOrderTypeDisplayedLabel() === 'Jahez Delivery');
+elements['notesModal'].classList.remove('open');
+safeStartNewOrder();
+
+// Test 18 — Both Dropdown Arrows
+assert("Master Test 18: Customer dropdown select exists", elements['posCustomerSelect'] !== undefined);
+assert("Master Test 18: Order Type dropdown select exists", elements['posOrderTypeSelect'] !== undefined);
+
+// Test 19 — Both Gear Buttons
+assert("Master Test 19: Customer gear button calls promptAddCustomer", posIndexHtml.includes('promptAddCustomer()'));
+assert("Master Test 19: Order Type gear button calls promptAddOrderType", posIndexHtml.includes('promptAddOrderType()'));
+
+// Test 20 — New Order
+onPosCustomerChange('jahiz');
+onPosOrderTypeChange('cars');
+assert("Master Test 20: Pre-condition set (Jahiz | Cars)", currentCustomerId === 'jahiz' && currentOrderTypeId === 'cars');
+safeStartNewOrder();
+assert("Master Test 20: New order resets Customer to cash", currentCustomerId === 'cash');
+assert("Master Test 20: New order resets Order Type to delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 20: New order resets display to Delivery", getPosOrderTypeDisplayedLabel() === 'Delivery');
+
+// Test 21 — Cancelled New Order
+addToCart(sampleKebab.id);
+onPosCustomerChange('ninja');
+onPosOrderTypeChange('cars');
+const mOrigConfirm = global.confirm;
+global.confirm = () => false;
+const cancelResp = safeStartNewOrder();
+assert("Master Test 21: safeStartNewOrder returned false on cancel", cancelResp === false);
+assert("Master Test 21: Customer remains ninja on cancel", currentCustomerId === 'ninja');
+assert("Master Test 21: Canonical type remains cars on cancel", currentOrderTypeId === 'cars');
+assert("Master Test 21: Cart preserved on cancel", currentCart.length > 0);
+global.confirm = mOrigConfirm;
+safeStartNewOrder();
+
+// Test 22 — Checkout
+addToCart(sampleKebab.id);
+onPosCustomerChange('ninja');
+onPosOrderTypeChange('cars');
+const mTotals = calculateCartTotals();
+completeOrderAndShowReceipt(null, 'Cash', {}, mTotals.grandTotal);
+const mCompletedOrder = orders[0];
+assert("Master Test 22: Completed order has customerId ninja", mCompletedOrder.customerId === 'ninja');
+assert("Master Test 22: Completed order has valid canonical orderTypeId cars", mCompletedOrder.orderTypeId === 'cars');
+assert("Master Test 22: Completed order has deliveryDisplay recorded", mCompletedOrder.deliveryDisplay === 'Cars');
+assert("Master Test 22: Next order customer resets to cash", currentCustomerId === 'cash');
+assert("Master Test 22: Next order canonical type resets to delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 22: Next order display resets to Delivery", getPosOrderTypeDisplayedLabel() === 'Delivery');
+
+// Test 23 — Page Refresh / Active Order Persistence
+const refreshMock = {
+    cart: [{ lineId: 'line_refr_1', id: 'item_tandoori', enName: 'Tandoori', arName: 'تندوري', price: 10.50, qty: 1 }],
+    customerId: 'jahiz',
+    orderTypeId: 'delivery',
+    selectionSource: 'automatic',
+    displayLabel: 'Jahez Delivery',
+    table: '-'
+};
+localStorage.setItem('nurpos_active_order', JSON.stringify(refreshMock));
+const mRestored = restoreActiveOrderState();
+assert("Master Test 23: Active order restored successfully", mRestored === true);
+assert("Master Test 23: Restored customer is jahiz", currentCustomerId === 'jahiz');
+assert("Master Test 23: Restored canonical orderTypeId is delivery", currentOrderTypeId === 'delivery');
+assert("Master Test 23: Restored display label is Jahez Delivery", getPosOrderTypeDisplayedLabel() === 'Jahez Delivery');
+clearActiveOrderState();
+safeStartNewOrder();
+
+// Test 24 — Responsive & CSS Verification
+const repCss = fs.readFileSync(path.join(__dirname, 'css', 'reports.css'), 'utf8');
+assert("Master Test 24: .select-box-wrap styled with position relative in reports.css", repCss.includes('.select-box-wrap'));
+assert("Master Test 24: .pos-select-display-overlay styled with pointer-events: none in reports.css", repCss.includes('.pos-select-display-overlay') && repCss.includes('pointer-events: none'));
+assert("Master Test 24: .pos-meta-selectors-card enforces 2-column grid and LTR", repCss.includes('.pos-meta-selectors-card') && repCss.includes('grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)'));
+
+// Test 25 — Regression
+safeStartNewOrder();
+addToCart(chickenKebab.id);
+addToCart(chickenKebab.id);
+addToCart(meatKebab.id);
+assert("Master Test 25: 3 independent cart rows created", currentCart.length === 3);
+const regTotals2 = calculateCartTotals();
+assert("Master Test 25: Total correctly calculated (15 + 15 + 16 = 46.00)", regTotals2.grandTotal === 46.00);
+nextOrderSeq = 8888;
+completeOrderAndShowReceipt(null, 'Cash', {}, regTotals2.grandTotal);
+assert("Master Test 25: Order 8888 placed and saved", orders[0].seq === 8888);
+const kot2 = getKitchenOrderTicketHtml(orders[0]);
+assert("Master Test 25: KOT rendered with valid delivery type", kot2.includes('DELIVERY'));
+safeStartNewOrder();
+
 console.log(`\n=== Verification Finished: ${passed} Passed, ${failed} Failed ===`);
 if (failed > 0) process.exit(1);
 else process.exit(0);

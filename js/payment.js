@@ -373,6 +373,8 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
         customerId: currentCustomerId,
         orderType: resolvedOrderTypeName,
         orderTypeId: currentOrderTypeId,
+        selectionSource: (typeof orderTypeSelectionSource !== 'undefined') ? orderTypeSelectionSource : 'default',
+        deliveryDisplay: (typeof getPosOrderTypeDisplayedLabel === 'function') ? getPosOrderTypeDisplayedLabel() : resolvedOrderTypeName,
         notes: currentOrderNotes,
         phone: currentClientPhone,
         status: 'new',
@@ -446,6 +448,8 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
     currentCustomerId = 'cash';
     currentOrderTypeId = 'delivery';
     currentOrderType = 'delivery';
+    if (typeof orderTypeSelectionSource !== 'undefined') orderTypeSelectionSource = 'default';
+    if (typeof orderTypeDisplayLabel !== 'undefined') orderTypeDisplayLabel = null;
     if (typeof clearActiveOrderState === 'function') clearActiveOrderState();
     if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
     if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();

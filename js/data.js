@@ -328,6 +328,116 @@ const DEFAULT_CUSTOMERS = [
     { id: "mosque", nameAr: "عميل مسجد", nameEn: "عميل مسجد" }
 ];
 
+/* Centralized Customer-to-Delivery Automatic Mapping
+   Separates canonical Order Type ID from the partner-specific displayed label.
+   Dropdown 2 manually selectable options remain strictly the 5 canonical types. */
+const CUSTOMER_DELIVERY_MAPPING = {
+    cash: {
+        orderTypeId: 'delivery',
+        displayEn: 'Delivery',
+        displayAr: 'توصيل',
+        policy: 'NORMAL',
+        source: 'verified_reference'
+    },
+    hungerstation: {
+        orderTypeId: 'delivery',
+        displayEn: 'Hungerstation',
+        displayAr: 'Hungerstation',
+        policy: 'ONLINE_PARTNER',
+        source: 'verified_reference'
+    },
+    jahiz: {
+        orderTypeId: 'delivery',
+        displayEn: 'Jahez Delivery',
+        displayAr: 'Jahez Delivery',
+        policy: 'ONLINE_PARTNER',
+        source: 'verified_reference'
+    },
+    ninja: {
+        orderTypeId: 'delivery',
+        displayEn: 'Ninja Delivery',
+        displayAr: 'Ninja Delivery',
+        policy: 'ONLINE_PARTNER',
+        source: 'verified_reference'
+    },
+    management: {
+        orderTypeId: 'delivery',
+        displayEn: 'Management Staff',
+        displayAr: 'Management Staff',
+        policy: 'STAFF_EXPENSE',
+        source: 'verified_reference'
+    },
+    keeta: {
+        orderTypeId: 'delivery',
+        displayEn: 'keeta Delivery',
+        displayAr: 'keeta Delivery',
+        policy: 'ONLINE_PARTNER',
+        source: 'verified_reference'
+    },
+    toyou: {
+        orderTypeId: 'delivery',
+        displayEn: 'سفري تويو ToYou',
+        displayAr: 'سفري تويو ToYou',
+        policy: 'ONLINE_PARTNER',
+        source: 'verified_reference'
+    },
+    thechefz: {
+        orderTypeId: 'delivery',
+        displayEn: 'سفري ذا شفز The chefz',
+        displayAr: 'سفري ذا شفز The chefz',
+        policy: 'ONLINE_PARTNER',
+        source: 'reference_bidi_pattern'
+    },
+    mrsool: {
+        orderTypeId: 'delivery',
+        displayEn: 'Mrsool',
+        displayAr: 'مرسول',
+        policy: 'ONLINE_PARTNER',
+        source: 'existing_configuration'
+    },
+    mosque: {
+        orderTypeId: 'delivery',
+        displayEn: 'Delivery',
+        displayAr: 'توصيل',
+        policy: 'NORMAL',
+        source: 'existing_business_policy'
+    }
+};
+
+function getCustomerDeliveryMapping(customerId) {
+    if (CUSTOMER_DELIVERY_MAPPING && CUSTOMER_DELIVERY_MAPPING[customerId]) {
+        return CUSTOMER_DELIVERY_MAPPING[customerId];
+    }
+    const cust = (typeof customers !== 'undefined' && Array.isArray(customers))
+        ? customers.find(c => c.id === customerId)
+        : null;
+    const policy = (typeof getOrderChannelPolicy === 'function')
+        ? getOrderChannelPolicy(customerId)
+        : 'NORMAL';
+
+    const defaultType = (cust && cust.defaultOrderTypeId) ? cust.defaultOrderTypeId : 'delivery';
+    let labelEn = 'Delivery';
+    let labelAr = 'توصيل';
+
+    if (cust && cust.deliveryDisplayEn) {
+        labelEn = cust.deliveryDisplayEn;
+        labelAr = cust.deliveryDisplayAr || cust.deliveryDisplayEn;
+    } else if (policy === 'ONLINE_PARTNER') {
+        const baseName = (cust && (cust.nameEn || cust.nameAr)) ? (cust.nameEn.split('-')[0].trim()) : 'Partner';
+        labelEn = `${baseName} Delivery`;
+        labelAr = `${baseName} Delivery`;
+    }
+
+    return {
+        orderTypeId: defaultType,
+        displayEn: labelEn,
+        displayAr: labelAr,
+        policy: policy,
+        source: 'fallback'
+    };
+}
+
+
 /* Fixed Allowed POS Order Types (Exact 5 options in required order) */
 const POS_ORDER_TYPES = [
     { id: "delivery", nameEn: "Delivery", nameAr: "توصيل", icon: "fa-motorcycle" },
