@@ -44,16 +44,33 @@ function generateZatcaTlvBase64(seller, vatNo, timeStr, totalStr, taxStr) {
 function renderReceipt(order) {
     if (!order) return;
 
-    const storeNameEn = (storeSettings.nameEn || 'NUR FOODES').toUpperCase();
-    const companyAr = storeSettings.companyNameAr || storeSettings.companyName || 'شركة صح للتجارة';
-    document.getElementById('recStoreName').innerText = storeNameEn;
-    document.getElementById('recCompanyName').innerText = companyAr;
-    document.getElementById('recVatNumber').innerText = `VAT: ${storeSettings.vatNumber || '300987654300003'}`;
+    const storeNameEn = (order.storeNameEn || (typeof storeSettings !== 'undefined' && storeSettings.nameEn) || 'NUR FOODES').toUpperCase();
+    const companyAr = order.companyNameAr || order.companyName || (typeof storeSettings !== 'undefined' && (storeSettings.companyNameAr || storeSettings.companyName)) || 'شركة صح للتجارة';
+    const vatNum = order.vatNumber || (typeof storeSettings !== 'undefined' && storeSettings.vatNumber) || '300987654300003';
+    
+    const storeEl = document.getElementById('recStoreName');
+    if (storeEl) storeEl.innerText = storeNameEn;
+    const compEl = document.getElementById('recCompanyName');
+    if (compEl) compEl.innerText = companyAr;
+    const vatEl = document.getElementById('recVatNumber');
+    if (vatEl) vatEl.innerText = `VAT: ${vatNum}`;
     
     // Clean order number without leading #
     const rawOrderNum = order.id || `ORD-${order.seq || '1013'}`;
-    document.getElementById('recOrderNum').innerText = rawOrderNum.replace(/^#/, '');
-    document.getElementById('recDateTime').innerText = order.dateFormatted || new Date().toLocaleString('en-US');
+    const orderNumEl = document.getElementById('recOrderNum');
+    if (orderNumEl) orderNumEl.innerText = String(rawOrderNum).replace(/^#/, '');
+
+    // Historical Date/Time: prefer saved order.dateFormatted or format original order.date
+    let dtDisplay = order.dateFormatted;
+    if (!dtDisplay && order.date) {
+        try {
+            dtDisplay = new Date(order.date).toLocaleString((typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'ar-SA' : 'en-US');
+        } catch (e) {
+            dtDisplay = String(order.date);
+        }
+    }
+    const dtEl = document.getElementById('recDateTime');
+    if (dtEl) dtEl.innerText = dtDisplay || new Date().toLocaleString('en-US');
 
     // Clean order type display (matching Image 1 e.g. DINE-IN (Table 1))
     let typeDisplay;
@@ -71,8 +88,13 @@ function renderReceipt(order) {
     } else {
         typeDisplay = String(order.type || order.orderType || 'DINE-IN').toUpperCase();
     }
-    document.getElementById('recOrderType').innerText = typeDisplay;
-    document.getElementById('recCashier').innerText = order.cashier || currentUser.name || 'Nawaf Saeed';
+    const typeEl = document.getElementById('recOrderType');
+    if (typeEl) typeEl.innerText = typeDisplay;
+
+    const cashierEl = document.getElementById('recCashier');
+    if (cashierEl) {
+        cashierEl.innerText = order.cashier || (typeof currentUser !== 'undefined' && currentUser ? (currentUser.name || currentUser.nameEn) : 'Cashier') || 'Nawaf Saeed';
+    }
 
     const tbody = document.getElementById('recItemsTbody');
     if (tbody) {
@@ -81,14 +103,14 @@ function renderReceipt(order) {
                 ? item.addons.reduce((sum, a) => sum + (Number(a.price) || 0), 0)
                 : 0;
             const unitPriceWithAddons = Number(item.price) + addonsTotal;
-            const lineTotal = unitPriceWithAddons * Number(item.qty);
+            const lineTotal = item.total !== undefined ? Number(item.total) : (unitPriceWithAddons * Number(item.qty));
 
             const addonsHtml = (item.addons && item.addons.length)
                 ? `<div class="rec-addon-line">+ ${item.addons.map(a => `${escapeHtml(a.nameAr || a.nameEn)} (+${Number(a.price).toFixed(2)})`).join(', ')}</div>`
                 : '';
             const modifiersHtml = (item.modifiers && item.modifiers.length)
                 ? item.modifiers.map(m => {
-                    const label = escapeHtml((currentLang === 'ar' && m.labelAr) ? m.labelAr : (m.labelEn || m.labelAr || ''));
+                    const label = escapeHtml(((typeof currentLang !== 'undefined' && currentLang === 'ar') && m.labelAr) ? m.labelAr : (m.labelEn || m.labelAr || ''));
                     const qtyText = (m.qty && m.qty > 1) ? ` x${m.qty}` : '';
                     const priceText = (Number(m.price) > 0) ? ` (+${Number(m.price).toFixed(2)})` : '';
                     return `<div class="rec-addon-line" style="color: #555; padding-inline-start: 12px;">+ ${label}${qtyText}${priceText}</div>`;
@@ -122,15 +144,28 @@ function renderReceipt(order) {
         }).join('');
     }
 
-    document.getElementById('recSubtotal').innerText = (order.subtotal || 0).toFixed(2);
-    document.getElementById('recTax').innerText = (order.tax || 0).toFixed(2);
-    document.getElementById('recDiscount').innerText = (order.discount || 0).toFixed(2);
+    const subEl = document.getElementById('recSubtotal');
+    if (subEl) subEl.innerText = (order.subtotal !== undefined ? Number(order.subtotal) : 0).toFixed(2);
+    
+    const taxEl = document.getElementById('recTax');
+    if (taxEl) taxEl.innerText = (order.tax !== undefined ? Number(order.tax) : 0).toFixed(2);
+    
+    const discEl = document.getElementById('recDiscount');
+    if (discEl) discEl.innerText = (order.discount !== undefined ? Number(order.discount) : 0).toFixed(2);
+
     // Support both order.grandTotal (from payment.js) and order.total fallback
     const grandTotal = Number(order.grandTotal !== undefined ? order.grandTotal : (order.total || 0));
-    document.getElementById('recGrandTotal').innerText = `SAR ${grandTotal.toFixed(2)}`;
-    document.getElementById('recMethod').innerText = order.method || order.paymentMethod || 'Cash';
-    document.getElementById('recPaid').innerText = Number(order.paid || order.amountPaid || grandTotal || 0).toFixed(2);
-    document.getElementById('recChange').innerText = Number(order.change || order.changeReturn || 0).toFixed(2);
+    const grandEl = document.getElementById('recGrandTotal');
+    if (grandEl) grandEl.innerText = `SAR ${grandTotal.toFixed(2)}`;
+
+    const methodEl = document.getElementById('recMethod');
+    if (methodEl) methodEl.innerText = order.method || order.payMethod || order.paymentMethod || 'Cash';
+
+    const paidEl = document.getElementById('recPaid');
+    if (paidEl) paidEl.innerText = Number(order.paid !== undefined ? order.paid : (order.amountPaid !== undefined ? order.amountPaid : grandTotal || 0)).toFixed(2);
+
+    const changeEl = document.getElementById('recChange');
+    if (changeEl) changeEl.innerText = Number(order.change !== undefined ? order.change : (order.changeReturn || 0)).toFixed(2);
 
     // Net before VAT display
     const netEl = document.getElementById('recNet');
@@ -139,10 +174,27 @@ function renderReceipt(order) {
         netEl.innerText = netVal.toFixed(2);
     }
 
-    const trDisplay = order.taxRate !== undefined && order.taxRate !== null ? order.taxRate : (storeSettings.taxRate !== undefined ? storeSettings.taxRate : 15);
+    const trDisplay = order.taxRate !== undefined && order.taxRate !== null ? order.taxRate : ((typeof storeSettings !== 'undefined' && storeSettings.taxRate !== undefined) ? storeSettings.taxRate : 15);
     const taxLbl = document.getElementById('recTaxLabel');
     if (taxLbl) {
-        taxLbl.innerText = currentLang === 'ar' ? `ضريبة القيمة المضافة المتضمنة (${trDisplay}%):` : `Included VAT (${trDisplay}%):`;
+        taxLbl.innerText = (typeof currentLang !== 'undefined' && currentLang === 'ar') ? `ضريبة القيمة المضافة المتضمنة (${trDisplay}%):` : `Included VAT (${trDisplay}%):`;
+    }
+
+    // Demo / Sample Badge for explicit non-fiscal receipts
+    let demoBadge = document.getElementById('recDemoBadge');
+    if (order.isDemo || order.isSample) {
+        if (!demoBadge) {
+            demoBadge = document.createElement('div');
+            demoBadge.id = 'recDemoBadge';
+            demoBadge.className = 'rec-demo-badge';
+            demoBadge.style.cssText = 'border: 1px dashed #d97706; background: #fffbeb; color: #b45309; font-size: 10px; font-weight: 800; text-align: center; padding: 3px 6px; margin: 4px 0; border-radius: 4px;';
+            const hdr = document.querySelector('.receipt-header') || document.getElementById('thermalReceiptNode');
+            if (hdr) hdr.appendChild(demoBadge);
+        }
+        demoBadge.style.display = 'block';
+        demoBadge.innerText = (typeof currentLang !== 'undefined' && currentLang === 'ar') ? '*** فاتورة تجريبية - ليست إشعاراً ضريبياً ***' : '*** SAMPLE / DEMO - NOT A TAX RECEIPT ***';
+    } else if (demoBadge) {
+        demoBadge.style.display = 'none';
     }
 
     // Dynamic ZATCA-compliant QR Code generation
@@ -150,11 +202,11 @@ function renderReceipt(order) {
     if (qrContainer) {
         qrContainer.innerHTML = '';
         const zatcaBase64 = generateZatcaTlvBase64(
-            storeSettings.companyName || storeSettings.nameAr || 'Nur Foodes',
-            storeSettings.vatNumber || '300987654300003',
+            order.companyName || order.companyNameAr || (typeof storeSettings !== 'undefined' && (storeSettings.companyName || storeSettings.nameAr)) || 'Nur Foodes',
+            order.vatNumber || (typeof storeSettings !== 'undefined' && storeSettings.vatNumber) || '300987654300003',
             order.date || new Date().toISOString(),
             grandTotal.toFixed(2),
-            (order.tax || 0).toFixed(2)
+            (order.tax !== undefined ? Number(order.tax) : 0).toFixed(2)
         );
 
         try {
@@ -167,12 +219,28 @@ function renderReceipt(order) {
                     colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.M
                 });
+
+                // Ensure an <img> element with dataURL exists for reliable iframe outerHTML printing
+                setTimeout(() => {
+                    try {
+                        const cvs = qrContainer.querySelector('canvas');
+                        if (cvs && typeof cvs.toDataURL === 'function') {
+                            let img = qrContainer.querySelector('img');
+                            if (!img) {
+                                img = document.createElement('img');
+                                qrContainer.appendChild(img);
+                            }
+                            img.src = cvs.toDataURL('image/png');
+                            img.style.display = 'block';
+                            img.style.margin = '0 auto';
+                        }
+                    } catch (qe) {}
+                }, 50);
             }
         } catch (e) {
             console.warn("QR Code Generation Error:", e);
         }
     }
-
 }
 
 function printReceiptDirect() {

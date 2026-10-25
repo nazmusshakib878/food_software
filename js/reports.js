@@ -27,6 +27,8 @@ function ensureSeedOrders() {
         {
             id: "ORD-1001",
             seq: 1001,
+            isDemo: true,
+            isSample: true,
             date: new Date(Date.now() - 3600000 * 2).toISOString(),
             customer: "عميل نقدي",
             customerId: "cash",
@@ -49,6 +51,8 @@ function ensureSeedOrders() {
         {
             id: "ORD-1002",
             seq: 1002,
+            isDemo: true,
+            isSample: true,
             date: new Date(Date.now() - 3600000 * 5).toISOString(),
             customer: "هنقرستيشن",
             customerId: "hungerstation",
@@ -71,6 +75,8 @@ function ensureSeedOrders() {
         {
             id: "ORD-1003",
             seq: 1003,
+            isDemo: true,
+            isSample: true,
             date: new Date(Date.now() - 3600000 * 12).toISOString(),
             customer: "جاهز",
             customerId: "jahiz",
@@ -91,6 +97,8 @@ function ensureSeedOrders() {
         {
             id: "ORD-1004",
             seq: 1004,
+            isDemo: true,
+            isSample: true,
             date: new Date(Date.now() - 3600000 * 24).toISOString(),
             customer: "طاقم الإدارة",
             customerId: "management",
@@ -112,6 +120,8 @@ function ensureSeedOrders() {
         {
             id: "ORD-1005",
             seq: 1005,
+            isDemo: true,
+            isSample: true,
             date: new Date(Date.now() - 3600000 * 48).toISOString(),
             customer: "عميل نقدي",
             customerId: "cash",
@@ -325,21 +335,31 @@ function renderInvoiceReports(container) {
                                 <th>${currentLang === 'ar' ? 'الكاشير' : 'Cashier'}</th>
                                 <th>${currentLang === 'ar' ? 'التاريخ والوقت' : 'Date / Time'}</th>
                                 <th class="text-end">${currentLang === 'ar' ? 'الإجمالي' : 'Total'}</th>
+                                <th class="text-center col-action-print no-print">${currentLang === 'ar' ? 'الإجراء' : 'Action'}</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${filtered.length === 0 ? `
-                                <tr><td colspan="8" class="text-center py-4 text-muted">${currentLang === 'ar' ? 'لا توجد فواتير في هذه الفترة' : 'No invoices found'}</td></tr>
+                                <tr><td colspan="9" class="text-center py-4 text-muted">${currentLang === 'ar' ? 'لا توجد فواتير في هذه الفترة' : 'No invoices found'}</td></tr>
                             ` : filtered.map((o, idx) => `
                                 <tr>
                                     <td>${idx + 1}</td>
                                     <td><strong>#${escapeHtml(o.seq || o.id)}</strong></td>
                                     <td><span class="badge-subtle">${escapeHtml(o.orderType || 'محلي')}</span></td>
-                                    <td><span class="badge-subtle">${escapeHtml(o.payMethod || 'Cash')}</span></td>
+                                    <td><span class="badge-subtle">${escapeHtml(o.payMethod || o.method || 'Cash')}</span></td>
                                     <td>${escapeHtml(o.customer || 'عميل نقدي')}</td>
                                     <td>${escapeHtml(o.cashier || 'الكاشير')}</td>
                                     <td>${o.date ? new Date(o.date).toLocaleString(currentLang === 'ar' ? 'ar-SA' : 'en-US') : '-'}</td>
-                                    <td class="text-end fw-bold">${formatCurrency(o.grandTotal)}</td>
+                                    <td class="text-end fw-bold">${formatCurrency(o.grandTotal || o.total || 0)}</td>
+                                    <td class="text-center col-action-print no-print">
+                                        <button type="button" 
+                                                class="btn btn-sm btn-teal btn-row-invoice-print" 
+                                                onclick="reprintSavedInvoice('${escapeHtml(o.id)}', event)"
+                                                data-invoice-id="${escapeHtml(o.id)}"
+                                                title="${currentLang === 'ar' ? 'طباعة' : 'Print'}">
+                                            <i class="fa-solid fa-print"></i> <span>${currentLang === 'ar' ? 'طباعة' : 'Print'}</span>
+                                        </button>
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -348,6 +368,160 @@ function renderInvoiceReports(container) {
             </div>
         </div>
     `;
+}
+
+// Debounce lock for historical invoice reprinting
+let isInvoiceReprinting = false;
+
+/**
+ * Historical Invoice Receipt Reprinting
+ * Resolves the exact saved order by its persistent identifier, validates permissions,
+ * scope, and data integrity, renders ONLY that invoice's customer receipt,
+ * and routes it through the configured customer receipt printer.
+ *
+ * STRICTLY READ-ONLY: Never alters orders, checkout sequence, cart, payments, or stock.
+ */
+async function reprintSavedInvoice(invoiceId, event) {
+    if (event && typeof event.stopPropagation === 'function') {
+        event.stopPropagation();
+    }
+
+    // 1. Prevent duplicate submissions from rapid tapping
+    if (isInvoiceReprinting) {
+        console.warn('[Reprint] Print job already in progress, please wait...');
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? 'جاري تجهيز أمر الطباعة، يرجى الانتظار...' : 'Print job is already processing, please wait...', 'warning');
+        }
+        return;
+    }
+
+    // 2. Validate input ID
+    if (!invoiceId) {
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? 'خطأ: لم يتم تحديد رقم الفاتورة' : 'Error: No invoice ID provided', 'danger');
+        }
+        return;
+    }
+
+    isInvoiceReprinting = true;
+
+    try {
+        // 3. Resolve exact saved invoice from authoritative orders collection
+        if (typeof ensureSeedOrders === 'function' && (!orders || orders.length === 0)) {
+            ensureSeedOrders();
+        }
+        const allOrders = (typeof orders !== 'undefined' && Array.isArray(orders)) ? orders : [];
+        const targetOrder = allOrders.find(o => String(o.id) === String(invoiceId) || (o.seq && String(o.seq) === String(invoiceId)));
+
+        if (!targetOrder) {
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? `تعذر العثور على الفاتورة (${escapeHtml(String(invoiceId))})` : `Invoice record (${escapeHtml(String(invoiceId))}) not found`, 'danger');
+            }
+            return;
+        }
+
+        // 4. Validate existing permissions and company/branch scope
+        if (typeof currentUser !== 'undefined' && currentUser) {
+            if (currentUser.role && !['admin', 'manager', 'cashier', 'staff'].includes(currentUser.role)) {
+                if (typeof showToast === 'function') {
+                    showToast(currentLang === 'ar' ? 'غير مصرح لك بإعادة طباعة الفواتير' : 'Unauthorized: Permission denied for reprinting invoices', 'danger');
+                }
+                return;
+            }
+            if (Array.isArray(currentUser.permissions) && !currentUser.permissions.includes('print_invoices') && !currentUser.permissions.includes('all')) {
+                if (typeof showToast === 'function') {
+                    showToast(currentLang === 'ar' ? 'غير مصرح لك بإعادة طباعة الفواتير' : 'Unauthorized: Insufficient permissions to reprint invoice', 'danger');
+                }
+                return;
+            }
+            if (currentUser.branchId && targetOrder.branchId && currentUser.branchId !== targetOrder.branchId && currentUser.role !== 'admin') {
+                if (typeof showToast === 'function') {
+                    showToast(currentLang === 'ar' ? 'لا يمكن طباعة فاتورة تابعة لفرع آخر' : 'Unauthorized: Invoice belongs to a different branch', 'danger');
+                }
+                return;
+            }
+            if (currentUser.companyId && targetOrder.companyId && currentUser.companyId !== targetOrder.companyId && currentUser.role !== 'admin') {
+                if (typeof showToast === 'function') {
+                    showToast(currentLang === 'ar' ? 'لا يمكن طباعة فاتورة تابعة لشركة أخرى' : 'Unauthorized: Invoice belongs to a different company', 'danger');
+                }
+                return;
+            }
+        }
+
+        // 5. Validate historical invoice completeness and integrity
+        if (!targetOrder.items || !Array.isArray(targetOrder.items) || targetOrder.items.length === 0) {
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? 'بيانات الفاتورة غير مكتملة: لا توجد عناصر محفوظة' : 'Incomplete invoice data: No items found in saved record', 'danger');
+            }
+            return;
+        }
+        const orderTotal = Number(targetOrder.grandTotal !== undefined ? targetOrder.grandTotal : (targetOrder.total !== undefined ? targetOrder.total : NaN));
+        if (isNaN(orderTotal)) {
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? 'خطأ في بيانات الفاتورة: إجمالي المبلغ غير صالح' : 'Invalid invoice data: Grand total is missing or invalid', 'danger');
+            }
+            return;
+        }
+
+        // 6. Demo / Sample data notice
+        if (targetOrder.isDemo || targetOrder.isSample) {
+            console.info('[Reprint] Historical invoice is flagged as sample/demo data:', targetOrder.id);
+        }
+
+        // 7. Render Customer Receipt while strictly preserving lastCompletedOrder
+        const previousLastCompleted = (typeof lastCompletedOrder !== 'undefined') ? lastCompletedOrder : null;
+
+        if (typeof renderReceipt !== 'function') {
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? 'خدمة تجهيز الإيصالات غير متاحة' : 'Receipt rendering function unavailable', 'danger');
+            }
+            return;
+        }
+
+        renderReceipt(targetOrder);
+
+        // Guarantee lastCompletedOrder is never mutated by reprint
+        if (typeof lastCompletedOrder !== 'undefined') {
+            lastCompletedOrder = previousLastCompleted;
+        }
+
+        // 8. Locate thermal receipt template node
+        const thermalNode = document.getElementById('thermalReceiptNode');
+        if (!thermalNode) {
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? 'تعذر العثور على قالب الإيصال الحراري' : 'Thermal receipt template node not found', 'danger');
+            }
+            return;
+        }
+
+        // 9. Dispatch receipt to configured Customer Receipt printing path
+        const invoiceLabel = `Invoice #${targetOrder.seq || (targetOrder.id ? String(targetOrder.id).replace(/^#/, '') : 'ORD')}`;
+        if (typeof routePrintJob === 'function') {
+            await routePrintJob('cashier', thermalNode.outerHTML, invoiceLabel);
+        } else if (typeof printReceiptDirect === 'function') {
+            printReceiptDirect();
+        } else if (typeof window !== 'undefined' && typeof window.print === 'function') {
+            window.print();
+        } else {
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? 'خدمة الطباعة غير متوفرة' : 'Printing service unavailable', 'warning');
+            }
+        }
+    } catch (err) {
+        console.error('[Reprint] Exception during invoice reprinting:', err);
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? 'حدث خطأ أثناء محاولة طباعة الفاتورة' : 'Error occurred while reprinting invoice', 'danger');
+        }
+    } finally {
+        isInvoiceReprinting = false;
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.reprintSavedInvoice = reprintSavedInvoice;
+}
+if (typeof global !== 'undefined') {
+    global.reprintSavedInvoice = reprintSavedInvoice;
 }
 
 // 2. ITEMS REPORT

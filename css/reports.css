@@ -934,7 +934,7 @@
 }
 
 @media print {
-    .app-topbar, .pos-bottom-nav-bar, .side-drawer, .report-header-actions, .btn-secondary-pos, .pos-top-actions-bar {
+    .app-topbar, .pos-bottom-nav-bar, .side-drawer, .report-header-actions, .btn-secondary-pos, .pos-top-actions-bar, .col-action-print, .btn-row-invoice-print, .no-print {
         display: none !important;
     }
     .reports-screen-container {
@@ -1085,4 +1085,57 @@
 .btn-teal-settings:active {
     transform: scale(0.98) !important;
 }
+
+/* 13. Individual Invoice Row Print Action */
+.report-table th.col-action-print,
+.report-table td.col-action-print {
+    text-align: center !important;
+    width: 95px !important;
+    min-width: 95px !important;
+    vertical-align: middle !important;
+}
+
+.btn-row-invoice-print {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2) !important;
+    transition: all 0.2s ease-in-out !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
+    min-height: 30px !important;
+    touch-action: manipulation !important;
+    user-select: none !important;
+}
+
+.btn-row-invoice-print:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%) !important;
+    box-shadow: 0 4px 8px rgba(13, 148, 136, 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+.btn-row-invoice-print:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 2px rgba(13, 148, 136, 0.2) !important;
+}
+
+.btn-row-invoice-print:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+.btn-row-invoice-print i {
+    font-size: 11px !important;
+}
+
 
