@@ -1050,10 +1050,10 @@ assert("Section 22 Test 8: Customer select present in markup", posIndexHtml.incl
 assert("Section 22 Test 8: Order Type select present in markup", posIndexHtml.includes('id="posOrderTypeSelect"'));
 assert("Section 22 Test 8: Customer gear button present", posIndexHtml.includes('onclick="promptAddCustomer()"'));
 assert("Section 22 Test 8: Order Type gear button present", posIndexHtml.includes('onclick="promptAddOrderType()"'));
-// Test promptAddOrderType feedback and preservation of fixed 5 options
-const prevOtCount = orderTypes.length;
+// Test promptAddOrderType opens Default Delivery Type popup and preservation of fixed 5 options
 promptAddOrderType();
-assert("Section 22 Test 8: promptAddOrderType added item to data collection", orderTypes.length === prevOtCount + 1);
+assert("Section 22 Test 8: promptAddOrderType opens Default Delivery Type popup", elements['defaultDeliveryTypeModal'].classList.contains('open'));
+closeDefaultDeliveryTypeModal();
 otOptions = parseOptions(elements['posOrderTypeSelect'].innerHTML);
 assert("Section 22 Test 8: POS dropdown remains strictly 5 options after gear action", otOptions.length === 5);
 
@@ -1618,6 +1618,149 @@ assert("Master Test 25: Order 8888 placed and saved", orders[0].seq === 8888);
 const kot2 = getKitchenOrderTicketHtml(orders[0]);
 assert("Master Test 25: KOT rendered with valid delivery type", kot2.includes('DELIVERY'));
 safeStartNewOrder();
+
+// --- Running Section 24: 16 Mandatory Tests for Customer & Order Type Gear Popups ---
+console.log("\n--- Running Section 24: 16 Mandatory Tests for Customer & Order Type Gear Popups ---");
+
+// 1. Customer Gear opens Default Client Type
+const clientModalEl = document.getElementById('defaultClientTypeModal');
+clientModalEl.classList.remove('open');
+promptAddCustomer();
+assert("Mandatory Test 1: Customer Gear opens Default Client Type modal", clientModalEl.classList.contains('open'));
+assert("Mandatory Test 1: Default Client Type modal markup has correct title", posIndexHtml.includes('id="defaultClientTypeModal"') && posIndexHtml.includes('Default Client Type'));
+closeDefaultClientTypeModal();
+
+// 2. Order Type Gear opens Default Delivery Type
+const deliveryModalEl = document.getElementById('defaultDeliveryTypeModal');
+deliveryModalEl.classList.remove('open');
+promptAddOrderType();
+assert("Mandatory Test 2: Order Type Gear opens Default Delivery Type modal", deliveryModalEl.classList.contains('open'));
+assert("Mandatory Test 2: Default Delivery Type modal markup has correct title", posIndexHtml.includes('id="defaultDeliveryTypeModal"') && posIndexHtml.includes('Default Delivery Type'));
+closeDefaultDeliveryTypeModal();
+
+// 3. Customer popup contains the 10 reference Customer identities
+openDefaultClientTypeModal();
+const clientSelectEl = document.getElementById('defaultClientTypeSelect');
+const clientOpts = parseOptions(clientSelectEl.innerHTML);
+const expected10Clients = ['cash', 'hungerstation', 'jahiz', 'ninja', 'management', 'keeta', 'mrsool', 'toyou', 'thechefz', 'mosque'];
+assert("Mandatory Test 3: Customer popup contains exactly 10 options", clientOpts.length === 10);
+expected10Clients.forEach((id, idx) => {
+    assert(`Mandatory Test 3: Customer popup identity ${idx + 1} is ${id}`, clientOpts.some(o => o.value === id));
+});
+
+// 4. Delivery popup contains exactly the 5 specified options
+openDefaultDeliveryTypeModal();
+const deliverySelectEl = document.getElementById('defaultDeliveryTypeSelect');
+const deliveryOpts = parseOptions(deliverySelectEl.innerHTML);
+const expected5Delivery = ['delivery', 'local', 'receive', 'cars', 'delivery_d'];
+assert("Mandatory Test 4: Delivery popup contains exactly 5 options", deliveryOpts.length === 5);
+expected5Delivery.forEach((id, idx) => {
+    assert(`Mandatory Test 4: Delivery popup option ${idx + 1} is ${id}`, deliveryOpts.some(o => o.value === id));
+});
+
+// 5. Both dropdown arrows work
+assert("Mandatory Test 5: Customer popup dropdown arrow element present", posIndexHtml.includes('default-settings-dropdown-arrow'));
+assert("Mandatory Test 5: Select wrap container present for both popups", posIndexHtml.includes('default-settings-select-wrap'));
+
+// 6. Customer popup Ok saves the selected default
+openDefaultClientTypeModal();
+clientSelectEl.value = 'hungerstation';
+saveDefaultClientType();
+assert("Mandatory Test 6: Customer popup Ok saves selected default to storeSettings", storeSettings.defaultCustomerId === 'hungerstation');
+assert("Mandatory Test 6: Saved default client persisted in storage", localStorageData['nurpos_settings'].includes('"defaultCustomerId":"hungerstation"'));
+assert("Mandatory Test 6: Customer popup closed after saving", !clientModalEl.classList.contains('open'));
+
+// 7. Delivery popup Ok saves the selected default
+openDefaultDeliveryTypeModal();
+deliverySelectEl.value = 'cars';
+saveDefaultDeliveryType();
+assert("Mandatory Test 7: Delivery popup Ok saves selected default to storeSettings", storeSettings.defaultOrderTypeId === 'cars');
+assert("Mandatory Test 7: Saved default delivery persisted in storage", localStorageData['nurpos_settings'].includes('"defaultOrderTypeId":"cars"'));
+assert("Mandatory Test 7: Delivery popup closed after saving", !deliveryModalEl.classList.contains('open'));
+
+// 8. Back closes without saving
+openDefaultClientTypeModal();
+clientSelectEl.value = 'ninja';
+closeDefaultClientTypeModal();
+assert("Mandatory Test 8: Back closes customer popup without saving unsaved changes", storeSettings.defaultCustomerId === 'hungerstation');
+openDefaultDeliveryTypeModal();
+deliverySelectEl.value = 'local';
+closeDefaultDeliveryTypeModal();
+assert("Mandatory Test 8: Back closes delivery popup without saving unsaved changes", storeSettings.defaultOrderTypeId === 'cars');
+
+// 9. Reopening shows the saved default
+openDefaultClientTypeModal();
+assert("Mandatory Test 9: Reopening customer popup shows saved default hungerstation", clientSelectEl.value === 'hungerstation');
+closeDefaultClientTypeModal();
+openDefaultDeliveryTypeModal();
+assert("Mandatory Test 9: Reopening delivery popup shows saved default cars", deliverySelectEl.value === 'cars');
+closeDefaultDeliveryTypeModal();
+
+// 10. Refreshing retains saved settings
+const reloadedSettings = JSON.parse(localStorageData['nurpos_settings']);
+assert("Mandatory Test 10: Refreshing retains saved default client", reloadedSettings.defaultCustomerId === 'hungerstation');
+assert("Mandatory Test 10: Refreshing retains saved default delivery type", reloadedSettings.defaultOrderTypeId === 'cars');
+
+// 11. Opening or saving popup does not reset the active order
+currentCustomerId = 'jahiz';
+currentOrderTypeId = 'local';
+orderTypeSelectionSource = 'manual';
+currentCart = [{ id: 'item_tikka_sauce', qty: 2, price: 2.00, lineId: 'test_line_1' }];
+openDefaultClientTypeModal();
+elements['defaultClientTypeSelect'].value = 'ninja';
+saveDefaultClientType();
+assert("Mandatory Test 11: Active customer jahiz unchanged after popup save", currentCustomerId === 'jahiz');
+assert("Mandatory Test 11: Active order type local unchanged after popup save", currentOrderTypeId === 'local');
+assert("Mandatory Test 11: Active cart preserved", currentCart.length === 1 && currentCart[0].qty === 2);
+openDefaultDeliveryTypeModal();
+elements['defaultDeliveryTypeSelect'].value = 'delivery_d';
+saveDefaultDeliveryType();
+assert("Mandatory Test 11: Active customer jahiz unchanged after delivery popup save", currentCustomerId === 'jahiz');
+assert("Mandatory Test 11: Active order type local unchanged after delivery popup save", currentOrderTypeId === 'local');
+assert("Mandatory Test 11: Active cart still preserved", currentCart.length === 1);
+
+// Clean up test state back to standard defaults for subsequent assertions
+storeSettings.defaultCustomerId = 'cash';
+storeSettings.defaultOrderTypeId = 'delivery';
+persistData();
+safeStartNewOrder();
+
+// 12. No duplicate modal or event handler exists
+const clientModalMatches = (posIndexHtml.match(/id="defaultClientTypeModal"/g) || []).length;
+const deliveryModalMatches = (posIndexHtml.match(/id="defaultDeliveryTypeModal"/g) || []).length;
+assert("Mandatory Test 12: Exactly one Default Client Type modal in DOM", clientModalMatches === 1);
+assert("Mandatory Test 12: Exactly one Default Delivery Type modal in DOM", deliveryModalMatches === 1);
+
+// 13. Both existing main dropdowns remain side by side
+assert("Mandatory Test 13: Main selectors card markup preserved", posIndexHtml.includes('class="pos-meta-selectors-card"'));
+assert("Mandatory Test 13: reports.css enforces 2-column layout", repCss.includes('grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)'));
+assert("Mandatory Test 13: reports.css enforces ltr row direction", repCss.includes('direction: ltr !important'));
+
+// 14. Existing Customer-to-Delivery automatic mapping still behaves exactly as before
+onPosCustomerChange('hungerstation');
+assert("Mandatory Test 14: Hungerstation maps to delivery", currentOrderTypeId === 'delivery');
+assert("Mandatory Test 14: Hungerstation display is Hungerstation", getPosOrderTypeDisplayedLabel() === 'Hungerstation');
+onPosCustomerChange('jahiz');
+assert("Mandatory Test 14: Jahiz maps to delivery", currentOrderTypeId === 'delivery');
+assert("Mandatory Test 14: Jahiz display is Jahez Delivery", getPosOrderTypeDisplayedLabel() === 'Jahez Delivery');
+onPosCustomerChange('cash');
+assert("Mandatory Test 14: Cash maps to delivery", currentOrderTypeId === 'delivery');
+assert("Mandatory Test 14: Cash display is Delivery", getPosOrderTypeDisplayedLabel() === 'Delivery');
+
+// 15. Payment, cart and existing POS workflows are unaffected
+safeStartNewOrder();
+addToCart('item_tikka_sauce');
+assert("Mandatory Test 15: Cart contains added product", currentCart.length === 1);
+const finTotals = calculateCartTotals();
+assert("Mandatory Test 15: Cart totals calculated properly", finTotals.grandTotal === 2.00);
+completeOrderAndShowReceipt(null, 'Cash', {}, finTotals.grandTotal);
+assert("Mandatory Test 15: Payment processed and order created", orders.length > 0);
+assert("Mandatory Test 15: Cart cleared after order completion", currentCart.length === 0);
+
+// 16. Both popups remain usable on mobile, tablet and desktop
+assert("Mandatory Test 16: .default-settings-modal-card responsive width in CSS", repCss.includes('.default-settings-modal-card') && repCss.includes('width: 340px !important') && repCss.includes('max-width: 90vw !important'));
+assert("Mandatory Test 16: Teal Ok and Back buttons styled with .btn-teal-settings", repCss.includes('.btn-teal-settings') && repCss.includes('background: #17a2b8 !important'));
+assert("Mandatory Test 16: Light pink/lavender header in CSS", repCss.includes('.default-settings-modal-header') && repCss.includes('background: #f8f0f8 !important'));
 
 console.log(`\n=== Verification Finished: ${passed} Passed, ${failed} Failed ===`);
 if (failed > 0) process.exit(1);

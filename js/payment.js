@@ -445,9 +445,11 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
     currentClientPhone = '';
     customDiscount = 0;
     resetPaymentState();
-    currentCustomerId = 'cash';
-    currentOrderTypeId = 'delivery';
-    currentOrderType = 'delivery';
+    const defCust = (typeof storeSettings !== 'undefined' && storeSettings.defaultCustomerId) ? storeSettings.defaultCustomerId : 'cash';
+    const defType = (typeof storeSettings !== 'undefined' && storeSettings.defaultOrderTypeId) ? storeSettings.defaultOrderTypeId : 'delivery';
+    currentCustomerId = defCust;
+    currentOrderTypeId = defType;
+    currentOrderType = defType;
     if (typeof orderTypeSelectionSource !== 'undefined') orderTypeSelectionSource = 'default';
     if (typeof orderTypeDisplayLabel !== 'undefined') orderTypeDisplayLabel = null;
     if (typeof clearActiveOrderState === 'function') clearActiveOrderState();

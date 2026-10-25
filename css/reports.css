@@ -946,3 +946,143 @@
         border: none !important;
     }
 }
+
+/* 12. Default Settings Popups (Customer & Order Type Gear Icons) */
+.default-settings-modal-card {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    width: 340px !important;
+    max-width: 90vw !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+    border: none !important;
+}
+
+.default-settings-modal-header {
+    background: #f8f0f8 !important;
+    color: #800080 !important;
+    padding: 15px !important;
+    text-align: center !important;
+    border-bottom: 1px solid #eee !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+}
+
+.default-settings-modal-header h3 {
+    margin: 0 !important;
+    font-weight: bold !important;
+    font-size: 1.3rem !important;
+    color: #800080 !important;
+    text-align: center !important;
+    width: 100% !important;
+}
+
+.default-settings-modal-body {
+    padding: 20px !important;
+    background: #ffffff !important;
+}
+
+.default-settings-label {
+    display: block !important;
+    margin-bottom: 8px !important;
+    font-weight: bold !important;
+    text-align: left !important;
+    font-size: 1rem !important;
+    color: #333333 !important;
+}
+
+[dir="rtl"] .default-settings-label {
+    text-align: right !important;
+}
+
+.default-settings-select-wrap {
+    position: relative !important;
+    width: 100% !important;
+    margin-bottom: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.default-settings-select {
+    width: 100% !important;
+    padding: 12px 36px 12px 14px !important;
+    font-size: 1.05rem !important;
+    border: 1px solid #cccccc !important;
+    border-radius: 8px !important;
+    background-color: #ffffff !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    cursor: pointer !important;
+    color: #333333 !important;
+    font-weight: 600 !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+[dir="rtl"] .default-settings-select {
+    padding: 12px 14px 12px 36px !important;
+}
+
+.default-settings-select:focus {
+    border-color: #17a2b8 !important;
+    box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.2) !important;
+}
+
+.default-settings-dropdown-arrow {
+    position: absolute !important;
+    right: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    pointer-events: none !important;
+    color: #666666 !important;
+    font-size: 12px !important;
+}
+
+[dir="rtl"] .default-settings-dropdown-arrow {
+    right: auto !important;
+    left: 14px !important;
+}
+
+.default-settings-modal-footer {
+    display: flex !important;
+    gap: 10px !important;
+    direction: ltr !important; /* Force Ok on LEFT, Back on RIGHT */
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    margin-top: 10px !important;
+}
+
+.btn-teal-settings {
+    flex: 1 !important;
+    padding: 14px 10px !important;
+    font-size: 1.1rem !important;
+    font-weight: bold !important;
+    background: #17a2b8 !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    text-align: center !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: background-color 0.2s ease, transform 0.1s ease !important;
+    user-select: none !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.btn-teal-settings:hover {
+    background: #138496 !important;
+}
+
+.btn-teal-settings:active {
+    transform: scale(0.98) !important;
+}
+

@@ -85,6 +85,21 @@ function getPosOrderTypeDisplayedLabel() {
     }
 
     // 3. Fresh default (Cash customer | Delivery)
+    if (currentOrderTypeId && currentOrderTypeId !== 'delivery') {
+        const allowedList = (typeof POS_ORDER_TYPES !== 'undefined' && Array.isArray(POS_ORDER_TYPES))
+            ? POS_ORDER_TYPES
+            : [
+                { id: "delivery", nameEn: "Delivery", nameAr: "توصيل" },
+                { id: "local", nameEn: "local", nameAr: "محلي" },
+                { id: "receive", nameEn: "Receive", nameAr: "استلام" },
+                { id: "cars", nameEn: "Cars", nameAr: "خدمة السيارات" },
+                { id: "delivery_d", nameEn: "Delivery D", nameAr: "توصيل سريع" }
+            ];
+        const match = allowedList.find(t => t.id === currentOrderTypeId);
+        if (match) {
+            return currentLang === 'ar' ? (match.nameAr || match.nameEn) : (match.nameEn || match.nameAr);
+        }
+    }
     return currentLang === 'ar' ? 'توصيل' : 'Delivery';
 }
 
@@ -133,7 +148,85 @@ function onPosCustomerChange(newId) {
     if (typeof saveActiveOrderState === 'function') saveActiveOrderState();
 }
 
+// Gear Icon 1 — Default Client Type Modal Functions
+function openDefaultClientTypeModal() {
+    const modal = document.getElementById('defaultClientTypeModal');
+    if (!modal) return;
+
+    const select = document.getElementById('defaultClientTypeSelect');
+    if (select) {
+        // Exactly the 10 reference Customer identities in order:
+        const clientOptions = [
+            { id: "cash", nameEn: "Cash customer", nameAr: "عميل نقدي" },
+            { id: "hungerstation", nameEn: "Hungerstation", nameAr: "شركة هنجر" },
+            { id: "jahiz", nameEn: "jahiz", nameAr: "شركة جاهز الدولية" },
+            { id: "ninja", nameEn: "ninja", nameAr: "شركة الخيال / نينجا" },
+            { id: "management", nameEn: "Management Staff", nameAr: "Management Staff" },
+            { id: "keeta", nameEn: "keeta", nameAr: "تطبيق كيتا" },
+            { id: "mrsool", nameEn: "Mrsool", nameAr: "مرسول - شركة تطبيق" },
+            { id: "toyou", nameEn: "ToYou", nameAr: "ToYou - شركة تطبيق تويو" },
+            { id: "thechefz", nameEn: "The chefz", nameAr: "The chefz - تطبيق ذا شفز" },
+            { id: "mosque", nameEn: "عميل مسجد", nameAr: "عميل مسجد" }
+        ];
+
+        select.innerHTML = clientOptions.map(opt => {
+            const cust = (typeof customers !== 'undefined' && Array.isArray(customers))
+                ? customers.find(c => c.id === opt.id)
+                : null;
+            let label = '';
+            if (currentLang === 'ar') {
+                label = (cust && cust.nameAr) ? cust.nameAr : opt.nameAr;
+            } else {
+                label = (cust && cust.nameEn) ? cust.nameEn : opt.nameEn;
+            }
+            return `<option value="${escapeHtml(opt.id)}">${escapeHtml(label)}</option>`;
+        }).join('');
+
+        const savedDefault = (typeof storeSettings !== 'undefined' && storeSettings.defaultCustomerId)
+            ? storeSettings.defaultCustomerId
+            : 'cash';
+        select.value = savedDefault;
+    }
+
+    modal.classList.add('open');
+    modal.style.display = 'flex';
+}
+
+function closeDefaultClientTypeModal() {
+    const modal = document.getElementById('defaultClientTypeModal');
+    if (modal) {
+        modal.classList.remove('open');
+        modal.style.display = 'none';
+    }
+}
+
+function saveDefaultClientType() {
+    const select = document.getElementById('defaultClientTypeSelect');
+    if (!select) return;
+    const val = select.value;
+
+    const allowed = ['cash', 'hungerstation', 'jahiz', 'ninja', 'management', 'keeta', 'mrsool', 'toyou', 'thechefz', 'mosque'];
+    if (!allowed.includes(val)) return;
+
+    if (typeof storeSettings !== 'undefined') {
+        storeSettings.defaultCustomerId = val;
+    }
+    if (typeof persistData === 'function') {
+        persistData();
+    }
+    closeDefaultClientTypeModal();
+    if (typeof showToast === 'function') {
+        showToast(currentLang === 'ar' ? 'تم حفظ نوع العميل الافتراضي' : 'Default Client Type saved', 'success');
+    }
+}
+
+// Gear Icon 1 Handler: Customer Gear opens Default Client Type
 function promptAddCustomer() {
+    openDefaultClientTypeModal();
+}
+
+// Preserved Customer Creation capability
+function promptAddCustomerLegacy() {
     const nameAr = prompt(currentLang === 'ar' ? "اسم العميل الجديد:" : "Customer Name (Arabic):", "");
     if (!nameAr) return;
     const nameEn = prompt(currentLang === 'ar' ? "اسم العميل بالإنجليزي:" : "Customer Name (English):", nameAr);
@@ -301,7 +394,74 @@ function onPosOrderTypeChange(newId) {
     if (typeof saveActiveOrderState === 'function') saveActiveOrderState();
 }
 
+// Gear Icon 2 — Default Delivery Type Modal Functions
+function openDefaultDeliveryTypeModal() {
+    const modal = document.getElementById('defaultDeliveryTypeModal');
+    if (!modal) return;
+
+    const select = document.getElementById('defaultDeliveryTypeSelect');
+    if (select) {
+        // Exactly the 5 approved POS options in required order:
+        const deliveryOptions = (typeof POS_ORDER_TYPES !== 'undefined' && Array.isArray(POS_ORDER_TYPES))
+            ? POS_ORDER_TYPES
+            : [
+                { id: "delivery", nameEn: "Delivery", nameAr: "توصيل" },
+                { id: "local", nameEn: "local", nameAr: "محلي" },
+                { id: "receive", nameEn: "Receive", nameAr: "استلام" },
+                { id: "cars", nameEn: "Cars", nameAr: "خدمة السيارات" },
+                { id: "delivery_d", nameEn: "Delivery D", nameAr: "توصيل سريع" }
+            ];
+
+        select.innerHTML = deliveryOptions.map(t => {
+            const label = currentLang === 'ar' ? (t.nameAr || t.nameEn) : (t.nameEn || t.nameAr);
+            return `<option value="${escapeHtml(t.id)}">${escapeHtml(label)}</option>`;
+        }).join('');
+
+        const savedDefault = (typeof storeSettings !== 'undefined' && storeSettings.defaultOrderTypeId)
+            ? storeSettings.defaultOrderTypeId
+            : 'delivery';
+        select.value = savedDefault;
+    }
+
+    modal.classList.add('open');
+    modal.style.display = 'flex';
+}
+
+function closeDefaultDeliveryTypeModal() {
+    const modal = document.getElementById('defaultDeliveryTypeModal');
+    if (modal) {
+        modal.classList.remove('open');
+        modal.style.display = 'none';
+    }
+}
+
+function saveDefaultDeliveryType() {
+    const select = document.getElementById('defaultDeliveryTypeSelect');
+    if (!select) return;
+    const val = select.value;
+
+    const allowed = ['delivery', 'local', 'receive', 'cars', 'delivery_d'];
+    if (!allowed.includes(val)) return;
+
+    if (typeof storeSettings !== 'undefined') {
+        storeSettings.defaultOrderTypeId = val;
+    }
+    if (typeof persistData === 'function') {
+        persistData();
+    }
+    closeDefaultDeliveryTypeModal();
+    if (typeof showToast === 'function') {
+        showToast(currentLang === 'ar' ? 'تم حفظ نوع التوصيل الافتراضي' : 'Default Delivery Type saved', 'success');
+    }
+}
+
+// Gear Icon 2 Handler: Order Type Gear opens Default Delivery Type
 function promptAddOrderType() {
+    openDefaultDeliveryTypeModal();
+}
+
+// Preserved Order Type Creation capability
+function promptAddOrderTypeLegacy() {
     const nameAr = prompt(currentLang === 'ar' ? "اسم نوع الطلب بالعربي:" : "Order Type Name (Arabic):", "");
     if (!nameAr) return;
     const nameEn = prompt(currentLang === 'ar' ? "الاسم بالإنجليزي:" : "Order Type Name (English):", nameAr);
@@ -1923,6 +2083,22 @@ document.addEventListener('keydown', function(e) {
             confirmQuantityModal();
         } else if (e.key === 'Escape') {
             closeQuantityModal();
+        }
+    }
+    const clientModal = document.getElementById('defaultClientTypeModal');
+    if (clientModal && (clientModal.classList.contains('open') || clientModal.style.display === 'flex')) {
+        if (e.key === 'Escape') {
+            closeDefaultClientTypeModal();
+        } else if (e.key === 'Enter') {
+            saveDefaultClientType();
+        }
+    }
+    const deliveryModal = document.getElementById('defaultDeliveryTypeModal');
+    if (deliveryModal && (deliveryModal.classList.contains('open') || deliveryModal.style.display === 'flex')) {
+        if (e.key === 'Escape') {
+            closeDefaultDeliveryTypeModal();
+        } else if (e.key === 'Enter') {
+            saveDefaultDeliveryType();
         }
     }
 });

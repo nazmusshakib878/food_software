@@ -1945,6 +1945,51 @@
     </div>
 </div>
 
+<!-- MODAL: DEFAULT CLIENT TYPE (GEAR ICON 1) -->
+<div class="modal-overlay" id="defaultClientTypeModal" style="display: none; align-items: center; justify-content: center; z-index: 9999; background: rgba(0,0,0,0.5);" onclick="if(event.target === this) closeDefaultClientTypeModal()">
+    <div class="modal-card default-settings-modal-card">
+        <div class="modal-header default-settings-modal-header">
+            <h3 id="defaultClientTypeModalTitle" data-i18n="default_client_type_title">Default Client Type</h3>
+        </div>
+        <div class="modal-body default-settings-modal-body">
+            <div class="form-group default-settings-form-group">
+                <label for="defaultClientTypeSelect" class="default-settings-label" data-i18n="select_default_client_type">Select Default Client Type</label>
+                <div class="default-settings-select-wrap">
+                    <select id="defaultClientTypeSelect" class="default-settings-select"></select>
+                    <span class="default-settings-dropdown-arrow" aria-hidden="true">&#9660;</span>
+                </div>
+            </div>
+            <div class="modal-footer default-settings-modal-footer">
+                <button type="button" id="btnDefaultClientOk" class="btn-teal-settings btn-teal-ok" onclick="saveDefaultClientType()">Ok</button>
+                <button type="button" id="btnDefaultClientBack" class="btn-teal-settings btn-teal-back" onclick="closeDefaultClientTypeModal()">Back</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: DEFAULT DELIVERY TYPE (GEAR ICON 2) -->
+<div class="modal-overlay" id="defaultDeliveryTypeModal" style="display: none; align-items: center; justify-content: center; z-index: 9999; background: rgba(0,0,0,0.5);" onclick="if(event.target === this) closeDefaultDeliveryTypeModal()">
+    <div class="modal-card default-settings-modal-card">
+        <div class="modal-header default-settings-modal-header">
+            <h3 id="defaultDeliveryTypeModalTitle" data-i18n="default_delivery_type_title">Default Delivery Type</h3>
+        </div>
+        <div class="modal-body default-settings-modal-body">
+            <div class="form-group default-settings-form-group">
+                <label for="defaultDeliveryTypeSelect" class="default-settings-label" data-i18n="select_default_delivery_type">Select Default Delivery Type</label>
+                <div class="default-settings-select-wrap">
+                    <select id="defaultDeliveryTypeSelect" class="default-settings-select"></select>
+                    <span class="default-settings-dropdown-arrow" aria-hidden="true">&#9660;</span>
+                </div>
+            </div>
+            <div class="modal-footer default-settings-modal-footer">
+                <button type="button" id="btnDefaultDeliveryOk" class="btn-teal-settings btn-teal-ok" onclick="saveDefaultDeliveryType()">Ok</button>
+                <button type="button" id="btnDefaultDeliveryBack" class="btn-teal-settings btn-teal-back" onclick="closeDefaultDeliveryTypeModal()">Back</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 
 <!-- Toast Shelf -->

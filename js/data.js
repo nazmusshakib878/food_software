@@ -13,7 +13,9 @@ const DEFAULT_STORE = {
     currency: "SAR",
     currencyAr: "ر.س",
     adminPin: "1234",
-    staffPin: "0000"
+    staffPin: "0000",
+    defaultCustomerId: "cash",
+    defaultOrderTypeId: "delivery"
 };
 
 const DEFAULT_CATEGORIES = [
@@ -916,6 +918,10 @@ const i18n = {
         // Action titles / buttons
         add_customer_title: "إضافة عميل",
         add_order_type_title: "إضافة نوع طلب",
+        default_client_type_title: "نوع العميل الافتراضي",
+        select_default_client_type: "اختر نوع العميل الافتراضي",
+        default_delivery_type_title: "نوع التوصيل الافتراضي",
+        select_default_delivery_type: "اختر نوع التوصيل الافتراضي",
         btn_print_receipt: "طباعة الفاتورة",
         btn_download_pdf: "تحميل PDF",
         btn_save_settings: "حفظ الإعدادات",
@@ -1279,6 +1285,10 @@ const i18n = {
         // Action titles / buttons
         add_customer_title: "Add Customer",
         add_order_type_title: "Add Order Type",
+        default_client_type_title: "Default Client Type",
+        select_default_client_type: "Select Default Client Type",
+        default_delivery_type_title: "Default Delivery Type",
+        select_default_delivery_type: "Select Default Delivery Type",
         btn_print_receipt: "Print Receipt",
         btn_download_pdf: "Download PDF",
         btn_save_settings: "Save Settings",

@@ -17,6 +17,8 @@ var storeSettings = (() => {
         if (!s.adminPin) s.adminPin = "1234";
         if (!s.staffPin) s.staffPin = "0000";
         if (!s.currencyAr) s.currencyAr = DEFAULT_STORE.currencyAr;
+        if (!s.defaultCustomerId) s.defaultCustomerId = "cash";
+        if (!s.defaultOrderTypeId) s.defaultOrderTypeId = "delivery";
         return s;
     } catch (e) {
         return { ...DEFAULT_STORE };
@@ -455,9 +457,11 @@ function safeStartNewOrder() {
     customDiscount = 0;
     discountValue = 0;
     discountType = 'fixed';
-    currentCustomerId = 'cash';
-    currentOrderTypeId = 'delivery';
-    currentOrderType = 'delivery';
+    const defCust = (typeof storeSettings !== 'undefined' && storeSettings.defaultCustomerId) ? storeSettings.defaultCustomerId : 'cash';
+    const defType = (typeof storeSettings !== 'undefined' && storeSettings.defaultOrderTypeId) ? storeSettings.defaultOrderTypeId : 'delivery';
+    currentCustomerId = defCust;
+    currentOrderTypeId = defType;
+    currentOrderType = defType;
     orderTypeSelectionSource = 'default';
     orderTypeDisplayLabel = null;
     if (typeof clearActiveOrderState === 'function') clearActiveOrderState();
