@@ -1411,49 +1411,63 @@
     color: #7c3aed;
 }
 
-/* Category Sales Summary (Above product list) */
+/* Category Sales Summary Table (Two-Row Foodie POS Layout) */
+.items-category-summary-wrap,
 .items-category-summary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px;
-    padding: 10px 16px;
-    background: #faf5ff;
-    border-bottom: 1px solid #ede9fe;
-    font-size: 12.5px;
-    direction: ltr !important; /* Preserves identical metric order */
+    width: 100%;
+    overflow-x: auto;
+    background: #ffffff;
+    border-bottom: 1px solid #cbd5e1;
+    direction: ltr !important; /* Strictly locks physical Left-to-Right column order */
+    padding: 0;
+    margin: 0;
+    -webkit-overflow-scrolling: touch;
 }
 
-.cat-summary-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    text-align: start;
+.items-category-summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    direction: ltr !important;
+    font-size: 13px;
+    min-width: 460px;
+    background: #ffffff;
 }
 
-.cat-summary-lbl {
+.items-category-summary-table thead tr {
+    background: #42556b; /* Dark slate / blue-grey header container */
+}
+
+.items-category-summary-table th {
+    width: 20%;
+    background: #42556b;
+    color: #ffffff;
     font-weight: 600;
-    color: #6b7280;
+    font-size: 12.5px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #334155;
+    letter-spacing: 0.1px;
+    vertical-align: middle;
+    white-space: normal;
+    word-break: break-word;
 }
 
-.cat-summary-val {
-    font-weight: 700;
-    color: #1f2937;
+.items-category-summary-table tbody tr {
+    background: #ffffff;
+}
+
+.items-category-summary-table td {
+    width: 20%;
+    background: #ffffff;
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
     font-variant-numeric: tabular-nums;
-}
-
-.cat-summary-net {
-    margin-inline-start: auto;
-    background: #ede9fe;
-    padding: 3px 10px;
-    border-radius: 6px;
-}
-.cat-summary-net .cat-summary-lbl {
-    color: #5b21b6;
-}
-.cat-summary-net .cat-summary-val {
-    color: #4c1d95;
-    font-size: 13.5px;
+    vertical-align: middle;
 }
 
 /* Item-wise Sales Table */
@@ -1619,14 +1633,13 @@
     .items-summary-net {
         grid-column: 1 / -1;
     }
-    .items-category-summary {
-        gap: 8px 12px;
-        font-size: 11.5px;
+    .items-category-summary-table th {
+        font-size: 11px;
+        padding: 7px 4px;
     }
-    .cat-summary-net {
-        width: 100%;
-        margin-inline-start: 0;
-        margin-top: 4px;
+    .items-category-summary-table td {
+        font-size: 12px;
+        padding: 7px 4px;
     }
     .items-report-breadcrumb {
         font-size: 16px;
@@ -1667,7 +1680,21 @@
         margin-bottom: 20px !important;
     }
     .items-category-header,
-    .items-category-summary {
+    .items-category-summary,
+    .items-category-summary-wrap {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        overflow: visible !important;
+    }
+    .items-category-summary-table {
+        min-width: 100% !important;
+        width: 100% !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+    .items-category-summary-table th {
+        background: #42556b !important;
+        color: #ffffff !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }

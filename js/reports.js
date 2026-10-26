@@ -901,28 +901,28 @@ function renderItemsReport(container) {
                     </div>
                 </div>
 
-                <!-- Category Sales Summary (Above product list) -->
-                <div class="items-category-summary">
-                    <div class="cat-summary-item">
-                        <span class="cat-summary-lbl">${currentLang === 'ar' ? 'الإجمالي' : 'Total'}:</span>
-                        <span class="cat-summary-val">${formatCurrency(cat.total)}</span>
-                    </div>
-                    <div class="cat-summary-item">
-                        <span class="cat-summary-lbl">${currentLang === 'ar' ? 'إجمالي المرتجعات' : 'Total Returns'}:</span>
-                        <span class="cat-summary-val">${formatCurrency(cat.returns)}</span>
-                    </div>
-                    <div class="cat-summary-item">
-                        <span class="cat-summary-lbl">${currentLang === 'ar' ? 'المرتجعات المستقبلية' : 'Total Future Returns'}:</span>
-                        <span class="cat-summary-val">${formatCurrency(cat.futureReturns)}</span>
-                    </div>
-                    <div class="cat-summary-item">
-                        <span class="cat-summary-lbl">${currentLang === 'ar' ? 'قيمة الضريبة' : 'Total Tax Value'}:</span>
-                        <span class="cat-summary-val">${formatCurrency(cat.tax)}</span>
-                    </div>
-                    <div class="cat-summary-item cat-summary-net">
-                        <span class="cat-summary-lbl">${currentLang === 'ar' ? 'الصافي' : 'Net Total'}:</span>
-                        <span class="cat-summary-val">${formatCurrency(cat.netTotal)}</span>
-                    </div>
+                <!-- Category Sales Summary (Two-Row Foodie POS Table Layout) -->
+                <div class="items-category-summary items-category-summary-wrap">
+                    <table class="items-category-summary-table">
+                        <thead>
+                            <tr>
+                                <th>${currentLang === 'ar' ? 'صافي الإجمالي' : 'Net Total'}</th>
+                                <th>${currentLang === 'ar' ? 'إجمالي قيمة الضريبة' : 'Total Tax Value'}</th>
+                                <th>${currentLang === 'ar' ? 'إجمالي المرتجعات المستقبلية' : 'Total Future Returns'}</th>
+                                <th>${currentLang === 'ar' ? 'إجمالي المرتجعات' : 'Total Returns'}</th>
+                                <th>${currentLang === 'ar' ? 'الإجمالي' : 'Total'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${formatCurrency(cat.netTotal)}</td>
+                                <td>${formatCurrency(cat.tax)}</td>
+                                <td>${formatCurrency(cat.futureReturns)}</td>
+                                <td>${formatCurrency(cat.returns)}</td>
+                                <td>${formatCurrency(cat.total)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <!-- Item-wise Sales Table -->
@@ -1052,13 +1052,26 @@ function printItemsReport() {
                     <div style="background: #f5f3ff; padding: 8px 12px; font-weight: bold; font-size: 13.5px; border-bottom: 1px solid #ddd6fe; color: #5b21b6;">
                         ${escapeHtml(cat.name)}
                     </div>
-                    <div style="background: #faf5ff; padding: 6px 12px; font-size: 11px; border-bottom: 1px solid #ede9fe; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between;">
-                        <span><strong>${currentLang === 'ar' ? 'الإجمالي' : 'Total'}:</strong> ${formatCurrency(cat.total)}</span>
-                        <span><strong>${currentLang === 'ar' ? 'المرتجعات' : 'Returns'}:</strong> ${formatCurrency(cat.returns)}</span>
-                        <span><strong>${currentLang === 'ar' ? 'المرتجعات المستقبلية' : 'Future Returns'}:</strong> ${formatCurrency(cat.futureReturns)}</span>
-                        <span><strong>${currentLang === 'ar' ? 'الضريبة' : 'Tax'}:</strong> ${formatCurrency(cat.tax)}</span>
-                        <span><strong>${currentLang === 'ar' ? 'الصافي' : 'Net'}:</strong> ${formatCurrency(cat.netTotal)}</span>
-                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; direction: ltr !important; border-bottom: 1px solid #cbd5e1;">
+                        <thead>
+                            <tr style="background: #42556b; color: #ffffff;">
+                                <th style="padding: 6px 6px; text-align: center; border: 1px solid #334155; width: 20%; font-weight: 600;">${currentLang === 'ar' ? 'صافي الإجمالي' : 'Net Total'}</th>
+                                <th style="padding: 6px 6px; text-align: center; border: 1px solid #334155; width: 20%; font-weight: 600;">${currentLang === 'ar' ? 'إجمالي قيمة الضريبة' : 'Total Tax Value'}</th>
+                                <th style="padding: 6px 6px; text-align: center; border: 1px solid #334155; width: 20%; font-weight: 600;">${currentLang === 'ar' ? 'إجمالي المرتجعات المستقبلية' : 'Total Future Returns'}</th>
+                                <th style="padding: 6px 6px; text-align: center; border: 1px solid #334155; width: 20%; font-weight: 600;">${currentLang === 'ar' ? 'إجمالي المرتجعات' : 'Total Returns'}</th>
+                                <th style="padding: 6px 6px; text-align: center; border: 1px solid #334155; width: 20%; font-weight: 600;">${currentLang === 'ar' ? 'الإجمالي' : 'Total'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="background: #ffffff; color: #1e293b; font-weight: 600;">
+                                <td style="padding: 6px 6px; text-align: center; border: 1px solid #e2e8f0; width: 20%;">${formatCurrency(cat.netTotal)}</td>
+                                <td style="padding: 6px 6px; text-align: center; border: 1px solid #e2e8f0; width: 20%;">${formatCurrency(cat.tax)}</td>
+                                <td style="padding: 6px 6px; text-align: center; border: 1px solid #e2e8f0; width: 20%;">${formatCurrency(cat.futureReturns)}</td>
+                                <td style="padding: 6px 6px; text-align: center; border: 1px solid #e2e8f0; width: 20%;">${formatCurrency(cat.returns)}</td>
+                                <td style="padding: 6px 6px; text-align: center; border: 1px solid #e2e8f0; width: 20%;">${formatCurrency(cat.total)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                     <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: ${currentLang === 'ar' ? 'right' : 'left'};">
                         <thead>
                             <tr style="background: #334155; color: #ffffff;">
