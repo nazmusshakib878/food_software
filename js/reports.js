@@ -19,9 +19,10 @@ let balancingInputs = {};
 let appReviewInputs = {};
 let auditInputs = {};
 
-// Ensure Rich Realistic Past Orders if orders list is empty
+// Ensure Rich Realistic Past Orders if orders list is empty or only contains sample ORD-1013
 function ensureSeedOrders() {
-    if (orders && orders.length > 0) return;
+    if (orders && orders.some(o => o.id === "ORD-1001")) return;
+    if (orders && orders.length > 0 && !orders.every(o => o.id === 'ORD-1013')) return;
 
     const dummyOrders = [
         {
@@ -141,7 +142,13 @@ function ensureSeedOrders() {
         }
     ];
 
-    orders = dummyOrders;
+    if (!orders || orders.length === 0) {
+        orders = dummyOrders;
+    } else {
+        dummyOrders.forEach(d => {
+            if (!orders.some(o => o.id === d.id)) orders.push(d);
+        });
+    }
     persistData();
 }
 
@@ -171,10 +178,19 @@ function renderActiveReport() {
     const container = document.getElementById('reportModuleContent');
     if (!container) return;
 
-    // Highlight active link in side drawer
-    document.querySelectorAll('.drawer-menu-item').forEach(el => {
+    // Highlight active link in side drawer (including sub-items like items_report)
+    document.querySelectorAll('.drawer-menu-item, .drawer-sub-item').forEach(el => {
         el.classList.toggle('active', el.getAttribute('data-report-id') === activeReportModule);
     });
+
+    const reportsContainer = document.getElementById('reportsView');
+    if (reportsContainer) {
+        if (activeReportModule === 'items_report') {
+            reportsContainer.classList.add('items-report-mode');
+        } else {
+            reportsContainer.classList.remove('items-report-mode');
+        }
+    }
 
     switch (activeReportModule) {
         case 'invoice_reports':
@@ -524,70 +540,599 @@ if (typeof global !== 'undefined') {
     global.reprintSavedInvoice = reprintSavedInvoice;
 }
 
-// 2. ITEMS REPORT
-function renderItemsReport(container) {
-    const filtered = getFilteredOrders();
-    const itemMap = {};
+// 2. ITEMS REPORT (FOODIE POS THREE-SECTION ENHANCEMENT)
 
-    filtered.forEach(o => {
-        if (o.items && Array.isArray(o.items)) {
-            o.items.forEach(it => {
-                const key = it.id || it.name;
-                if (!itemMap[key]) {
-                    itemMap[key] = {
+/**
+ * Validates and updates report date range from Items Report header inputs
+ */
+function onItemsReportDateChange() {
+    const fromInput = document.getElementById('itemsRepDateFrom');
+    const toInput = document.getElementById('itemsRepDateTo');
+    const newFrom = fromInput?.value || reportDateFrom;
+    const newTo = toInput?.value || reportDateTo;
+
+    if (newFrom && newTo && newFrom > newTo) {
+        if (typeof showToast === 'function') {
+            showToast(
+                currentLang === 'ar' 
+                    ? 'تاريخ البداية لا يمكن أن يكون بعد تاريخ النهاية' 
+                    : 'From Date cannot be later than To Date',
+                'warning'
+            );
+        }
+        if (fromInput) fromInput.value = reportDateFrom;
+        if (toInput) toInput.value = reportDateTo;
+        return;
+    }
+
+    if (newFrom) reportDateFrom = newFrom;
+    if (newTo) reportDateTo = newTo;
+
+    const syncFrom = document.getElementById('repDateFromInput');
+    const syncTo = document.getElementById('repDateToInput');
+    if (syncFrom) syncFrom.value = reportDateFrom;
+    if (syncTo) syncTo.value = reportDateTo;
+
+    renderActiveReport();
+}
+
+/**
+ * Authoritative Historical Items Report Data Aggregation
+ * Aggregates sales at 3 synchronized reporting levels:
+ * Level 1: Overall Sales Summary (5 fields: Total, Returns, Future Returns, Tax, Net Total)
+ * Level 2: Category Sales Summary (5 fields: Total, Returns, Future Returns, Tax, Net Total)
+ * Level 3: Item-wise Sales Breakdown (Item Name, Quantity, Returned Quantity)
+ */
+function getItemsReportData() {
+    if (typeof ensureSeedOrders === 'function') {
+        ensureSeedOrders();
+    }
+
+    // Date range boundaries in local business timezone:
+    // Timestamp >= Start of From Date (00:00:00.000)
+    // Timestamp < Start of day after To Date (00:00:00.000 of next day)
+    const fromParts = (reportDateFrom || '').split('-');
+    let fromTime;
+    if (fromParts.length === 3) {
+        fromTime = new Date(Number(fromParts[0]), Number(fromParts[1]) - 1, Number(fromParts[2]), 0, 0, 0, 0).getTime();
+    } else {
+        fromTime = new Date((reportDateFrom || '') + "T00:00:00").getTime();
+    }
+
+    const toParts = (reportDateTo || '').split('-');
+    let toNextDayTime;
+    if (toParts.length === 3) {
+        toNextDayTime = new Date(Number(toParts[0]), Number(toParts[1]) - 1, Number(toParts[2]) + 1, 0, 0, 0, 0).getTime();
+    } else {
+        toNextDayTime = new Date((reportDateTo || '') + "T23:59:59.999").getTime() + 1;
+    }
+
+    const allOrders = (typeof orders !== 'undefined' && Array.isArray(orders)) ? orders : [];
+
+    // Filter by date range and valid order timestamps
+    let filteredOrders = allOrders.filter(o => {
+        if (!o.date) return true;
+        const orderTime = new Date(o.date).getTime();
+        if (isNaN(orderTime)) return false;
+        return orderTime >= fromTime && orderTime < toNextDayTime;
+    });
+
+    // Check company and branch permissions
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.role !== 'admin') {
+        if (currentUser.branchId) {
+            filteredOrders = filteredOrders.filter(o => !o.branchId || o.branchId === currentUser.branchId);
+        }
+        if (currentUser.companyId) {
+            filteredOrders = filteredOrders.filter(o => !o.companyId || o.companyId === currentUser.companyId);
+        }
+    }
+
+    // Exclude unpaid, void, draft orders
+    filteredOrders = filteredOrders.filter(o => {
+        if (o.status === 'void' || o.status === 'draft' || o.status === 'unpaid') return false;
+        return true;
+    });
+
+    const taxRate = (typeof storeSettings !== 'undefined' && Number(storeSettings.taxRate)) || 15;
+
+    // Collect all catalog categories
+    const allCategories = (typeof categories !== 'undefined' && Array.isArray(categories))
+        ? categories
+        : ((typeof DEFAULT_CATEGORIES !== 'undefined' && Array.isArray(DEFAULT_CATEGORIES)) ? DEFAULT_CATEGORIES : []);
+
+    const catMap = {};
+
+    function getCategoryEntry(catId) {
+        if (!catMap[catId]) {
+            const found = allCategories.find(c => c.id === catId);
+            catMap[catId] = {
+                id: catId,
+                nameAr: found ? found.nameAr : (catId === 'unclassified' ? 'أصناف غير مصنفة' : catId),
+                nameEn: found ? found.nameEn : (catId === 'unclassified' ? 'Unclassified Items' : catId),
+                icon: found ? (found.icon || 'fa-tag') : 'fa-tag',
+                itemsMap: {},
+                total: 0,
+                returns: 0,
+                futureReturns: 0.00,
+                tax: 0,
+                netTotal: 0
+            };
+        }
+        return catMap[catId];
+    }
+
+    // Process orders
+    filteredOrders.forEach(order => {
+        const orderReturnedMap = {};
+
+        // 1. Process explicit return items from order cancellations
+        if (Array.isArray(order.cancelledItems) && order.cancelledItems.length > 0) {
+            order.cancelledItems.forEach(ci => {
+                const k = ci.id || ci.name;
+                if (!orderReturnedMap[k]) orderReturnedMap[k] = { qty: 0, amount: 0 };
+                const retQty = Number(ci.cancelledQty !== undefined ? ci.cancelledQty : (ci.returnQty || 0));
+                const retPrice = Number(ci.unitPrice !== undefined ? ci.unitPrice : (ci.price || 0));
+                const retLineTotal = Number(ci.lineTotal !== undefined ? ci.lineTotal : (retQty * retPrice));
+                orderReturnedMap[k].qty += retQty;
+                orderReturnedMap[k].amount += retLineTotal;
+            });
+        } else if (Array.isArray(order.returnedItems) && order.returnedItems.length > 0) {
+            order.returnedItems.forEach(ri => {
+                const k = ri.id || ri.name;
+                if (!orderReturnedMap[k]) orderReturnedMap[k] = { qty: 0, amount: 0 };
+                const retQty = Number(ri.qty || ri.returnQty || 0);
+                const retPrice = Number(ri.price || ri.unitPrice || 0);
+                orderReturnedMap[k].qty += retQty;
+                orderReturnedMap[k].amount += (ri.lineTotal !== undefined ? ri.lineTotal : (retQty * retPrice));
+            });
+        } else if (order.status === 'cancelled' || order.status === 'returned' || order.isReturned === true) {
+            // Entire order cancelled/returned
+            if (Array.isArray(order.items)) {
+                order.items.forEach(it => {
+                    const k = it.id || it.name;
+                    if (!orderReturnedMap[k]) orderReturnedMap[k] = { qty: 0, amount: 0 };
+                    const q = Number(it.qty) || 1;
+                    const p = Number(it.price) || 0;
+                    orderReturnedMap[k].qty += q;
+                    orderReturnedMap[k].amount += (q * p);
+                });
+            }
+        }
+
+        // 2. Process order items
+        if (Array.isArray(order.items)) {
+            order.items.forEach(it => {
+                const itemId = it.id || it.name;
+                const qty = Number(it.qty) || 1;
+                const price = Number(it.price) || 0;
+                let lineTotal = qty * price;
+                if (Array.isArray(it.addons)) {
+                    const addSum = it.addons.reduce((s, a) => s + (Number(a.price) || 0), 0);
+                    lineTotal += (addSum * qty);
+                }
+
+                // Resolve category ID
+                let catId = it.catId || it.category;
+                if (!catId) {
+                    const catalogItem = (typeof items !== 'undefined' && Array.isArray(items)) 
+                        ? items.find(ci => ci.id === it.id || ci.enName === it.name || ci.arName === it.name) 
+                        : null;
+                    if (catalogItem && catalogItem.catId) {
+                        catId = catalogItem.catId;
+                    } else if (typeof DEFAULT_ITEMS !== 'undefined' && Array.isArray(DEFAULT_ITEMS)) {
+                        const defItem = DEFAULT_ITEMS.find(ci => ci.id === it.id || ci.enName === it.name || ci.arName === it.name);
+                        if (defItem && defItem.catId) catId = defItem.catId;
+                    }
+                }
+                if (!catId) {
+                    const nameLower = (it.name || it.enName || '').toLowerCase();
+                    if (nameLower.includes('grill') || nameLower.includes('sandwich') || nameLower.includes('kebab') || nameLower.includes('fries') || nameLower.includes('sauce') || nameLower.includes('cheese')) {
+                        catId = 'sandwiches';
+                    } else if (nameLower.includes('meal') || nameLower.includes('burger')) {
+                        catId = 'meals';
+                    } else if (nameLower.includes('pepsi') || nameLower.includes('cola') || nameLower.includes('water') || nameLower.includes('juice') || nameLower.includes('soda')) {
+                        catId = 'drinks';
+                    } else if (nameLower.includes('tea') || nameLower.includes('coffee')) {
+                        catId = 'hot_drinks';
+                    } else {
+                        catId = 'unclassified';
+                    }
+                }
+
+                const catEntry = getCategoryEntry(catId);
+
+                if (!catEntry.itemsMap[itemId]) {
+                    catEntry.itemsMap[itemId] = {
+                        id: itemId,
                         nameAr: it.arName || it.name,
                         nameEn: it.enName || it.name,
+                        price: price,
                         qty: 0,
+                        returnsQty: 0,
                         totalVal: 0,
-                        returnsQty: 0
+                        returnsVal: 0
                     };
                 }
-                const q = Number(it.qty) || 1;
-                const p = Number(it.price) || 0;
-                itemMap[key].qty += q;
-                itemMap[key].totalVal += (q * p);
+
+                catEntry.itemsMap[itemId].qty += qty;
+                catEntry.itemsMap[itemId].totalVal += lineTotal;
+                catEntry.total += lineTotal;
+
+                // Handle item-level return field if present
+                if (it.returnedQty && !orderReturnedMap[itemId]) {
+                    const rQty = Number(it.returnedQty) || 0;
+                    catEntry.itemsMap[itemId].returnsQty += rQty;
+                    const rVal = rQty * price;
+                    catEntry.itemsMap[itemId].returnsVal += rVal;
+                    catEntry.returns += rVal;
+                }
             });
+        }
+
+        // 3. Attribute order-level return records to matching category items
+        for (const [k, retInfo] of Object.entries(orderReturnedMap)) {
+            let foundInCat = false;
+            for (const cId in catMap) {
+                if (catMap[cId].itemsMap[k]) {
+                    catMap[cId].itemsMap[k].returnsQty += retInfo.qty;
+                    catMap[cId].itemsMap[k].returnsVal += retInfo.amount;
+                    catMap[cId].returns += retInfo.amount;
+                    foundInCat = true;
+                    break;
+                }
+            }
+            if (!foundInCat) {
+                const catEntry = getCategoryEntry('unclassified');
+                if (!catEntry.itemsMap[k]) {
+                    catEntry.itemsMap[k] = {
+                        id: k,
+                        nameAr: k,
+                        nameEn: k,
+                        price: 0,
+                        qty: 0,
+                        returnsQty: 0,
+                        totalVal: 0,
+                        returnsVal: 0
+                    };
+                }
+                catEntry.itemsMap[k].returnsQty += retInfo.qty;
+                catEntry.itemsMap[k].returnsVal += retInfo.amount;
+                catEntry.returns += retInfo.amount;
+            }
         }
     });
 
-    const rows = Object.values(itemMap);
+    let overallTotal = 0;
+    let overallReturns = 0;
+    let overallFutureReturns = 0.00;
+    let overallNetTotal = 0;
+    let overallTax = 0;
+
+    const categoriesList = [];
+
+    const catKeys = Object.keys(catMap);
+    catKeys.sort((a, b) => {
+        const idxA = allCategories.findIndex(c => c.id === a);
+        const idxB = allCategories.findIndex(c => c.id === b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b);
+    });
+
+    catKeys.forEach(cId => {
+        const cat = catMap[cId];
+        const itemsArr = Object.values(cat.itemsMap);
+        if (itemsArr.length === 0 && cat.total === 0 && cat.returns === 0) return;
+
+        itemsArr.sort((a, b) => b.qty - a.qty);
+
+        cat.total = Math.round(cat.total * 100) / 100;
+        cat.returns = Math.round(cat.returns * 100) / 100;
+        cat.futureReturns = 0.00;
+        cat.netTotal = Math.round((cat.total - cat.returns) * 100) / 100;
+        cat.tax = taxRate > 0 ? Math.round(((cat.netTotal * taxRate) / (100 + taxRate)) * 100) / 100 : 0;
+
+        cat.name = currentLang === 'ar' ? cat.nameAr : cat.nameEn;
+        cat.items = itemsArr.map(it => ({
+            id: it.id,
+            name: currentLang === 'ar' ? it.nameAr : it.nameEn,
+            qty: it.qty,
+            returnsQty: it.returnsQty
+        }));
+
+        overallTotal += cat.total;
+        overallReturns += cat.returns;
+        overallNetTotal += cat.netTotal;
+        overallTax += cat.tax;
+
+        categoriesList.push(cat);
+    });
+
+    overallTotal = Math.round(overallTotal * 100) / 100;
+    overallReturns = Math.round(overallReturns * 100) / 100;
+    overallFutureReturns = 0.00;
+    overallNetTotal = Math.round((overallTotal - overallReturns) * 100) / 100;
+    overallTax = Math.round(overallTax * 100) / 100;
+
+    return {
+        overall: {
+            total: overallTotal,
+            returns: overallReturns,
+            futureReturns: overallFutureReturns,
+            tax: overallTax,
+            netTotal: overallNetTotal
+        },
+        categories: categoriesList
+    };
+}
+
+/**
+ * 2. ITEMS REPORT RENDERER
+ * Renders the Foodie POS 3-Section Layout:
+ * - SECTION A: Fixed Top (Header + From/To Date Filter + Overall Sales Summary with 5 fields)
+ * - SECTION B: Scrollable Middle (Continuous scroll containing each Category Summary + Product Table)
+ * - SECTION C: Fixed Bottom (Back on physical bottom-left, Print on physical bottom-right)
+ */
+function renderItemsReport(container) {
+    if (!container) return;
+
+    const data = getItemsReportData();
+    const overall = data.overall;
+    const categories = data.categories;
+
+    let categoriesHtml = '';
+    if (categories.length === 0) {
+        categoriesHtml = `
+            <div class="items-report-empty">
+                <i class="fa-solid fa-box-open"></i>
+                <p>${currentLang === 'ar' ? 'لا توجد أصناف مباعة في الفترة المحددة' : 'No items sold in selected period'}</p>
+                <span class="items-empty-sub">${currentLang === 'ar' ? 'يرجى تغيير نطاق التاريخ لعرض المبيعات' : 'Please select a different date range to view sales'}</span>
+            </div>
+        `;
+    } else {
+        categoriesHtml = categories.map(cat => `
+            <section class="items-category-section" data-cat-id="${escapeHtml(cat.id)}">
+                <!-- Category Heading (Muted Purple) -->
+                <div class="items-category-header">
+                    <div class="items-category-title">
+                        <i class="fa-solid ${cat.icon || 'fa-tag'}"></i>
+                        <h3>${escapeHtml(cat.name)}</h3>
+                    </div>
+                </div>
+
+                <!-- Category Sales Summary (Above product list) -->
+                <div class="items-category-summary">
+                    <div class="cat-summary-item">
+                        <span class="cat-summary-lbl">${currentLang === 'ar' ? 'الإجمالي' : 'Total'}:</span>
+                        <span class="cat-summary-val">${formatCurrency(cat.total)}</span>
+                    </div>
+                    <div class="cat-summary-item">
+                        <span class="cat-summary-lbl">${currentLang === 'ar' ? 'إجمالي المرتجعات' : 'Total Returns'}:</span>
+                        <span class="cat-summary-val">${formatCurrency(cat.returns)}</span>
+                    </div>
+                    <div class="cat-summary-item">
+                        <span class="cat-summary-lbl">${currentLang === 'ar' ? 'المرتجعات المستقبلية' : 'Total Future Returns'}:</span>
+                        <span class="cat-summary-val">${formatCurrency(cat.futureReturns)}</span>
+                    </div>
+                    <div class="cat-summary-item">
+                        <span class="cat-summary-lbl">${currentLang === 'ar' ? 'قيمة الضريبة' : 'Total Tax Value'}:</span>
+                        <span class="cat-summary-val">${formatCurrency(cat.tax)}</span>
+                    </div>
+                    <div class="cat-summary-item cat-summary-net">
+                        <span class="cat-summary-lbl">${currentLang === 'ar' ? 'الصافي' : 'Net Total'}:</span>
+                        <span class="cat-summary-val">${formatCurrency(cat.netTotal)}</span>
+                    </div>
+                </div>
+
+                <!-- Item-wise Sales Table -->
+                <div class="items-table-card">
+                    <div class="table-responsive">
+                        <table class="items-report-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-seq">#</th>
+                                    <th class="col-name">${currentLang === 'ar' ? 'اسم الصنف' : 'Item Name'}</th>
+                                    <th class="col-qty text-center">${currentLang === 'ar' ? 'الكمية' : 'Quantity'}</th>
+                                    <th class="col-ret-qty text-center">${currentLang === 'ar' ? 'الكمية المرتجعة' : 'Returned Quantity'}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${cat.items.map((it, idx) => `
+                                    <tr>
+                                        <td class="col-seq">${idx + 1}</td>
+                                        <td class="col-name"><strong>${escapeHtml(it.name)}</strong></td>
+                                        <td class="col-qty text-center"><span class="items-qty-badge">${it.qty}</span></td>
+                                        <td class="col-ret-qty text-center"><span class="items-ret-badge ${it.returnsQty > 0 ? 'has-returns' : ''}">${it.returnsQty}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        `).join('');
+    }
 
     container.innerHTML = `
-        ${renderReportHeader(currentLang === 'ar' ? 'تقرير الأصناف والمبيعات' : 'Items Report')}
-        <div class="report-printable-area">
-            <div class="report-table-card">
-                <div class="table-responsive">
-                    <table class="report-table">
+        <section class="items-report-screen" id="itemsReportScreen">
+            <!-- SECTION A: FIXED TOP -->
+            <header class="items-report-top">
+                <div class="items-report-top-header">
+                    <div class="items-report-title-wrap">
+                        <span class="items-report-breadcrumb">
+                            <span class="breadcrumb-root" onclick="openReportModule('invoice_reports')">${currentLang === 'ar' ? 'التقارير' : 'Reports'}</span>
+                            <span class="breadcrumb-separator">/</span>
+                            <span class="breadcrumb-current">${currentLang === 'ar' ? 'تقرير الأصناف' : 'Items Report'}</span>
+                        </span>
+                    </div>
+                    <div class="items-report-date-filters">
+                        <div class="items-date-group">
+                            <label for="itemsRepDateFrom"><i class="fa-regular fa-calendar"></i> ${currentLang === 'ar' ? 'من:' : 'From:'}</label>
+                            <input type="date" id="itemsRepDateFrom" value="${reportDateFrom}" onchange="onItemsReportDateChange()">
+                        </div>
+                        <div class="items-date-group">
+                            <label for="itemsRepDateTo"><i class="fa-regular fa-calendar"></i> ${currentLang === 'ar' ? 'إلى:' : 'To:'}</label>
+                            <input type="date" id="itemsRepDateTo" value="${reportDateTo}" onchange="onItemsReportDateChange()">
+                        </div>
+                        <button type="button" class="btn btn-sm btn-teal items-btn-apply" onclick="onItemsReportDateChange()">
+                            <i class="fa-solid fa-filter"></i> <span>${currentLang === 'ar' ? 'تطبيق' : 'Apply'}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Overall Sales Summary (Fixed Top) -->
+                <div class="items-report-overall-summary">
+                    <div class="items-summary-card">
+                        <span class="items-summary-label">${currentLang === 'ar' ? 'الإجمالي' : 'Total'}</span>
+                        <span class="items-summary-value">${formatCurrency(overall.total)}</span>
+                    </div>
+                    <div class="items-summary-card">
+                        <span class="items-summary-label">${currentLang === 'ar' ? 'إجمالي المرتجعات' : 'Total Returns'}</span>
+                        <span class="items-summary-value">${formatCurrency(overall.returns)}</span>
+                    </div>
+                    <div class="items-summary-card">
+                        <span class="items-summary-label">${currentLang === 'ar' ? 'إجمالي المرتجعات المستقبلية' : 'Total Future Returns'}</span>
+                        <span class="items-summary-value">${formatCurrency(overall.futureReturns)}</span>
+                    </div>
+                    <div class="items-summary-card">
+                        <span class="items-summary-label">${currentLang === 'ar' ? 'إجمالي قيمة الضريبة' : 'Total Tax Value'}</span>
+                        <span class="items-summary-value">${formatCurrency(overall.tax)}</span>
+                    </div>
+                    <div class="items-summary-card items-summary-net">
+                        <span class="items-summary-label">${currentLang === 'ar' ? 'صافي الإجمالي' : 'Net Total'}</span>
+                        <span class="items-summary-value">${formatCurrency(overall.netTotal)}</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- SECTION B: SCROLLABLE MIDDLE -->
+            <main class="items-report-middle" id="itemsReportScrollArea">
+                <div class="report-printable-area items-report-printable">
+                    ${categoriesHtml}
+                </div>
+            </main>
+
+            <!-- SECTION C: FIXED BOTTOM -->
+            <footer class="items-report-bottom">
+                <button type="button" class="btn items-report-btn-back" onclick="switchView('pos')" title="${currentLang === 'ar' ? 'الرجوع لنقاط البيع' : 'Back to POS'}">
+                    <i class="fa-solid ${currentLang === 'ar' ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
+                    <span>${currentLang === 'ar' ? 'رجوع' : 'Back'}</span>
+                </button>
+                <button type="button" class="btn btn-teal items-report-btn-print" onclick="printItemsReport()" title="${currentLang === 'ar' ? 'طباعة التقرير الكامل' : 'Print Complete Report'}">
+                    <i class="fa-solid fa-print"></i>
+                    <span>${currentLang === 'ar' ? 'طباعة' : 'Print'}</span>
+                </button>
+            </footer>
+        </section>
+    `;
+}
+
+/**
+ * Complete Report Printing Implementation
+ * Strictly Read-Only: Never modifies orders, checkout sequence, cart, payments, or stock.
+ * Prints ALL matching categories and items for the selected From/To dates,
+ * including off-screen scrolled content.
+ */
+function printItemsReport() {
+    const data = getItemsReportData();
+    const title = currentLang === 'ar' ? 'تقرير الأصناف والمبيعات' : 'Items Sales Report';
+
+    const companyName = (typeof storeSettings !== 'undefined' && (storeSettings.companyNameAr || storeSettings.companyName)) || 'شركة صح للتجارة';
+    const storeName = (typeof storeSettings !== 'undefined' && (currentLang === 'ar' ? storeSettings.nameAr : storeSettings.nameEn)) || 'NUR FOODES';
+    const vatNo = (typeof storeSettings !== 'undefined' && storeSettings.vatNumber) || '300987654300003';
+
+    let categoriesHtml = '';
+    if (data.categories.length === 0) {
+        categoriesHtml = `<div style="text-align: center; padding: 30px; color: #666;">${currentLang === 'ar' ? 'لا توجد أصناف مباعة في الفترة المحددة' : 'No items sold in selected period'}</div>`;
+    } else {
+        data.categories.forEach(cat => {
+            categoriesHtml += `
+                <div style="margin-bottom: 18px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; page-break-inside: avoid; break-inside: avoid;">
+                    <div style="background: #f5f3ff; padding: 8px 12px; font-weight: bold; font-size: 13.5px; border-bottom: 1px solid #ddd6fe; color: #5b21b6;">
+                        ${escapeHtml(cat.name)}
+                    </div>
+                    <div style="background: #faf5ff; padding: 6px 12px; font-size: 11px; border-bottom: 1px solid #ede9fe; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between;">
+                        <span><strong>${currentLang === 'ar' ? 'الإجمالي' : 'Total'}:</strong> ${formatCurrency(cat.total)}</span>
+                        <span><strong>${currentLang === 'ar' ? 'المرتجعات' : 'Returns'}:</strong> ${formatCurrency(cat.returns)}</span>
+                        <span><strong>${currentLang === 'ar' ? 'المرتجعات المستقبلية' : 'Future Returns'}:</strong> ${formatCurrency(cat.futureReturns)}</span>
+                        <span><strong>${currentLang === 'ar' ? 'الضريبة' : 'Tax'}:</strong> ${formatCurrency(cat.tax)}</span>
+                        <span><strong>${currentLang === 'ar' ? 'الصافي' : 'Net'}:</strong> ${formatCurrency(cat.netTotal)}</span>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: ${currentLang === 'ar' ? 'right' : 'left'};">
                         <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>${currentLang === 'ar' ? 'الصنف' : 'Item'}</th>
-                                <th>${currentLang === 'ar' ? 'الكمية المباعة' : 'Quantity Sold'}</th>
-                                <th>${currentLang === 'ar' ? 'قيمة المبيعات' : 'Sales Value'}</th>
-                                <th>${currentLang === 'ar' ? 'المرتجع' : 'Returns'}</th>
-                                <th class="text-end">${currentLang === 'ar' ? 'صافي القيمة' : 'Net Value'}</th>
+                            <tr style="background: #334155; color: #ffffff;">
+                                <th style="padding: 6px 10px; width: 35px; border: none;">#</th>
+                                <th style="padding: 6px 10px; border: none;">${currentLang === 'ar' ? 'اسم الصنف' : 'Item Name'}</th>
+                                <th style="padding: 6px 10px; text-align: center; width: 75px; border: none;">${currentLang === 'ar' ? 'الكمية' : 'Quantity'}</th>
+                                <th style="padding: 6px 10px; text-align: center; width: 100px; border: none;">${currentLang === 'ar' ? 'الكمية المرتجعة' : 'Returned Quantity'}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${rows.length === 0 ? `
-                                <tr><td colspan="6" class="text-center py-4 text-muted">${currentLang === 'ar' ? 'لا توجد أصناف مباعة في الفترة المحددة' : 'No items sold in selected period'}</td></tr>
-                            ` : rows.map((r, idx) => `
-                                <tr>
-                                    <td>${idx + 1}</td>
-                                    <td><strong>${escapeHtml(currentLang === 'ar' ? r.nameAr : r.nameEn)}</strong></td>
-                                    <td><span class="badge-pill">${r.qty}</span></td>
-                                    <td>${formatCurrency(r.totalVal)}</td>
-                                    <td>0</td>
-                                    <td class="text-end fw-bold">${formatCurrency(r.totalVal)}</td>
+                            ${cat.items.map((it, idx) => `
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 5px 10px; color: #64748b;">${idx + 1}</td>
+                                    <td style="padding: 5px 10px; font-weight: 600; color: #1e293b;">${escapeHtml(it.name)}</td>
+                                    <td style="padding: 5px 10px; text-align: center;">${it.qty}</td>
+                                    <td style="padding: 5px 10px; text-align: center; ${it.returnsQty > 0 ? 'color: #dc2626; font-weight: bold;' : ''}">${it.returnsQty}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
                 </div>
+            `;
+        });
+    }
+
+    const printHtml = `
+        <div class="items-report-print-container" style="padding: 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; direction: ${currentLang === 'ar' ? 'rtl' : 'ltr'};">
+            <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #334155; padding-bottom: 8px;">
+                <h2 style="margin: 0; font-size: 18px; color: #0f172a;">${escapeHtml(storeName)}</h2>
+                <p style="margin: 3px 0; font-size: 11.5px; color: #64748b;">${escapeHtml(companyName)} | ${currentLang === 'ar' ? 'الرقم الضريبي' : 'VAT'}: ${escapeHtml(vatNo)}</p>
+                <h3 style="margin: 6px 0 3px; font-size: 15px; color: #0f172a;">${escapeHtml(title)}</h3>
+                <p style="margin: 0; font-size: 11px; color: #475569;">${currentLang === 'ar' ? 'الفترة:' : 'Period:'} ${reportDateFrom} ${currentLang === 'ar' ? 'إلى' : 'to'} ${reportDateTo}</p>
             </div>
+
+            <!-- Overall Summary Print Block -->
+            <div style="margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; background: #f8fafc;">
+                <div style="font-weight: 700; font-size: 12px; margin-bottom: 6px; color: #334155;">
+                    ${currentLang === 'ar' ? 'الملخص العام للمبيعات' : 'Overall Sales Summary'}
+                </div>
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 11.5px;">
+                    <div><strong>${currentLang === 'ar' ? 'الإجمالي' : 'Total'}:</strong> ${formatCurrency(data.overall.total)}</div>
+                    <div><strong>${currentLang === 'ar' ? 'المرتجعات' : 'Returns'}:</strong> ${formatCurrency(data.overall.returns)}</div>
+                    <div><strong>${currentLang === 'ar' ? 'المرتجعات المستقبلية' : 'Future Returns'}:</strong> ${formatCurrency(data.overall.futureReturns)}</div>
+                    <div><strong>${currentLang === 'ar' ? 'قيمة الضريبة' : 'Tax Value'}:</strong> ${formatCurrency(data.overall.tax)}</div>
+                    <div style="color: #0f766e; font-weight: bold;"><strong>${currentLang === 'ar' ? 'صافي الإجمالي' : 'Net Total'}:</strong> ${formatCurrency(data.overall.netTotal)}</div>
+                </div>
+            </div>
+
+            <!-- Categories and Items -->
+            ${categoriesHtml}
         </div>
     `;
+
+    if (typeof routePrintJob === 'function') {
+        routePrintJob('reports', printHtml, title);
+    } else {
+        window.print();
+    }
 }
+
+// Global Exports
+if (typeof window !== 'undefined') {
+    window.renderItemsReport = renderItemsReport;
+    window.getItemsReportData = getItemsReportData;
+    window.onItemsReportDateChange = onItemsReportDateChange;
+    window.printItemsReport = printItemsReport;
+}
+if (typeof global !== 'undefined') {
+    global.renderItemsReport = renderItemsReport;
+    global.getItemsReportData = getItemsReportData;
+    global.onItemsReportDateChange = onItemsReportDateChange;
+    global.printItemsReport = printItemsReport;
+}
+
 
 // 3. DAILY SHIFT REPORTS
 function renderDailyShiftsReport(container) {
