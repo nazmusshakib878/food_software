@@ -1286,58 +1286,64 @@
     transform: scale(0.98);
 }
 
-/* Fixed Overall Sales Summary Grid */
+/* Fixed Overall Sales Summary Table (Two-Row Foodie POS Layout) */
+.items-overall-summary-wrap,
 .items-report-overall-summary {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-    direction: ltr !important; /* Preserves identical metric tile layout LTR */
-}
-
-.items-summary-card {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    width: 100%;
+    overflow-x: auto;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
-    padding: 8px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    transition: border-color 0.15s;
-    text-align: start;
-}
-.items-summary-card:hover {
-    border-color: #cbd5e1;
+    direction: ltr !important; /* Strictly locks physical Left-to-Right column order */
+    padding: 0;
+    margin: 0;
+    -webkit-overflow-scrolling: touch;
 }
 
-.items-summary-label {
-    font-size: 11px;
+.items-overall-summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    direction: ltr !important;
+    font-size: 13px;
+    min-width: 460px;
+    background: #ffffff;
+}
+
+.items-overall-summary-table thead tr {
+    background: #42556b; /* Dark slate / blue-grey header container */
+}
+
+.items-overall-summary-table th {
+    width: 20%;
+    background: #42556b;
+    color: #ffffff;
     font-weight: 600;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 12.5px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #334155;
+    letter-spacing: 0.1px;
+    vertical-align: middle;
+    white-space: normal;
+    word-break: break-word;
 }
 
-.items-summary-value {
-    font-size: 15px;
-    font-weight: 700;
+.items-overall-summary-table tbody tr {
+    background: #ffffff;
+}
+
+.items-overall-summary-table td {
+    width: 20%;
+    background: #ffffff;
     color: #1e293b;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
     font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-}
-
-.items-summary-net {
-    background: #f0fdfa;
-    border-color: #99f6e4;
-}
-.items-summary-net .items-summary-label {
-    color: #0d9488;
-}
-.items-summary-net .items-summary-value {
-    color: #0f766e;
-    font-size: 16px;
+    vertical-align: middle;
 }
 
 /* SECTION B: SCROLLABLE MIDDLE (Continuous Category Scroll) */
@@ -1607,15 +1613,6 @@
 }
 
 /* RESPONSIVE LAYOUT BREAKPOINTS */
-@media (max-width: 900px) {
-    .items-report-overall-summary {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    .items-summary-net {
-        grid-column: span 2;
-    }
-}
-
 @media (max-width: 640px) {
     .items-report-top {
         padding: 10px 14px 10px;
@@ -1626,17 +1623,12 @@
     .items-report-bottom {
         padding: 10px 14px;
     }
-    .items-report-overall-summary {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
-    }
-    .items-summary-net {
-        grid-column: 1 / -1;
-    }
+    .items-overall-summary-table th,
     .items-category-summary-table th {
         font-size: 11px;
         padding: 7px 4px;
     }
+    .items-overall-summary-table td,
     .items-category-summary-table td {
         font-size: 12px;
         padding: 7px 4px;
@@ -1681,17 +1673,21 @@
     }
     .items-category-header,
     .items-category-summary,
-    .items-category-summary-wrap {
+    .items-category-summary-wrap,
+    .items-overall-summary-wrap,
+    .items-report-overall-summary {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         overflow: visible !important;
     }
+    .items-overall-summary-table,
     .items-category-summary-table {
         min-width: 100% !important;
         width: 100% !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
     }
+    .items-overall-summary-table th,
     .items-category-summary-table th {
         background: #42556b !important;
         color: #ffffff !important;
