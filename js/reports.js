@@ -187,8 +187,13 @@ function renderActiveReport() {
     if (reportsContainer) {
         if (activeReportModule === 'items_report') {
             reportsContainer.classList.add('items-report-mode');
+            reportsContainer.classList.remove('invoice-report-mode');
+        } else if (activeReportModule === 'invoice_reports') {
+            reportsContainer.classList.add('invoice-report-mode');
+            reportsContainer.classList.remove('items-report-mode');
         } else {
             reportsContainer.classList.remove('items-report-mode');
+            reportsContainer.classList.remove('invoice-report-mode');
         }
     }
 
@@ -281,11 +286,24 @@ function renderReportHeader(title, showDateFilter = true) {
 }
 
 function onReportDateChange() {
-    const fromInput = document.getElementById('repDateFromInput');
-    const toInput = document.getElementById('repDateToInput');
+    const fromInput = document.getElementById('repDateFromInput') || document.getElementById('invRepDateFrom');
+    const toInput = document.getElementById('repDateToInput') || document.getElementById('invRepDateTo');
     if (fromInput && fromInput.value) reportDateFrom = fromInput.value;
     if (toInput && toInput.value) reportDateTo = toInput.value;
     renderActiveReport();
+}
+
+function onInvoiceReportDateChange() {
+    const fromEl = document.getElementById('invRepDateFrom') || document.getElementById('repDateFromInput');
+    const toEl = document.getElementById('invRepDateTo') || document.getElementById('repDateToInput');
+    if (fromEl && fromEl.value) reportDateFrom = fromEl.value;
+    if (toEl && toEl.value) reportDateTo = toEl.value;
+    const container = document.getElementById('reportModuleContent');
+    if (container) {
+        renderInvoiceReports(container);
+    } else {
+        renderActiveReport();
+    }
 }
 
 function printCurrentReport(title) {
@@ -308,82 +326,288 @@ function printCurrentReport(title) {
     routePrintJob('reports', html, title);
 }
 
-// 1. INVOICE REPORTS
-function renderInvoiceReports(container) {
+/**
+ * 1. INVOICE REPORTS DATA COMPUTATION
+ * Strictly authoritative financial reconciliation using existing saved invoice data:
+ * - Net Total: Total sales minus returns
+ * - Total Discount Value: Aggregated discounts granted on invoices
+ * - Total Tax Value: Aggregated VAT (VAT-inclusive calculation)
+ * - Total Future Returns: 0.00
+ * - Total Returns: Aggregated invoice/item returns
+ * - Total: Customer payable total sales
+ */
+function getInvoiceReportsData() {
+    if (typeof ensureSeedOrders === 'function') {
+        ensureSeedOrders();
+    }
     const filtered = getFilteredOrders();
-    const totalSales = filtered.reduce((s, o) => s + (Number(o.grandTotal) || 0), 0);
-    const returnsTotal = 0.00;
-    const netTotal = totalSales - returnsTotal;
     const invoicesCount = filtered.length;
+    const taxRate = (typeof storeSettings !== 'undefined' && Number(storeSettings.taxRate)) || 15;
+
+    let totalSales = 0;
+    let totalDiscount = 0;
+    let totalTax = 0;
+    let totalReturns = 0;
+    const totalFutureReturns = 0.00;
+
+    filtered.forEach(o => {
+        const orderTotal = Number(o.grandTotal !== undefined ? o.grandTotal : (o.total || 0)) || 0;
+        totalSales += orderTotal;
+        totalDiscount += Number(o.discount) || 0;
+
+        if (o.status === 'refunded' || o.status === 'returned') {
+            totalReturns += orderTotal;
+        } else if (Array.isArray(o.cancelledItems)) {
+            totalReturns += o.cancelledItems.reduce((cs, ci) => cs + (Number(ci.amount || (ci.price * ci.qty)) || 0), 0);
+        } else if (o.returns) {
+            totalReturns += Number(o.returns) || 0;
+        }
+
+        if (o.tax !== undefined && o.tax !== null) {
+            totalTax += Number(o.tax) || 0;
+        } else if (taxRate > 0) {
+            totalTax += (orderTotal * taxRate) / (100 + taxRate);
+        }
+    });
+
+    totalSales = Math.round(totalSales * 100) / 100;
+    totalDiscount = Math.round(totalDiscount * 100) / 100;
+    totalReturns = Math.round(totalReturns * 100) / 100;
+    const netTotal = Math.round((totalSales - totalReturns) * 100) / 100;
+    totalTax = Math.round(totalTax * 100) / 100;
+
+    return {
+        orders: filtered,
+        invoicesCount,
+        summary: {
+            netTotal,
+            totalDiscount,
+            totalTax,
+            totalFutureReturns,
+            totalReturns,
+            total: totalSales
+        }
+    };
+}
+
+/**
+ * 1. INVOICE REPORTS RENDERER (Foodie POS 3-Section Layout)
+ * - SECTION A: Fixed Top (Header + From/To Date Filter + 6-Column, 2-Row Overall Sales Summary Table)
+ * - SECTION B: Scrollable Middle (Existing Invoices Table and Individual Row Print Buttons)
+ * - SECTION C: Fixed Bottom (Back at physical bottom-left, Complete Report Print at physical bottom-right)
+ */
+function renderInvoiceReports(container) {
+    if (!container) return;
+
+    const data = getInvoiceReportsData();
+    const filtered = data.orders;
+    const summary = data.summary;
+    const invoicesCount = data.invoicesCount;
 
     container.innerHTML = `
-        ${renderReportHeader(currentLang === 'ar' ? 'تقارير الفواتير' : 'Invoice Reports')}
-        <div class="report-printable-area">
-            <div class="report-summary-cards">
-                <div class="summary-card">
-                    <span class="card-lbl">${currentLang === 'ar' ? 'عدد الفواتير' : 'Invoices Count'}</span>
-                    <span class="card-val">${invoicesCount}</span>
+        <section class="invoice-report-screen" id="invoiceReportScreen">
+            <!-- SECTION A: FIXED TOP -->
+            <header class="invoice-report-top">
+                <div class="invoice-report-top-header">
+                    <div class="invoice-report-title-wrap">
+                        <span class="invoice-report-breadcrumb">
+                            <span class="breadcrumb-root" onclick="switchView('pos')">${currentLang === 'ar' ? 'التقارير' : 'Reports'}</span>
+                            <span class="breadcrumb-separator">/</span>
+                            <span class="breadcrumb-current">${currentLang === 'ar' ? 'تقارير الفواتير' : 'Invoice Reports'}</span>
+                        </span>
+                        <span class="invoice-count-badge" id="invoiceCountBadge">${currentLang === 'ar' ? `عدد الفواتير: ${invoicesCount}` : `Invoices: ${invoicesCount}`}</span>
+                    </div>
+                    <div class="invoice-report-date-filters">
+                        <div class="invoice-date-group">
+                            <label for="invRepDateFrom"><i class="fa-regular fa-calendar"></i> ${currentLang === 'ar' ? 'من:' : 'From:'}</label>
+                            <input type="date" id="invRepDateFrom" value="${reportDateFrom}" onchange="onInvoiceReportDateChange()">
+                        </div>
+                        <div class="invoice-date-group">
+                            <label for="invRepDateTo"><i class="fa-regular fa-calendar"></i> ${currentLang === 'ar' ? 'إلى:' : 'To:'}</label>
+                            <input type="date" id="invRepDateTo" value="${reportDateTo}" onchange="onInvoiceReportDateChange()">
+                        </div>
+                        <button type="button" class="btn btn-sm btn-teal invoice-btn-apply" onclick="onInvoiceReportDateChange()">
+                            <i class="fa-solid fa-filter"></i> <span>${currentLang === 'ar' ? 'تطبيق' : 'Apply'}</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="summary-card">
-                    <span class="card-lbl">${currentLang === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
-                    <span class="card-val">${formatCurrency(totalSales)}</span>
-                </div>
-                <div class="summary-card">
-                    <span class="card-lbl">${currentLang === 'ar' ? 'المرتجعات' : 'Returns'}</span>
-                    <span class="card-val">${formatCurrency(returnsTotal)}</span>
-                </div>
-                <div class="summary-card highlight-card">
-                    <span class="card-lbl">${currentLang === 'ar' ? 'الصافي' : 'Net Total'}</span>
-                    <span class="card-val">${formatCurrency(netTotal)}</span>
-                </div>
-            </div>
 
-            <div class="report-table-card">
-                <div class="table-responsive">
-                    <table class="report-table">
+                <!-- Overall Sales Summary (Two-Row Foodie POS Table Layout with 6 columns) -->
+                <div class="invoice-report-overall-summary invoice-overall-summary-wrap">
+                    <table class="invoice-overall-summary-table">
                         <thead>
                             <tr>
-                                <th>#</th>
-                                <th>${currentLang === 'ar' ? 'رقم الفاتورة' : 'Invoice ID'}</th>
-                                <th>${currentLang === 'ar' ? 'نوع الطلب' : 'Order Type'}</th>
-                                <th>${currentLang === 'ar' ? 'طريقة الدفع' : 'Payment Type'}</th>
-                                <th>${currentLang === 'ar' ? 'العميل / المصدر' : 'Customer / Source'}</th>
-                                <th>${currentLang === 'ar' ? 'الكاشير' : 'Cashier'}</th>
-                                <th>${currentLang === 'ar' ? 'التاريخ والوقت' : 'Date / Time'}</th>
-                                <th class="text-end">${currentLang === 'ar' ? 'الإجمالي' : 'Total'}</th>
-                                <th class="text-center col-action-print no-print">${currentLang === 'ar' ? 'الإجراء' : 'Action'}</th>
+                                <th>${currentLang === 'ar' ? 'صافي الإجمالي' : 'Net Total'}</th>
+                                <th>${currentLang === 'ar' ? 'إجمالي قيمة الخصم' : 'Total Discount Value'}</th>
+                                <th>${currentLang === 'ar' ? 'إجمالي قيمة الضريبة' : 'Total Tax Value'}</th>
+                                <th>${currentLang === 'ar' ? 'إجمالي المرتجعات المستقبلية' : 'Total Future Returns'}</th>
+                                <th>${currentLang === 'ar' ? 'إجمالي المرتجعات' : 'Total Returns'}</th>
+                                <th>${currentLang === 'ar' ? 'الإجمالي' : 'Total'}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${filtered.length === 0 ? `
-                                <tr><td colspan="9" class="text-center py-4 text-muted">${currentLang === 'ar' ? 'لا توجد فواتير في هذه الفترة' : 'No invoices found'}</td></tr>
-                            ` : filtered.map((o, idx) => `
-                                <tr>
-                                    <td>${idx + 1}</td>
-                                    <td><strong>#${escapeHtml(o.seq || o.id)}</strong></td>
-                                    <td><span class="badge-subtle">${escapeHtml(o.orderType || 'محلي')}</span></td>
-                                    <td><span class="badge-subtle">${escapeHtml(o.payMethod || o.method || 'Cash')}</span></td>
-                                    <td>${escapeHtml(o.customer || 'عميل نقدي')}</td>
-                                    <td>${escapeHtml(o.cashier || 'الكاشير')}</td>
-                                    <td>${o.date ? new Date(o.date).toLocaleString(currentLang === 'ar' ? 'ar-SA' : 'en-US') : '-'}</td>
-                                    <td class="text-end fw-bold">${formatCurrency(o.grandTotal || o.total || 0)}</td>
-                                    <td class="text-center col-action-print no-print">
-                                        <button type="button" 
-                                                class="btn btn-sm btn-teal btn-row-invoice-print" 
-                                                onclick="reprintSavedInvoice('${escapeHtml(o.id)}', event)"
-                                                data-invoice-id="${escapeHtml(o.id)}"
-                                                title="${currentLang === 'ar' ? 'طباعة' : 'Print'}">
-                                            <i class="fa-solid fa-print"></i> <span>${currentLang === 'ar' ? 'طباعة' : 'Print'}</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                            `).join('')}
+                            <tr>
+                                <td>${formatCurrency(summary.netTotal)}</td>
+                                <td>${formatCurrency(summary.totalDiscount)}</td>
+                                <td>${formatCurrency(summary.totalTax)}</td>
+                                <td>${formatCurrency(summary.totalFutureReturns)}</td>
+                                <td>${formatCurrency(summary.totalReturns)}</td>
+                                <td>${formatCurrency(summary.total)}</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
+            </header>
+
+            <!-- SECTION B: SCROLLABLE MIDDLE -->
+            <main class="invoice-report-middle" id="invoiceReportScrollArea">
+                <div class="report-printable-area invoice-report-printable">
+                    <div class="report-table-card invoice-table-card">
+                        <div class="table-responsive">
+                            <table class="report-table invoice-list-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>${currentLang === 'ar' ? 'رقم الفاتورة' : 'Invoice ID'}</th>
+                                        <th>${currentLang === 'ar' ? 'نوع الطلب' : 'Order Type'}</th>
+                                        <th>${currentLang === 'ar' ? 'طريقة الدفع' : 'Payment Type'}</th>
+                                        <th>${currentLang === 'ar' ? 'العميل / المصدر' : 'Customer / Source'}</th>
+                                        <th>${currentLang === 'ar' ? 'الكاشير' : 'Cashier'}</th>
+                                        <th>${currentLang === 'ar' ? 'التاريخ والوقت' : 'Date / Time'}</th>
+                                        <th class="text-end">${currentLang === 'ar' ? 'الإجمالي' : 'Total'}</th>
+                                        <th class="text-center col-action-print no-print">${currentLang === 'ar' ? 'الإجراء' : 'Action'}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${filtered.length === 0 ? `
+                                        <tr><td colspan="9" class="text-center py-4 text-muted">${currentLang === 'ar' ? 'لا توجد فواتير في هذه الفترة' : 'No invoices found'}</td></tr>
+                                    ` : filtered.map((o, idx) => `
+                                        <tr>
+                                            <td>${idx + 1}</td>
+                                            <td><strong>#${escapeHtml(o.seq || o.id)}</strong></td>
+                                            <td><span class="badge-subtle">${escapeHtml(o.orderType || 'محلي')}</span></td>
+                                            <td><span class="badge-subtle">${escapeHtml(o.payMethod || o.method || 'Cash')}</span></td>
+                                            <td>${escapeHtml(o.customer || 'عميل نقدي')}</td>
+                                            <td>${escapeHtml(o.cashier || 'الكاشير')}</td>
+                                            <td>${o.date ? new Date(o.date).toLocaleString(currentLang === 'ar' ? 'ar-SA' : 'en-US') : '-'}</td>
+                                            <td class="text-end fw-bold">${formatCurrency(o.grandTotal || o.total || 0)}</td>
+                                            <td class="text-center col-action-print no-print">
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-teal btn-row-invoice-print" 
+                                                        onclick="reprintSavedInvoice('${escapeHtml(o.id)}', event)"
+                                                        data-invoice-id="${escapeHtml(o.id)}"
+                                                        title="${currentLang === 'ar' ? 'طباعة' : 'Print'}">
+                                                    <i class="fa-solid fa-print"></i> <span>${currentLang === 'ar' ? 'طباعة' : 'Print'}</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- SECTION C: FIXED BOTTOM -->
+            <footer class="invoice-report-bottom">
+                <button type="button" class="btn invoice-report-btn-back" onclick="switchView('pos')" title="${currentLang === 'ar' ? 'الرجوع لنقاط البيع' : 'Back to POS'}">
+                    <i class="fa-solid ${currentLang === 'ar' ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
+                    <span>${currentLang === 'ar' ? 'رجوع' : 'Back'}</span>
+                </button>
+                <button type="button" class="btn btn-teal invoice-report-btn-print" onclick="printInvoiceReport()" title="${currentLang === 'ar' ? 'طباعة التقرير الكامل' : 'Print Complete Report'}">
+                    <i class="fa-solid fa-print"></i>
+                    <span>${currentLang === 'ar' ? 'طباعة' : 'Print'}</span>
+                </button>
+            </footer>
+        </section>
+    `;
+}
+
+/**
+ * Complete Invoice Report Printing Implementation
+ * Strictly Read-Only: Never modifies orders, checkout sequence, cart, payments, or stock.
+ * Prints the complete report with overall summary and all matching invoices for the selected date range.
+ */
+function printInvoiceReport() {
+    const data = getInvoiceReportsData();
+    const title = currentLang === 'ar' ? 'تقارير الفواتير' : 'Invoice Reports';
+    const storeName = (typeof storeSettings !== 'undefined' && (currentLang === 'ar' ? (storeSettings.nameAr || storeSettings.nameEn) : (storeSettings.nameEn || storeSettings.nameAr))) || 'NUR FOODES';
+    const companyName = (typeof storeSettings !== 'undefined' && (storeSettings.companyNameAr || storeSettings.companyName)) || '';
+    const vatNo = (typeof storeSettings !== 'undefined' && storeSettings.vatNumber) || '';
+
+    const summary = data.summary;
+    const orders = data.orders;
+
+    const html = `
+        <div style="padding: 15px; font-family: sans-serif; color: #1e293b;">
+            <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #334155; padding-bottom: 10px;">
+                <h2 style="margin: 0 0 4px; font-size: 20px;">${escapeHtml(storeName)}</h2>
+                ${companyName ? `<p style="margin: 2px 0; color: #475569; font-size: 13px;">${escapeHtml(companyName)}</p>` : ''}
+                ${vatNo ? `<p style="margin: 2px 0; color: #475569; font-size: 12px;">${currentLang === 'ar' ? 'الرقم الضريبي:' : 'VAT No:'} ${escapeHtml(vatNo)}</p>` : ''}
+                <h3 style="margin: 8px 0 4px; font-size: 16px; color: #0f172a;">${escapeHtml(title)}</h3>
+                <p style="font-size: 12px; margin: 0; color: #64748b;">${currentLang === 'ar' ? `الفترة: من ${reportDateFrom} إلى ${reportDateTo}` : `Period: From ${reportDateFrom} To ${reportDateTo}`}</p>
             </div>
+
+            <!-- Two-Row Overall Sales Summary Table in Print (Foodie POS Design) -->
+            <div style="margin-bottom: 20px; direction: ltr !important;">
+                <table style="width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px;">
+                    <thead>
+                        <tr style="background: #42556b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                            <th style="padding: 6px 4px; text-align: center; color: #ffffff !important; border: 1px solid #334155; width: 16.666%; font-weight: 600;">${currentLang === 'ar' ? 'صافي الإجمالي' : 'Net Total'}</th>
+                            <th style="padding: 6px 4px; text-align: center; color: #ffffff !important; border: 1px solid #334155; width: 16.666%; font-weight: 600;">${currentLang === 'ar' ? 'إجمالي قيمة الخصم' : 'Total Discount Value'}</th>
+                            <th style="padding: 6px 4px; text-align: center; color: #ffffff !important; border: 1px solid #334155; width: 16.666%; font-weight: 600;">${currentLang === 'ar' ? 'إجمالي قيمة الضريبة' : 'Total Tax Value'}</th>
+                            <th style="padding: 6px 4px; text-align: center; color: #ffffff !important; border: 1px solid #334155; width: 16.666%; font-weight: 600;">${currentLang === 'ar' ? 'إجمالي المرتجعات المستقبلية' : 'Total Future Returns'}</th>
+                            <th style="padding: 6px 4px; text-align: center; color: #ffffff !important; border: 1px solid #334155; width: 16.666%; font-weight: 600;">${currentLang === 'ar' ? 'إجمالي المرتجعات' : 'Total Returns'}</th>
+                            <th style="padding: 6px 4px; text-align: center; color: #ffffff !important; border: 1px solid #334155; width: 16.666%; font-weight: 600;">${currentLang === 'ar' ? 'الإجمالي' : 'Total'}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #ffffff !important;">
+                            <td style="padding: 6px 4px; text-align: center; color: #1e293b; border: 1px solid #cbd5e1; width: 16.666%; font-weight: 600;">${formatCurrency(summary.netTotal)}</td>
+                            <td style="padding: 6px 4px; text-align: center; color: #1e293b; border: 1px solid #cbd5e1; width: 16.666%; font-weight: 600;">${formatCurrency(summary.totalDiscount)}</td>
+                            <td style="padding: 6px 4px; text-align: center; color: #1e293b; border: 1px solid #cbd5e1; width: 16.666%; font-weight: 600;">${formatCurrency(summary.totalTax)}</td>
+                            <td style="padding: 6px 4px; text-align: center; color: #1e293b; border: 1px solid #cbd5e1; width: 16.666%; font-weight: 600;">${formatCurrency(summary.totalFutureReturns)}</td>
+                            <td style="padding: 6px 4px; text-align: center; color: #1e293b; border: 1px solid #cbd5e1; width: 16.666%; font-weight: 600;">${formatCurrency(summary.totalReturns)}</td>
+                            <td style="padding: 6px 4px; text-align: center; color: #1e293b; border: 1px solid #cbd5e1; width: 16.666%; font-weight: 600;">${formatCurrency(summary.total)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Invoices Table in Print -->
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <thead>
+                    <tr style="background: #334155 !important; color: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                        <th style="padding: 6px 8px; text-align: start; border: 1px solid #475569;">#</th>
+                        <th style="padding: 6px 8px; text-align: start; border: 1px solid #475569;">${currentLang === 'ar' ? 'رقم الفاتورة' : 'Invoice ID'}</th>
+                        <th style="padding: 6px 8px; text-align: start; border: 1px solid #475569;">${currentLang === 'ar' ? 'نوع الطلب' : 'Order Type'}</th>
+                        <th style="padding: 6px 8px; text-align: start; border: 1px solid #475569;">${currentLang === 'ar' ? 'طريقة الدفع' : 'Payment Type'}</th>
+                        <th style="padding: 6px 8px; text-align: start; border: 1px solid #475569;">${currentLang === 'ar' ? 'العميل' : 'Customer'}</th>
+                        <th style="padding: 6px 8px; text-align: start; border: 1px solid #475569;">${currentLang === 'ar' ? 'الكاشير' : 'Cashier'}</th>
+                        <th style="padding: 6px 8px; text-align: start; border: 1px solid #475569;">${currentLang === 'ar' ? 'التاريخ والوقت' : 'Date / Time'}</th>
+                        <th style="padding: 6px 8px; text-align: end; border: 1px solid #475569;">${currentLang === 'ar' ? 'الإجمالي' : 'Total'}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${orders.map((o, idx) => `
+                        <tr style="page-break-inside: avoid; break-inside: avoid;">
+                            <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${idx + 1}</td>
+                            <td style="padding: 6px 8px; border: 1px solid #e2e8f0; font-weight: 600;">#${escapeHtml(o.seq || o.id)}</td>
+                            <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${escapeHtml(o.orderType || 'محلي')}</td>
+                            <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${escapeHtml(o.payMethod || o.method || 'Cash')}</td>
+                            <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${escapeHtml(o.customer || 'عميل نقدي')}</td>
+                            <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${escapeHtml(o.cashier || 'الكاشير')}</td>
+                            <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${o.date ? new Date(o.date).toLocaleString(currentLang === 'ar' ? 'ar-SA' : 'en-US') : '-'}</td>
+                            <td style="padding: 6px 8px; border: 1px solid #e2e8f0; text-align: end; font-weight: 600;">${formatCurrency(o.grandTotal || o.total || 0)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
         </div>
     `;
+
+    routePrintJob('reports', html, title);
 }
 
 // Debounce lock for historical invoice reprinting
@@ -1151,12 +1375,20 @@ if (typeof window !== 'undefined') {
     window.getItemsReportData = getItemsReportData;
     window.onItemsReportDateChange = onItemsReportDateChange;
     window.printItemsReport = printItemsReport;
+    window.renderInvoiceReports = renderInvoiceReports;
+    window.getInvoiceReportsData = getInvoiceReportsData;
+    window.onInvoiceReportDateChange = onInvoiceReportDateChange;
+    window.printInvoiceReport = printInvoiceReport;
 }
 if (typeof global !== 'undefined') {
     global.renderItemsReport = renderItemsReport;
     global.getItemsReportData = getItemsReportData;
     global.onItemsReportDateChange = onItemsReportDateChange;
     global.printItemsReport = printItemsReport;
+    global.renderInvoiceReports = renderInvoiceReports;
+    global.getInvoiceReportsData = getInvoiceReportsData;
+    global.onInvoiceReportDateChange = onInvoiceReportDateChange;
+    global.printInvoiceReport = printInvoiceReport;
 }
 
 

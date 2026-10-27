@@ -1148,16 +1148,20 @@
    13. Items Report Three-Section Architecture (Foodie POS Design)
    ========================================================= */
 
-/* Parent Container Scope when in Items Report mode */
+/* Parent Container Scope when in Items Report or Invoice Reports mode */
 .reports-screen-container:has(.items-report-screen),
-.reports-screen-container.items-report-mode {
+.reports-screen-container:has(.invoice-report-screen),
+.reports-screen-container.items-report-mode,
+.reports-screen-container.invoice-report-mode {
     padding: 0 !important;
     overflow: hidden !important;
     height: 100% !important;
 }
 
 .reports-screen-container:has(.items-report-screen) #reportModuleContent,
-.reports-screen-container.items-report-mode #reportModuleContent {
+.reports-screen-container:has(.invoice-report-screen) #reportModuleContent,
+.reports-screen-container.items-report-mode #reportModuleContent,
+.reports-screen-container.invoice-report-mode #reportModuleContent {
     height: 100% !important;
     min-height: 0 !important;
     display: flex !important;
@@ -1612,41 +1616,313 @@
     transform: scale(0.98);
 }
 
+/* =========================================================
+   14. Invoice Reports Three-Section Architecture & 6-Column Summary (Foodie POS Design)
+   ========================================================= */
+
+/* SECTION A, B, C FLEX ARCHITECTURE */
+.invoice-report-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    background: #f8fafc;
+    color: #1e293b;
+    position: relative;
+    box-sizing: border-box;
+}
+
+/* SECTION A: FIXED TOP (Header + Date Filters + 6-Column Overall Sales Summary) */
+.invoice-report-top {
+    flex: 0 0 auto;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 14px 20px 12px;
+    z-index: 10;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.invoice-report-top-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.invoice-report-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.invoice-report-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.invoice-count-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+/* Date Filters */
+.invoice-report-date-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.invoice-date-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+}
+
+.invoice-date-group label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #475569;
+    margin: 0;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.invoice-date-group input[type="date"] {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    outline: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.invoice-btn-apply {
+    background: #0d9488;
+    color: #ffffff;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s, transform 0.1s;
+}
+.invoice-btn-apply:hover {
+    background: #0f766e;
+}
+.invoice-btn-apply:active {
+    transform: scale(0.98);
+}
+
+/* Fixed Overall Sales Summary Table (Six-Column, Two-Row Foodie POS Layout) */
+.invoice-overall-summary-wrap,
+.invoice-report-overall-summary {
+    width: 100%;
+    overflow-x: auto;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    direction: ltr !important; /* Strictly locks physical Left-to-Right column order */
+    padding: 0;
+    margin: 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+.invoice-overall-summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    direction: ltr !important;
+    font-size: 13px;
+    min-width: 540px;
+    background: #ffffff;
+}
+
+.invoice-overall-summary-table thead tr {
+    background: #42556b; /* Dark slate / blue-grey header container */
+}
+
+.invoice-overall-summary-table th {
+    width: 16.666%;
+    background: #42556b;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 12.5px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #334155;
+    letter-spacing: 0.1px;
+    vertical-align: middle;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.invoice-overall-summary-table tbody tr {
+    background: #ffffff;
+}
+
+.invoice-overall-summary-table td {
+    width: 16.666%;
+    background: #ffffff;
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    font-variant-numeric: tabular-nums;
+    vertical-align: middle;
+}
+
+/* SECTION B: SCROLLABLE MIDDLE (Existing Invoice Table and Invoice Rows) */
+.invoice-report-middle {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 16px 20px 24px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.invoice-table-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.invoice-list-table {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+/* SECTION C: FIXED BOTTOM (Back at Bottom-Left, Print at Bottom-Right) */
+.invoice-report-bottom {
+    flex: 0 0 auto;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    padding: 12px 20px;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    direction: ltr !important; /* Locks Back to physical LEFT and Print to physical RIGHT */
+    z-index: 10;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.04);
+}
+
+.invoice-report-btn-back {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s, border-color 0.15s;
+}
+.invoice-report-btn-back:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+}
+
+.invoice-report-btn-print {
+    background: #0d9488;
+    color: #ffffff;
+    border: none;
+    padding: 9px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s, transform 0.1s;
+    box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25);
+}
+.invoice-report-btn-print:hover {
+    background: #0f766e;
+}
+.invoice-report-btn-print:active {
+    transform: scale(0.98);
+}
+
 /* RESPONSIVE LAYOUT BREAKPOINTS */
 @media (max-width: 640px) {
-    .items-report-top {
+    .items-report-top,
+    .invoice-report-top {
         padding: 10px 14px 10px;
     }
-    .items-report-middle {
+    .items-report-middle,
+    .invoice-report-middle {
         padding: 12px 14px 20px;
     }
-    .items-report-bottom {
+    .items-report-bottom,
+    .invoice-report-bottom {
         padding: 10px 14px;
     }
     .items-overall-summary-table th,
-    .items-category-summary-table th {
+    .items-category-summary-table th,
+    .invoice-overall-summary-table th {
         font-size: 11px;
         padding: 7px 4px;
     }
     .items-overall-summary-table td,
-    .items-category-summary-table td {
+    .items-category-summary-table td,
+    .invoice-overall-summary-table td {
         font-size: 12px;
         padding: 7px 4px;
     }
-    .items-report-breadcrumb {
+    .items-report-breadcrumb,
+    .invoice-report-breadcrumb {
         font-size: 16px;
     }
 }
 
 /* COMPLETE MULTIPAGE PRINTING STYLES (No scroll clipping) */
 @media print {
-    .items-report-screen {
+    .items-report-screen,
+    .invoice-report-screen {
         height: auto !important;
         overflow: visible !important;
         display: block !important;
         background: #ffffff !important;
     }
-    .items-report-middle {
+    .items-report-middle,
+    .invoice-report-middle {
         overflow: visible !important;
         height: auto !important;
         max-height: none !important;
@@ -1655,10 +1931,14 @@
     }
     .items-report-bottom,
     .items-report-date-filters,
-    .items-btn-apply {
+    .items-btn-apply,
+    .invoice-report-bottom,
+    .invoice-report-date-filters,
+    .invoice-btn-apply {
         display: none !important;
     }
-    .items-report-top {
+    .items-report-top,
+    .invoice-report-top {
         position: static !important;
         box-shadow: none !important;
         border: none !important;
@@ -1675,20 +1955,24 @@
     .items-category-summary,
     .items-category-summary-wrap,
     .items-overall-summary-wrap,
-    .items-report-overall-summary {
+    .items-report-overall-summary,
+    .invoice-overall-summary-wrap,
+    .invoice-report-overall-summary {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         overflow: visible !important;
     }
     .items-overall-summary-table,
-    .items-category-summary-table {
+    .items-category-summary-table,
+    .invoice-overall-summary-table {
         min-width: 100% !important;
         width: 100% !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
     }
     .items-overall-summary-table th,
-    .items-category-summary-table th {
+    .items-category-summary-table th,
+    .invoice-overall-summary-table th {
         background: #42556b !important;
         color: #ffffff !important;
         -webkit-print-color-adjust: exact !important;
@@ -1705,5 +1989,6 @@
         break-inside: avoid !important;
     }
 }
+
 
 
