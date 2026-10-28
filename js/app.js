@@ -275,6 +275,11 @@ function applyLanguage(lang) {
     if (typeof renderActiveReport === 'function') renderActiveReport();
     if (typeof renderKdsScreen === 'function') renderKdsScreen();
     if (typeof renderReturnsOrdersList === 'function') renderReturnsOrdersList();
+    if (document.getElementById('shiftsView')?.classList.contains('active') && typeof renderShiftsScreen === 'function') {
+        if (!document.getElementById('shiftInvoicesSubView')?.classList.contains('active')) {
+            renderShiftsScreen();
+        }
+    }
     updatePosOrderBadge();
 }
 

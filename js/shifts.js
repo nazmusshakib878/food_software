@@ -198,17 +198,17 @@ function renderShiftsScreen() {
                     `;
                 }).join('')}
             </div>
-
-            <!-- Bottom Action Buttons (Direct Match to Reference) -->
-            <div class="shifts-bottom-bar">
-                <button type="button" class="btn-close-branch" onclick="confirmCloseBranchShifts()">
-                    ${isAr ? 'إغلاق ورديات الفرع' : 'Close Branch Shifts'}
-                </button>
-                <button type="button" class="btn-print-branch" onclick="printBranchShiftsSummary()">
-                    ${isAr ? 'طباعة' : 'Print'}
-                </button>
-            </div>
         </main>
+
+        <!-- Fixed Bottom Section: Large Teal Action Buttons (Left: Close Branch Shifts, Right: Print) -->
+        <footer class="shifts-footer" id="shiftsFooter">
+            <button type="button" class="btn-close-branch" onclick="confirmCloseBranchShifts()" title="${isAr ? 'إغلاق ورديات الفرع' : 'Close Branch Shifts'}">
+                ${isAr ? 'إغلاق ورديات الفرع' : 'Close Branch Shifts'}
+            </button>
+            <button type="button" class="btn-print-branch" onclick="printBranchShiftsSummary()" title="${isAr ? 'طباعة' : 'Print'}">
+                ${isAr ? 'طباعة' : 'Print'}
+            </button>
+        </footer>
 
         <!-- Shift Invoices Container (Nested View) -->
         <section class="shift-invoices-view" id="shiftInvoicesSubView"></section>
@@ -675,6 +675,11 @@ function viewShiftInvoices(shiftId) {
     mainContent.style.display = 'none';
     const mainHeader = document.querySelector('.shifts-header');
     if (mainHeader) mainHeader.style.display = 'none';
+    const mainFooter = document.getElementById('shiftsFooter') || document.querySelector('.shifts-footer');
+    if (mainFooter) {
+        mainFooter.classList.add('hidden');
+        mainFooter.style.setProperty('display', 'none', 'important');
+    }
     subView.classList.add('active');
 
     subView.innerHTML = `
@@ -772,4 +777,9 @@ function backToShiftsList() {
     }
     const mainHeader = document.querySelector('.shifts-header');
     if (mainHeader) mainHeader.style.display = 'flex';
+    const mainFooter = document.getElementById('shiftsFooter') || document.querySelector('.shifts-footer');
+    if (mainFooter) {
+        mainFooter.classList.remove('hidden');
+        mainFooter.style.removeProperty('display');
+    }
 }
