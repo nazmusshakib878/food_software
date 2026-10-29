@@ -188,12 +188,19 @@ function renderActiveReport() {
         if (activeReportModule === 'items_report') {
             reportsContainer.classList.add('items-report-mode');
             reportsContainer.classList.remove('invoice-report-mode');
+            reportsContainer.classList.remove('daily-shifts-report-mode');
         } else if (activeReportModule === 'invoice_reports') {
             reportsContainer.classList.add('invoice-report-mode');
             reportsContainer.classList.remove('items-report-mode');
+            reportsContainer.classList.remove('daily-shifts-report-mode');
+        } else if (activeReportModule === 'daily_shifts') {
+            reportsContainer.classList.add('daily-shifts-report-mode');
+            reportsContainer.classList.remove('items-report-mode');
+            reportsContainer.classList.remove('invoice-report-mode');
         } else {
             reportsContainer.classList.remove('items-report-mode');
             reportsContainer.classList.remove('invoice-report-mode');
+            reportsContainer.classList.remove('daily-shifts-report-mode');
         }
     }
 
@@ -1392,70 +1399,838 @@ if (typeof global !== 'undefined') {
 }
 
 
-// 3. DAILY SHIFT REPORTS
-function renderDailyShiftsReport(container) {
-    const filtered = getFilteredOrders();
-    const totalSales = filtered.reduce((s, o) => s + (Number(o.grandTotal) || 0), 0);
+// Helper to normalize payment method keys
+function normalizePaymentMethodKey(rawKey) {
+    if (!rawKey) return 'cash';
+    const k = String(rawKey).trim().toLowerCase();
+    if (k.includes('bank236') || k.includes('mada236')) return 'mada_236';
+    if (k.includes('bank237') || k.includes('mada237')) return 'mada_237';
+    if (k.includes('bank238') || k.includes('mada238')) return 'mada_238';
+    if (k.includes('bank239') || k.includes('mada239')) return 'mada_239';
+    if (k.includes('visa236')) return 'visa_236';
+    if (k.includes('visa237')) return 'visa_237';
+    if (k.includes('visa238')) return 'visa_238';
+    if (k.includes('visa239')) return 'visa_239';
+    if (k.includes('cash') || k.includes('نقدي')) return 'cash';
+    if (k.includes('credit') || k.includes('ajel') || k.includes('آجل') || k.includes('اجل')) return 'credit';
+    if (k.includes('mada_1') || k.includes('mada 1')) return 'mada_1';
+    if (k.includes('mada_2') || k.includes('mada 2')) return 'mada_2';
+    if (k.includes('apps') || k.includes('تطبيق')) return 'apps';
+    return k.replace(/[\s\-_]+/g, '_');
+}
 
-    const shiftsData = [
-        {
-            id: "SH-901",
-            cashier: "Nawaf Saeed (Manager)",
-            openedAt: reportDateFrom + " 08:00 AM",
-            closedAt: reportDateFrom + " 04:00 PM",
-            salesCount: Math.ceil(filtered.length * 0.6),
-            salesTotal: totalSales * 0.6,
-            returns: 0,
-            diff: 0
-        },
-        {
-            id: "SH-902",
-            cashier: "Cashier 1",
-            openedAt: reportDateFrom + " 04:00 PM",
-            closedAt: reportDateFrom + " 11:59 PM",
-            salesCount: Math.floor(filtered.length * 0.4),
-            salesTotal: totalSales * 0.4,
-            returns: 0,
-            diff: 0
+// Helper to get payment method display title
+function getPaymentMethodTitle(key, isAr = false) {
+    if (!key) return isAr ? 'نقدي' : 'Cash';
+    const norm = normalizePaymentMethodKey(key);
+    switch (norm) {
+        case 'mada_236': return 'Mada236';
+        case 'mada_237': return 'Mada237';
+        case 'mada_238': return 'Mada238';
+        case 'mada_239': return 'Mada239';
+        case 'visa_236': return 'Visa236';
+        case 'visa_237': return 'Visa237';
+        case 'visa_238': return 'Visa238';
+        case 'visa_239': return 'Visa239';
+        case 'cash': return isAr ? 'نقدي' : 'Cash';
+        case 'credit': return isAr ? 'آجل' : 'Credit';
+        case 'mada_1': return isAr ? 'جهاز مدى 1' : 'Mada Terminal 1';
+        case 'mada_2': return isAr ? 'جهاز مدى 2' : 'Mada Terminal 2';
+        case 'apps': return isAr ? 'تطبيقات التوصيل' : 'Delivery Apps';
+        default:
+            return String(key).trim();
+    }
+}
+
+// Calculate financial metrics and payment method breakdown for a set of orders
+function calculateFinancialsForOrders(orderList, isAr = false) {
+    let totalSales = 0;
+    let totalDiscount = 0;
+    let totalReturns = 0;
+    let totalFutureReturns = 0;
+    const paymentMethodsMap = {};
+
+    (orderList || []).forEach(o => {
+        const orderTotal = Number(o.grandTotal !== undefined ? o.grandTotal : (o.total || 0)) || 0;
+        const orderDiscountVal = Number(o.discount) || 0;
+        let orderReturnsVal = 0;
+        if (o.status === 'refunded' || o.status === 'returned') {
+            orderReturnsVal = orderTotal;
+        } else if (Array.isArray(o.cancelledItems) && o.cancelledItems.length > 0) {
+            orderReturnsVal = o.cancelledItems.reduce((sum, ci) => sum + (Number(ci.lineTotal || ci.amount || (ci.price * ci.qty)) || 0), 0);
+        } else if (o.returns) {
+            orderReturnsVal = Number(o.returns) || 0;
         }
-    ];
+        const orderFutureRetVal = Number(o.futureReturns) || 0;
 
-    container.innerHTML = `
-        ${renderReportHeader(currentLang === 'ar' ? 'تقارير الورديات اليومية' : 'Daily Shift Reports')}
-        <div class="report-printable-area">
-            <div class="report-table-card">
-                <div class="table-responsive">
-                    <table class="report-table">
-                        <thead>
-                            <tr>
-                                <th>${currentLang === 'ar' ? 'رقم الوردية' : 'Shift ID'}</th>
-                                <th>${currentLang === 'ar' ? 'الكاشير' : 'Cashier'}</th>
-                                <th>${currentLang === 'ar' ? 'بداية الوردية' : 'Opening'}</th>
-                                <th>${currentLang === 'ar' ? 'نهاية الوردية' : 'Closing'}</th>
-                                <th>${currentLang === 'ar' ? 'عدد الفواتير' : 'Invoices'}</th>
-                                <th>${currentLang === 'ar' ? 'إجمالي المبيعات' : 'Sales Total'}</th>
-                                <th class="text-end">${currentLang === 'ar' ? 'الفروقات' : 'Differences'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${shiftsData.map(sh => `
-                                <tr>
-                                    <td><strong>${sh.id}</strong></td>
-                                    <td>${escapeHtml(sh.cashier)}</td>
-                                    <td>${sh.openedAt}</td>
-                                    <td>${sh.closedAt}</td>
-                                    <td>${sh.salesCount}</td>
-                                    <td class="fw-bold">${formatCurrency(sh.salesTotal)}</td>
-                                    <td class="text-end text-success">${formatCurrency(sh.diff)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        totalSales += orderTotal;
+        totalDiscount += orderDiscountVal;
+        totalReturns += orderReturnsVal;
+        totalFutureReturns += orderFutureRetVal;
+
+        // Check if split payments or payment breakdown exists
+        const breakdown = o.paymentBreakdown;
+        const breakdownKeys = (breakdown && typeof breakdown === 'object')
+            ? Object.keys(breakdown).filter(k => (Number(breakdown[k]) || 0) > 0)
+            : [];
+
+        if (breakdownKeys.length > 0) {
+            const totalBreakdown = breakdownKeys.reduce((sum, k) => sum + (Number(breakdown[k]) || 0), 0);
+            breakdownKeys.forEach(key => {
+                const amt = Number(breakdown[key]) || 0;
+                const ratio = totalBreakdown > 0 ? (amt / totalBreakdown) : (1 / breakdownKeys.length);
+                const normKey = normalizePaymentMethodKey(key);
+                if (!paymentMethodsMap[normKey]) {
+                    paymentMethodsMap[normKey] = {
+                        key: normKey,
+                        name: getPaymentMethodTitle(key, isAr),
+                        totalSales: 0,
+                        totalDiscount: 0,
+                        totalReturns: 0,
+                        totalFutureReturns: 0
+                    };
+                }
+                paymentMethodsMap[normKey].totalSales += amt;
+                paymentMethodsMap[normKey].totalDiscount += Math.round(orderDiscountVal * ratio * 100) / 100;
+                paymentMethodsMap[normKey].totalReturns += Math.round(orderReturnsVal * ratio * 100) / 100;
+                paymentMethodsMap[normKey].totalFutureReturns += Math.round(orderFutureRetVal * ratio * 100) / 100;
+            });
+        } else {
+            const key = o.method || o.payMethod || o.paymentMethod || 'Cash';
+            const normKey = normalizePaymentMethodKey(key);
+            if (!paymentMethodsMap[normKey]) {
+                paymentMethodsMap[normKey] = {
+                    key: normKey,
+                    name: getPaymentMethodTitle(key, isAr),
+                    totalSales: 0,
+                    totalDiscount: 0,
+                    totalReturns: 0,
+                    totalFutureReturns: 0
+                };
+            }
+            paymentMethodsMap[normKey].totalSales += orderTotal;
+            paymentMethodsMap[normKey].totalDiscount += orderDiscountVal;
+            paymentMethodsMap[normKey].totalReturns += orderReturnsVal;
+            paymentMethodsMap[normKey].totalFutureReturns += orderFutureRetVal;
+        }
+    });
+
+    totalSales = Math.round(totalSales * 100) / 100;
+    totalDiscount = Math.round(totalDiscount * 100) / 100;
+    totalReturns = Math.round(totalReturns * 100) / 100;
+    totalFutureReturns = Math.round(totalFutureReturns * 100) / 100;
+    const netTotal = Math.round((totalSales - totalReturns) * 100) / 100;
+    const totalTax = Math.round((netTotal * 15) / 115 * 100) / 100;
+
+    const paymentMethodsList = Object.values(paymentMethodsMap).map(pm => {
+        const pmSales = Math.round(pm.totalSales * 100) / 100;
+        const pmDiscount = Math.round(pm.totalDiscount * 100) / 100;
+        const pmReturns = Math.round(pm.totalReturns * 100) / 100;
+        const pmFutureReturns = Math.round(pm.totalFutureReturns * 100) / 100;
+        const pmNet = Math.round((pmSales - pmReturns) * 100) / 100;
+        const pmTax = Math.round((pmNet * 15) / 115 * 100) / 100;
+        return {
+            key: pm.key,
+            name: pm.name,
+            totalSales: pmSales,
+            totalDiscount: pmDiscount,
+            totalReturns: pmReturns,
+            totalFutureReturns: pmFutureReturns,
+            netTotal: pmNet,
+            totalTax: pmTax
+        };
+    });
+
+    return {
+        totalSales,
+        totalPaid: totalSales,
+        totalDiscount,
+        totalReturns,
+        totalFutureReturns,
+        netTotal,
+        totalTax,
+        paymentMethods: paymentMethodsList,
+        ordersCount: orderList.length
+    };
+}
+
+// 3. DAILY SHIFT REPORTS DATA ENGINE
+function getDailyShiftsReportData() {
+    if (typeof ensureSeedOrders === 'function') {
+        ensureSeedOrders();
+    }
+
+    const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar');
+    const fromTime = new Date(reportDateFrom + "T00:00:00").getTime();
+    const toTime = new Date(reportDateTo + "T23:59:59.999").getTime();
+
+    // 1. Filter orders strictly within the date range
+    const allOrders = (typeof orders !== 'undefined' && Array.isArray(orders)) ? orders : [];
+    const filteredOrders = allOrders.filter(o => {
+        if (!o.date) return true;
+        const oTime = new Date(o.date).getTime();
+        return !isNaN(oTime) && oTime >= fromTime && oTime <= toTime;
+    });
+
+    // 2. Calculate overall summary and overall payment types
+    const overallFinancials = calculateFinancialsForOrders(filteredOrders, isAr);
+
+    // 3. Retrieve and filter shifts
+    let allShifts = [];
+    if (typeof getShiftsCollection === 'function') {
+        allShifts = getShiftsCollection();
+    } else if (typeof shifts !== 'undefined' && Array.isArray(shifts)) {
+        allShifts = shifts;
+    } else if (typeof DEFAULT_SHIFTS !== 'undefined' && Array.isArray(DEFAULT_SHIFTS)) {
+        allShifts = DEFAULT_SHIFTS;
+    }
+
+    // Clone to prevent mutating original collection
+    const clonedShifts = JSON.parse(JSON.stringify(allShifts));
+
+    // Attribution set to ensure an order is not double-counted across shifts
+    const attributedOrderIds = new Set();
+
+    // Find shifts belonging to the date range or with orders in the date range
+    const shiftSections = [];
+    clonedShifts.forEach(sh => {
+        // Find orders for this shift
+        const shiftOrders = filteredOrders.filter(o => {
+            if (attributedOrderIds.has(o.id)) return false;
+            // Direct shiftId match
+            if (o.shiftId && o.shiftId === sh.id) return true;
+            // Cashier match if shiftId is not set
+            if (!o.shiftId) {
+                const cashierMatch = (o.cashier === sh.cashier || 
+                                      o.cashier === sh.cashierEn || 
+                                      o.cashier === sh.cashierAr);
+                if (cashierMatch) return true;
+            }
+            // Time window match if shift is closed or open
+            if (!o.shiftId && sh.openedAt && o.date) {
+                const oTime = new Date(o.date).getTime();
+                const sOpen = new Date(sh.openedAt).getTime();
+                const sClose = sh.closedAt ? new Date(sh.closedAt).getTime() : Date.now();
+                if (oTime >= sOpen && oTime <= sClose) return true;
+            }
+            return false;
+        });
+
+        // Mark attributed orders
+        shiftOrders.forEach(o => attributedOrderIds.add(o.id));
+
+        // Check if shift falls within date range
+        let shiftInDateRange = false;
+        if (sh.openedAt) {
+            const openTime = new Date(sh.openedAt).getTime();
+            if (!isNaN(openTime) && openTime >= fromTime && openTime <= toTime) shiftInDateRange = true;
+        }
+        if (sh.closedAt) {
+            const closeTime = new Date(sh.closedAt).getTime();
+            if (!isNaN(closeTime) && closeTime >= fromTime && closeTime <= toTime) shiftInDateRange = true;
+        }
+        if (shiftOrders.length > 0) {
+            shiftInDateRange = true;
+        }
+
+        if (shiftInDateRange) {
+            const shiftFin = calculateFinancialsForOrders(shiftOrders, isAr);
+            shiftSections.push({
+                shift: sh,
+                financials: shiftFin,
+                orders: shiftOrders
+            });
+        }
+    });
+
+    // Handle any remaining unassigned orders if shifts exist or synthesize safe shift section
+    const unassignedOrders = filteredOrders.filter(o => !attributedOrderIds.has(o.id));
+    if (unassignedOrders.length > 0) {
+        if (shiftSections.length > 0) {
+            // Assign to the most relevant or active shift
+            const targetShift = shiftSections[0];
+            const combinedOrders = targetShift.orders.concat(unassignedOrders);
+            targetShift.orders = combinedOrders;
+            targetShift.financials = calculateFinancialsForOrders(combinedOrders, isAr);
+        } else {
+            // Create a general branch shift section so orders are never lost
+            const synthShift = {
+                id: 'SH-MAIN',
+                cashier: isAr ? 'الكاشير' : 'Cashier',
+                cashierEn: 'Cashier',
+                cashierAr: 'الكاشير',
+                status: 'closed',
+                openedAt: reportDateFrom + 'T08:00:00',
+                closedAt: reportDateTo + 'T23:59:59'
+            };
+            shiftSections.push({
+                shift: synthShift,
+                financials: calculateFinancialsForOrders(unassignedOrders, isAr),
+                orders: unassignedOrders
+            });
+        }
+    }
+
+    // Sequence labeling for repeated staff names (e.g. "Nawaf Saeed (1)", "Nawaf Saeed (2)")
+    const nameCounts = {};
+    shiftSections.forEach(item => {
+        const name = (isAr ? (item.shift.cashierAr || item.shift.cashier) : (item.shift.cashierEn || item.shift.cashier)) || 'Cashier';
+        nameCounts[name] = (nameCounts[name] || 0) + 1;
+    });
+
+    const nameIdx = {};
+    shiftSections.forEach(item => {
+        const name = (isAr ? (item.shift.cashierAr || item.shift.cashier) : (item.shift.cashierEn || item.shift.cashier)) || 'Cashier';
+        if (nameCounts[name] > 1) {
+            nameIdx[name] = (nameIdx[name] || 0) + 1;
+            item.sequenceTitle = `${name} (${nameIdx[name]})`;
+        } else {
+            item.sequenceTitle = name;
+        }
+    });
+
+    return {
+        overall: overallFinancials,
+        totalPaymentTypes: overallFinancials.paymentMethods,
+        shifts: shiftSections,
+        shiftsCount: shiftSections.length,
+        dateFrom: reportDateFrom,
+        dateTo: reportDateTo
+    };
+}
+
+// 3x2 Financial Arrangement Renderer (Used for Payment Types & Shift Summaries)
+function render3x2FinancialGrid(fin, isAr) {
+    return `
+        <div class="grid-cell col-left row-top">
+            <span class="cell-label">${isAr ? 'صافي الإجمالي' : 'Net Total'}</span>
+            <span class="cell-value">${formatCurrency(fin.netTotal)}</span>
+        </div>
+        <div class="grid-cell col-center row-top">
+            <span class="cell-label">${isAr ? 'إجمالي المرتجعات' : 'Total Returns'}</span>
+            <span class="cell-value">${formatCurrency(fin.totalReturns)}</span>
+        </div>
+        <div class="grid-cell col-right row-top">
+            <span class="cell-label">${isAr ? 'إجمالي المبيعات' : 'Total Sales'}</span>
+            <span class="cell-value">${formatCurrency(fin.totalSales)}</span>
+        </div>
+        <div class="grid-cell col-left row-bottom">
+            <span class="cell-label">${isAr ? 'إجمالي قيمة الخصم' : 'Total Discount Value'}</span>
+            <span class="cell-value">${formatCurrency(fin.totalDiscount)}</span>
+        </div>
+        <div class="grid-cell col-center row-bottom">
+            <span class="cell-label">${isAr ? 'إجمالي المرتجعات المستقبلية' : 'Total Future Returns'}</span>
+            <span class="cell-value">${formatCurrency(fin.totalFutureReturns)}</span>
+        </div>
+        <div class="grid-cell col-right row-bottom">
+            <span class="cell-label">${isAr ? 'إجمالي قيمة الضريبة' : 'Total Tax Value'}</span>
+            <span class="cell-value">${formatCurrency(fin.totalTax)}</span>
         </div>
     `;
 }
+
+// Format date and time for shift display
+function formatDailyShiftTime(dateStr) {
+    if (!dateStr) return '-';
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        let hours = d.getHours();
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        const formattedHours = String(hours).padStart(2, '0');
+        return `${ampm} ${formattedHours}:${minutes} ${day}/${month}/${year}`;
+    } catch (e) {
+        return dateStr;
+    }
+}
+
+// MAIN DAILY SHIFT REPORTS RENDERER
+function renderDailyShiftsReport(container) {
+    if (!container) return;
+
+    const data = getDailyShiftsReportData();
+    const overall = data.overall;
+    const paymentTypes = data.totalPaymentTypes;
+    const shiftsList = data.shifts;
+    const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar');
+
+    container.innerHTML = `
+        <section class="daily-shifts-report-screen" id="dailyShiftsReportScreen">
+            <!-- SECTION A: FIXED TOP -->
+            <header class="daily-shifts-report-top">
+                <div class="daily-shifts-report-top-header">
+                    <div class="daily-shifts-report-title-wrap">
+                        <span class="daily-shifts-report-breadcrumb">
+                            <span class="breadcrumb-root" onclick="openReportModule('invoice_reports')">${isAr ? 'التقارير' : 'Reports'}</span>
+                            <span class="breadcrumb-separator">/</span>
+                            <span class="breadcrumb-current">${isAr ? 'تقارير الورديات اليومية' : 'Daily Shift Reports'}</span>
+                        </span>
+                        <span class="daily-shifts-count-badge" id="dailyShiftsCountBadge">${isAr ? `الورديات: ${data.shiftsCount}` : `Shifts: ${data.shiftsCount}`}</span>
+                    </div>
+                    <div class="daily-shifts-report-date-filters">
+                        <div class="daily-shifts-date-group">
+                            <label for="dailyShiftsDateFrom"><i class="fa-regular fa-calendar"></i> ${isAr ? 'من:' : 'From:'}</label>
+                            <input type="date" id="dailyShiftsDateFrom" value="${reportDateFrom}" onchange="onDailyShiftsReportDateChange()">
+                        </div>
+                        <div class="daily-shifts-date-group">
+                            <label for="dailyShiftsDateTo"><i class="fa-regular fa-calendar"></i> ${isAr ? 'إلى:' : 'To:'}</label>
+                            <input type="date" id="dailyShiftsDateTo" value="${reportDateTo}" onchange="onDailyShiftsReportDateChange()">
+                        </div>
+                        <button type="button" class="btn btn-sm btn-teal daily-shifts-btn-apply" onclick="onDailyShiftsReportDateChange()">
+                            <i class="fa-solid fa-filter"></i> <span>${isAr ? 'تطبيق' : 'Apply'}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mandatory 6-Column Overall Sales Summary (Two-Row Table Layout, Locked LTR) -->
+                <div class="daily-shifts-overall-summary-wrap">
+                    <table class="daily-shifts-overall-summary-table">
+                        <thead>
+                            <tr>
+                                <th>${isAr ? 'صافي الإجمالي' : 'Net Total'}</th>
+                                <th>${isAr ? 'إجمالي قيمة الخصم' : 'Total Discount Value'}</th>
+                                <th>${isAr ? 'إجمالي قيمة الضريبة' : 'Total Tax Value'}</th>
+                                <th>${isAr ? 'إجمالي المرتجعات المستقبلية' : 'Total Future Returns'}</th>
+                                <th>${isAr ? 'إجمالي المرتجعات' : 'Total Returns'}</th>
+                                <th>${isAr ? 'الإجمالي المدفوع' : 'Total Paid'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${formatCurrency(overall.netTotal)}</td>
+                                <td>${formatCurrency(overall.totalDiscount)}</td>
+                                <td>${formatCurrency(overall.totalTax)}</td>
+                                <td>${formatCurrency(overall.totalFutureReturns)}</td>
+                                <td>${formatCurrency(overall.totalReturns)}</td>
+                                <td>${formatCurrency(overall.totalPaid)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </header>
+
+            <!-- SECTION B: INDEPENDENTLY SCROLLABLE MIDDLE -->
+            <main class="daily-shifts-report-middle" id="dailyShiftsReportScrollArea">
+                <!-- 1. Total Payment Types Divider -->
+                <div class="shift-reports-divider">
+                    <div class="divider-line"></div>
+                    <span class="divider-text">${isAr ? '( إجمالي طرق الدفع )' : '( Total Payment Types )'}</span>
+                    <div class="divider-line"></div>
+                </div>
+
+                <!-- 2. Payment-Type Financial Breakdown Blocks -->
+                <div class="payment-types-breakdowns-container">
+                    ${paymentTypes.length === 0 ? `
+                        <div class="text-center py-4 text-muted">${isAr ? 'لا توجد عمليات دفع مسجلة' : 'No payment transactions recorded'}</div>
+                    ` : paymentTypes.map(pm => `
+                        <div class="payment-type-breakdown-card" data-payment-key="${escapeHtml(pm.key)}">
+                            <div class="payment-type-card-header">
+                                <h4 class="payment-type-title">${escapeHtml(pm.name)} — ${isAr ? 'طريقة دفع' : 'Payment Type'}</h4>
+                            </div>
+                            <div class="payment-type-financial-grid">
+                                ${render3x2FinancialGrid(pm, isAr)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <!-- 3. Shifts Details Divider -->
+                <div class="shift-reports-divider">
+                    <div class="divider-line"></div>
+                    <span class="divider-text">${isAr ? '( تفاصيل الورديات )' : '( Shifts Details )'}</span>
+                    <div class="divider-line"></div>
+                </div>
+
+                <!-- 4. Dynamic Shift Sections -->
+                <div class="shifts-details-container">
+                    ${shiftsList.length === 0 ? `
+                        <div class="text-center py-4 text-muted">${isAr ? 'لا توجد ورديات في هذه الفترة' : 'No shifts found in this period'}</div>
+                    ` : shiftsList.map(item => {
+                        const sh = item.shift;
+                        const fin = item.financials;
+                        const openStr = formatDailyShiftTime(sh.openedAt);
+                        const closeStr = sh.closedAt ? formatDailyShiftTime(sh.closedAt) : (isAr ? 'مستمرة' : 'Ongoing');
+                        const isClosed = sh.status === 'closed';
+
+                        return `
+                            <div class="shift-section-card" id="shift_report_card_${escapeHtml(sh.id)}" data-shift-id="${escapeHtml(sh.id)}">
+                                <!-- Shift Section Header: Print Shift on LEFT, Creator on RIGHT -->
+                                <div class="shift-section-header">
+                                    <div class="shift-header-left">
+                                        <button type="button" 
+                                                class="btn btn-outline-shift-print" 
+                                                onclick="printIndividualShiftFromReport('${escapeHtml(sh.id)}')"
+                                                data-shift-id="${escapeHtml(sh.id)}"
+                                                title="${isAr ? 'طباعة تقرير الوردية' : 'Print Shift Report'}">
+                                            <i class="fa-solid fa-print"></i> <span>${isAr ? 'طباعة الوردية' : 'Print Shift'}</span>
+                                        </button>
+                                    </div>
+                                    <div class="shift-header-right">
+                                        <span class="shift-status-pill ${isClosed ? 'closed' : 'active'}">
+                                            ${isClosed ? (isAr ? 'مغلقة' : 'Closed') : (isAr ? 'نشطة' : 'Active')}
+                                        </span>
+                                        <span class="shift-creator-name">${escapeHtml(item.sequenceTitle)}</span>
+                                        <span class="shift-code-badge">#${escapeHtml(sh.id)}</span>
+                                        <span class="shift-timing-text">${openStr} - ${closeStr}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Each Shift Financial Summary (3x2 Arrangement) -->
+                                <div class="shift-summary-financial-grid">
+                                    ${render3x2FinancialGrid(fin, isAr)}
+                                </div>
+
+                                <!-- Individual Shift Payment Methods Breakdown -->
+                                ${fin.paymentMethods && fin.paymentMethods.length > 0 ? `
+                                    <div class="shift-payment-methods-wrap">
+                                        <h5 class="shift-payment-methods-title">${isAr ? 'طرق الدفع الخاصة بالوردية' : 'Shift Payment Methods'}</h5>
+                                        ${fin.paymentMethods.map(pm => `
+                                            <div class="shift-payment-method-item">
+                                                <div class="shift-pm-header">
+                                                    <strong>${escapeHtml(pm.name)}</strong> — ${isAr ? 'طريقة دفع' : 'Payment Type'}
+                                                </div>
+                                                <div class="payment-type-financial-grid">
+                                                    ${render3x2FinancialGrid(pm, isAr)}
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </main>
+
+            <!-- SECTION C: FIXED BOTTOM -->
+            <footer class="daily-shifts-report-bottom">
+                <button type="button" class="btn daily-shifts-btn-back" onclick="switchView('pos')" title="${isAr ? 'الرجوع لنقاط البيع' : 'Back to POS'}">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>${isAr ? 'رجوع' : 'Back'}</span>
+                </button>
+                <button type="button" class="btn btn-teal daily-shifts-btn-print" onclick="printDailyShiftsReport()" title="${isAr ? 'طباعة التقرير الكامل' : 'Print Complete Report'}">
+                    <i class="fa-solid fa-print"></i>
+                    <span>${isAr ? 'طباعة' : 'Print'}</span>
+                </button>
+            </footer>
+        </section>
+    `;
+}
+
+// Date change handler with validation
+function onDailyShiftsReportDateChange() {
+    const fromEl = document.getElementById('dailyShiftsDateFrom');
+    const toEl = document.getElementById('dailyShiftsDateTo');
+    if (fromEl && fromEl.value) {
+        if (toEl && toEl.value && fromEl.value > toEl.value) {
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? 'تاريخ البداية يجب أن يكون قبل أو يساوي تاريخ النهاية' : 'From Date must be less than or equal to To Date', 'warning');
+            }
+            return;
+        }
+        reportDateFrom = fromEl.value;
+    }
+    if (toEl && toEl.value) {
+        reportDateTo = toEl.value;
+    }
+    const container = document.getElementById('reportModuleContent');
+    if (container) {
+        renderDailyShiftsReport(container);
+    } else {
+        renderActiveReport();
+    }
+}
+
+// Print Individual Shift Action (Read-only, exact Shift ID)
+function printIndividualShiftFromReport(shiftId) {
+    const data = getDailyShiftsReportData();
+    const item = data.shifts.find(s => s.shift && s.shift.id === shiftId);
+    if (!item) {
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? 'الوردية غير موجودة' : 'Shift not found', 'danger');
+        }
+        return;
+    }
+
+    const sh = item.shift;
+    const f = item.financials;
+    const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar');
+
+    const storeTitle = (typeof storeSettings !== 'undefined' && (storeSettings.companyName || storeSettings.companyNameAr || storeSettings.nameAr))
+        ? (storeSettings.companyName || storeSettings.companyNameAr || storeSettings.nameAr)
+        : (isAr ? 'نور فودز' : 'NUR FOODES');
+    const branchTitle = (typeof storeSettings !== 'undefined' && (storeSettings.nameAr || storeSettings.nameEn))
+        ? (storeSettings.nameAr || storeSettings.nameEn)
+        : (isAr ? 'فرع الرياض' : 'Main Branch');
+    const vatNum = (typeof storeSettings !== 'undefined' && storeSettings.vatNumber) ? storeSettings.vatNumber : '300987654300003';
+    const cashierName = isAr ? (sh.cashierAr || sh.cashier) : (sh.cashierEn || sh.cashier);
+    const statusText = sh.status === 'closed' ? (isAr ? 'مغلقة' : 'Closed') : (isAr ? 'نشطة' : 'Active');
+
+    const html = `
+        <div style="font-family: 'Courier New', 'Cairo', monospace, sans-serif; font-size: 13px; line-height: 1.45; color: #000; padding: 12px; width: 100%; box-sizing: border-box; direction: ${isAr ? 'rtl' : 'ltr'};">
+            <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 10px;">
+                <h2 style="margin: 0 0 4px 0; font-size: 17px; font-weight: bold;">${escapeHtml(storeTitle)}</h2>
+                <div style="font-size: 13px;">${escapeHtml(branchTitle)}</div>
+                <div style="font-size: 12px; margin-top: 2px;">${isAr ? 'الرقم الضريبي:' : 'VAT No:'} ${escapeHtml(vatNum)}</div>
+                <h3 style="margin: 8px 0 2px 0; font-size: 15px; border-top: 1px solid #000; padding-top: 6px;">
+                    ${isAr ? 'تقرير الوردية اليومية' : 'Daily Shift Report'}
+                </h3>
+            </div>
+
+            <div style="margin-bottom: 8px; font-size: 12.5px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>${isAr ? 'رقم الوردية:' : 'Shift ID:'}</span>
+                    <strong>${escapeHtml(sh.id)}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>${isAr ? 'المستخدم / الكاشير:' : 'Cashier / User:'}</span>
+                    <strong>${escapeHtml(cashierName)}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>${isAr ? 'الحالة:' : 'Status:'}</span>
+                    <strong>${statusText}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>${isAr ? 'بداية الوردية:' : 'Opened At:'}</span>
+                    <span>${formatDailyShiftTime(sh.openedAt)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>${isAr ? 'نهاية الوردية:' : 'Closed At:'}</span>
+                    <span>${formatDailyShiftTime(sh.closedAt)}</span>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid #000; padding-top: 6px; margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>${isAr ? 'عدد الفواتير:' : 'Invoices Count:'}</span>
+                    <span>${f.ordersCount}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>${isAr ? 'إجمالي المبيعات:' : 'Total Sales:'}</span>
+                    <span>${formatCurrency(f.totalSales)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>${isAr ? 'إجمالي الخصم:' : 'Total Discount:'}</span>
+                    <span>${formatCurrency(f.totalDiscount)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>${isAr ? 'إجمالي المرتجعات:' : 'Total Returns:'}</span>
+                    <span>${formatCurrency(f.totalReturns)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>${isAr ? 'ضريبة القيمة المضافة (15%):' : 'VAT (15%):'}</span>
+                    <span>${formatCurrency(f.totalTax)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; border-top: 1px solid #000; padding-top: 4px; margin-top: 4px;">
+                    <span>${isAr ? 'صافي المبيعات:' : 'Net Total:'}</span>
+                    <span>${formatCurrency(f.netTotal)}</span>
+                </div>
+            </div>
+
+            ${f.paymentMethods && f.paymentMethods.length > 0 ? `
+                <div style="border-top: 1px dashed #000; padding-top: 6px; margin-bottom: 8px;">
+                    <div style="font-weight: bold; margin-bottom: 4px; text-decoration: underline;">
+                        ${isAr ? 'طرق الدفع بالوردية:' : 'Shift Payment Methods:'}
+                    </div>
+                    ${f.paymentMethods.map(pm => `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>${escapeHtml(pm.name)}:</span>
+                            <span>${formatCurrency(pm.netTotal)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : ''}
+
+            <div style="text-align: center; border-top: 2px dashed #000; padding-top: 8px; font-size: 11px; color: #333;">
+                <div>${isAr ? 'تاريخ الطباعة:' : 'Print Date:'} ${new Date().toLocaleString(isAr ? 'ar-SA' : 'en-US')}</div>
+                <div style="margin-top: 4px;">${isAr ? 'طابعة التقارير والمحاسبة (Reports Printer)' : 'Reports Printer'}</div>
+            </div>
+        </div>
+    `;
+
+    if (typeof routePrintJob === 'function') {
+        routePrintJob('reports', html, `Shift Report - ${sh.id}`);
+    } else {
+        window.print();
+    }
+}
+
+// Print Full Daily Shift Report
+function printDailyShiftsReport() {
+    const data = getDailyShiftsReportData();
+    const isAr = (typeof currentLang !== 'undefined' && currentLang === 'ar');
+    const title = isAr ? 'تقارير الورديات اليومية' : 'Daily Shift Reports';
+    const storeName = (typeof storeSettings !== 'undefined' && (isAr ? (storeSettings.nameAr || storeSettings.nameEn) : (storeSettings.nameEn || storeSettings.nameAr))) || 'NUR FOODES';
+    const companyName = (typeof storeSettings !== 'undefined' && (storeSettings.companyNameAr || storeSettings.companyName)) || '';
+    const vatNo = (typeof storeSettings !== 'undefined' && storeSettings.vatNumber) || '';
+
+    const overall = data.overall;
+    const paymentTypes = data.totalPaymentTypes;
+    const shiftsList = data.shifts;
+
+    const html = `
+        <div style="padding: 15px; font-family: sans-serif; color: #1e293b;">
+            <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #334155; padding-bottom: 10px;">
+                <h2 style="margin: 0 0 4px; font-size: 20px;">${escapeHtml(storeName)}</h2>
+                ${companyName ? `<p style="margin: 2px 0; color: #475569; font-size: 13px;">${escapeHtml(companyName)}</p>` : ''}
+                ${vatNo ? `<p style="margin: 2px 0; color: #475569; font-size: 12px;">${isAr ? 'الرقم الضريبي:' : 'VAT No:'} ${escapeHtml(vatNo)}</p>` : ''}
+                <h3 style="margin: 8px 0 4px; font-size: 16px; color: #0f172a;">${escapeHtml(title)}</h3>
+                <p style="font-size: 12px; margin: 0; color: #64748b;">${isAr ? `الفترة: من ${reportDateFrom} إلى ${reportDateTo}` : `Period: From ${reportDateFrom} To ${reportDateTo}`}</p>
+            </div>
+
+            <!-- Mandatory Six-Column Overall Sales Summary Table (Foodie POS Design) -->
+            <div style="margin-bottom: 20px; direction: ltr !important;">
+                <table style="width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px;">
+                    <thead>
+                        <tr style="background: #42556b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                            <th style="padding: 6px 4px; text-align: center; color: #ffffff !important; border: 1px solid #334155; width: 16.666%; font-weight: 600;">${isAr ? 'صافي الإجمالي' : 'Net Total'}</th>
+                            <th style="padding: 6px 4px; text-align: center; color: #ffffff !important; border: 1px solid #334155; width: 16.666%; font-weight: 600;">${isAr ? 'إجمالي قيمة الخصم' : 'Total Discount Value'}</th>
+                            <th style="padding: 6px 4px; text-align: center; color: #ffffff !important; border: 1px solid #334155; width: 16.666%; font-weight: 600;">${isAr ? 'إجمالي قيمة الضريبة' : 'Total Tax Value'}</th>
+                            <th style="padding: 6px 4px; text-align: center; color: #ffffff !important; border: 1px solid #334155; width: 16.666%; font-weight: 600;">${isAr ? 'إجمالي المرتجعات المستقبلية' : 'Total Future Returns'}</th>
+                            <th style="padding: 6px 4px; text-align: center; color: #ffffff !important; border: 1px solid #334155; width: 16.666%; font-weight: 600;">${isAr ? 'إجمالي المرتجعات' : 'Total Returns'}</th>
+                            <th style="padding: 6px 4px; text-align: center; color: #ffffff !important; border: 1px solid #334155; width: 16.666%; font-weight: 600;">${isAr ? 'الإجمالي المدفوع' : 'Total Paid'}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #ffffff !important;">
+                            <td style="padding: 6px 4px; text-align: center; color: #1e293b; border: 1px solid #cbd5e1; width: 16.666%; font-weight: 600;">${formatCurrency(overall.netTotal)}</td>
+                            <td style="padding: 6px 4px; text-align: center; color: #1e293b; border: 1px solid #cbd5e1; width: 16.666%; font-weight: 600;">${formatCurrency(overall.totalDiscount)}</td>
+                            <td style="padding: 6px 4px; text-align: center; color: #1e293b; border: 1px solid #cbd5e1; width: 16.666%; font-weight: 600;">${formatCurrency(overall.totalTax)}</td>
+                            <td style="padding: 6px 4px; text-align: center; color: #1e293b; border: 1px solid #cbd5e1; width: 16.666%; font-weight: 600;">${formatCurrency(overall.totalFutureReturns)}</td>
+                            <td style="padding: 6px 4px; text-align: center; color: #1e293b; border: 1px solid #cbd5e1; width: 16.666%; font-weight: 600;">${formatCurrency(overall.totalReturns)}</td>
+                            <td style="padding: 6px 4px; text-align: center; color: #1e293b; border: 1px solid #cbd5e1; width: 16.666%; font-weight: 600;">${formatCurrency(overall.totalPaid)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Divider: Total Payment Types -->
+            <div style="text-align: center; margin: 15px 0 10px 0; border-top: 1px solid #0d9488; padding-top: 6px;">
+                <span style="font-weight: bold; color: #334155; font-size: 13px;">${isAr ? '( إجمالي طرق الدفع )' : '( Total Payment Types )'}</span>
+            </div>
+
+            <!-- Payment Types Breakdown -->
+            <div style="margin-bottom: 20px;">
+                ${paymentTypes.map(pm => `
+                    <div style="margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; page-break-inside: avoid;">
+                        <div style="background: #f8fafc; padding: 6px 10px; font-weight: bold; font-size: 12px; border-bottom: 1px solid #e2e8f0;">
+                            ${escapeHtml(pm.name)} — ${isAr ? 'طريقة دفع' : 'Payment Type'}
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); direction: ltr !important; font-size: 11px;">
+                            <div style="padding: 6px 10px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                                <div style="color: #64748b;">${isAr ? 'صافي الإجمالي' : 'Net Total'}</div>
+                                <div style="font-weight: bold;">${formatCurrency(pm.netTotal)}</div>
+                            </div>
+                            <div style="padding: 6px 10px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; text-align: center;">
+                                <div style="color: #64748b;">${isAr ? 'إجمالي المرتجعات' : 'Total Returns'}</div>
+                                <div style="font-weight: bold;">${formatCurrency(pm.totalReturns)}</div>
+                            </div>
+                            <div style="padding: 6px 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">
+                                <div style="color: #64748b;">${isAr ? 'إجمالي المبيعات' : 'Total Sales'}</div>
+                                <div style="font-weight: bold;">${formatCurrency(pm.totalSales)}</div>
+                            </div>
+                            <div style="padding: 6px 10px; border-right: 1px solid #e2e8f0;">
+                                <div style="color: #64748b;">${isAr ? 'إجمالي قيمة الخصم' : 'Total Discount Value'}</div>
+                                <div style="font-weight: bold;">${formatCurrency(pm.totalDiscount)}</div>
+                            </div>
+                            <div style="padding: 6px 10px; border-right: 1px solid #e2e8f0; text-align: center;">
+                                <div style="color: #64748b;">${isAr ? 'إجمالي المرتجعات المستقبلية' : 'Total Future Returns'}</div>
+                                <div style="font-weight: bold;">${formatCurrency(pm.totalFutureReturns)}</div>
+                            </div>
+                            <div style="padding: 6px 10px; text-align: right;">
+                                <div style="color: #64748b;">${isAr ? 'إجمالي قيمة الضريبة' : 'Total Tax Value'}</div>
+                                <div style="font-weight: bold;">${formatCurrency(pm.totalTax)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <!-- Divider: Shifts Details -->
+            <div style="text-align: center; margin: 15px 0 10px 0; border-top: 1px solid #0d9488; padding-top: 6px;">
+                <span style="font-weight: bold; color: #334155; font-size: 13px;">${isAr ? '( تفاصيل الورديات )' : '( Shifts Details )'}</span>
+            </div>
+
+            <!-- Shifts Details Sections -->
+            <div>
+                ${shiftsList.map(item => {
+                    const sh = item.shift;
+                    const fin = item.financials;
+                    return `
+                        <div style="margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; page-break-inside: avoid;">
+                            <div style="background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; direction: ltr !important; font-size: 12px;">
+                                <div>
+                                    <strong>#${escapeHtml(sh.id)}</strong> (${sh.status === 'closed' ? (isAr ? 'مغلقة' : 'Closed') : (isAr ? 'نشطة' : 'Active')})
+                                </div>
+                                <div>
+                                    <strong>${escapeHtml(item.sequenceTitle)}</strong> - ${formatDailyShiftTime(sh.openedAt)} ${sh.closedAt ? ' / ' + formatDailyShiftTime(sh.closedAt) : ''}
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); direction: ltr !important; font-size: 11px;">
+                                <div style="padding: 6px 10px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                                    <div style="color: #64748b;">${isAr ? 'صافي الإجمالي' : 'Net Total'}</div>
+                                    <div style="font-weight: bold;">${formatCurrency(fin.netTotal)}</div>
+                                </div>
+                                <div style="padding: 6px 10px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; text-align: center;">
+                                    <div style="color: #64748b;">${isAr ? 'إجمالي المرتجعات' : 'Total Returns'}</div>
+                                    <div style="font-weight: bold;">${formatCurrency(fin.totalReturns)}</div>
+                                </div>
+                                <div style="padding: 6px 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">
+                                    <div style="color: #64748b;">${isAr ? 'إجمالي المبيعات' : 'Total Sales'}</div>
+                                    <div style="font-weight: bold;">${formatCurrency(fin.totalSales)}</div>
+                                </div>
+                                <div style="padding: 6px 10px; border-right: 1px solid #e2e8f0;">
+                                    <div style="color: #64748b;">${isAr ? 'إجمالي قيمة الخصم' : 'Total Discount Value'}</div>
+                                    <div style="font-weight: bold;">${formatCurrency(fin.totalDiscount)}</div>
+                                </div>
+                                <div style="padding: 6px 10px; border-right: 1px solid #e2e8f0; text-align: center;">
+                                    <div style="color: #64748b;">${isAr ? 'إجمالي المرتجعات المستقبلية' : 'Total Future Returns'}</div>
+                                    <div style="font-weight: bold;">${formatCurrency(fin.totalFutureReturns)}</div>
+                                </div>
+                                <div style="padding: 6px 10px; text-align: right;">
+                                    <div style="color: #64748b;">${isAr ? 'إجمالي قيمة الضريبة' : 'Total Tax Value'}</div>
+                                    <div style="font-weight: bold;">${formatCurrency(fin.totalTax)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <div style="text-align: center; border-top: 1px dashed #64748b; padding-top: 8px; font-size: 11px; color: #64748b; margin-top: 20px;">
+                ${isAr ? 'تاريخ الطباعة:' : 'Print Date:'} ${new Date().toLocaleString(isAr ? 'ar-SA' : 'en-US')}
+            </div>
+        </div>
+    `;
+
+    if (typeof routePrintJob === 'function') {
+        routePrintJob('reports', html, title);
+    } else {
+        window.print();
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.renderDailyShiftsReport = renderDailyShiftsReport;
+    window.getDailyShiftsReportData = getDailyShiftsReportData;
+    window.onDailyShiftsReportDateChange = onDailyShiftsReportDateChange;
+    window.printDailyShiftsReport = printDailyShiftsReport;
+    window.printIndividualShiftFromReport = printIndividualShiftFromReport;
+}
+if (typeof global !== 'undefined') {
+    global.renderDailyShiftsReport = renderDailyShiftsReport;
+    global.getDailyShiftsReportData = getDailyShiftsReportData;
+    global.onDailyShiftsReportDateChange = onDailyShiftsReportDateChange;
+    global.printDailyShiftsReport = printDailyShiftsReport;
+    global.printIndividualShiftFromReport = printIndividualShiftFromReport;
+}
+
 
 // 4. DAMAGED ITEMS REPORT
 function renderDamagedItemsReport(container) {
