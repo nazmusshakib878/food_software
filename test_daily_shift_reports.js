@@ -299,6 +299,200 @@ assert('Main Print: Contains 6-column summary in print HTML', printedHtml.includ
 assert('Main Print: Contains Total Payment Types and Shifts Details', printedHtml.includes('طرق الدفع') || printedHtml.includes('Payment Types'));
 assert('Main Print Safety: No data mutated', window.orders.length === preOrdersCount);
 
+// 6. Partner-wise Credit Grouping & Display Labels (Parts 8, 9, 10, 11, 12)
+console.log('\n--- Suite 6: Partner-wise Credit Grouping & Display Labels (Parts 8-12) ---');
+
+// Build scenario with 10 Hungerstation, 5 Ninja, 3 Jahez, 2 Keeta, 1 ToYou, 2 Generic Credit, 4 Cash, 2 Mada237, 2 Mada239 orders
+const partnerScenarioOrders = [];
+let pSeq = 5000;
+
+// Shift 1: 6 Hungerstation, 3 Ninja, 1 Jahez, 1 Keeta, 1 Generic Credit, 2 Cash, 2 Mada237
+for (let i = 0; i < 6; i++) {
+    partnerScenarioOrders.push({
+        id: `ORD-P${++pSeq}`, shiftId: 'SH-P1', grandTotal: 50.00, discount: 0, date: '2026-10-29T10:00:00Z',
+        customerId: 'hungerstation', customer: 'Hungerstation - شركة هنجر', method: 'Credit', status: 'completed'
+    });
+}
+for (let i = 0; i < 3; i++) {
+    partnerScenarioOrders.push({
+        id: `ORD-P${++pSeq}`, shiftId: 'SH-P1', grandTotal: 40.00, discount: 0, date: '2026-10-29T10:30:00Z',
+        customerId: 'ninja', customer: 'ninja - شركة الخيال / نينجا', method: 'Apps', status: 'completed'
+    });
+}
+partnerScenarioOrders.push({
+    id: `ORD-P${++pSeq}`, shiftId: 'SH-P1', grandTotal: 60.00, discount: 0, date: '2026-10-29T11:00:00Z',
+    customerId: 'jahiz', customer: 'jahiz - شركة جاهز الدولية', method: 'Ajel', status: 'completed'
+});
+partnerScenarioOrders.push({
+    id: `ORD-P${++pSeq}`, shiftId: 'SH-P1', grandTotal: 30.00, discount: 0, date: '2026-10-29T11:15:00Z',
+    customerId: 'keeta', customer: 'keeta - تطبيق كيتا', method: 'Credit', status: 'completed'
+});
+partnerScenarioOrders.push({
+    id: `ORD-P${++pSeq}`, shiftId: 'SH-P1', grandTotal: 25.00, discount: 0, date: '2026-10-29T11:30:00Z',
+    customerId: 'cash_cust_1', customer: 'Customer 1', method: 'Credit', status: 'completed'
+});
+for (let i = 0; i < 2; i++) {
+    partnerScenarioOrders.push({
+        id: `ORD-P${++pSeq}`, shiftId: 'SH-P1', grandTotal: 20.00, discount: 0, date: '2026-10-29T11:45:00Z',
+        customerId: 'cash', customer: 'Cash Customer', method: 'Cash', status: 'completed'
+    });
+}
+for (let i = 0; i < 2; i++) {
+    partnerScenarioOrders.push({
+        id: `ORD-P${++pSeq}`, shiftId: 'SH-P1', grandTotal: 35.00, discount: 0, date: '2026-10-29T12:00:00Z',
+        customerId: 'cash', customer: 'Cash Customer', method: 'Mada237', status: 'completed'
+    });
+}
+
+// Shift 2: 4 Hungerstation, 2 Ninja, 2 Jahez, 1 Keeta, 1 ToYou, 1 Generic Credit, 2 Cash, 2 Mada239
+for (let i = 0; i < 4; i++) {
+    partnerScenarioOrders.push({
+        id: `ORD-P${++pSeq}`, shiftId: 'SH-P2', grandTotal: 50.00, discount: 0, date: '2026-10-29T14:00:00Z',
+        customerId: 'hungerstation', customer: 'هنقرستيشن', method: 'Credit', status: 'completed'
+    });
+}
+for (let i = 0; i < 2; i++) {
+    partnerScenarioOrders.push({
+        id: `ORD-P${++pSeq}`, shiftId: 'SH-P2', grandTotal: 40.00, discount: 0, date: '2026-10-29T14:30:00Z',
+        customerId: 'ninja', customer: 'نينجا', method: 'Credit', status: 'completed'
+    });
+}
+for (let i = 0; i < 2; i++) {
+    partnerScenarioOrders.push({
+        id: `ORD-P${++pSeq}`, shiftId: 'SH-P2', grandTotal: 60.00, discount: 0, date: '2026-10-29T15:00:00Z',
+        customerId: 'jahiz', customer: 'جاهز', method: 'Credit', status: 'completed'
+    });
+}
+partnerScenarioOrders.push({
+    id: `ORD-P${++pSeq}`, shiftId: 'SH-P2', grandTotal: 30.00, discount: 0, date: '2026-10-29T15:30:00Z',
+    customerId: 'keeta', customer: 'كيتا', method: 'Credit', status: 'completed'
+});
+partnerScenarioOrders.push({
+    id: `ORD-P${++pSeq}`, shiftId: 'SH-P2', grandTotal: 45.00, discount: 0, date: '2026-10-29T16:00:00Z',
+    customerId: 'toyou', customer: 'ToYou - شركة تطبيق تويو', method: 'Credit', status: 'completed'
+});
+partnerScenarioOrders.push({
+    id: `ORD-P${++pSeq}`, shiftId: 'SH-P2', grandTotal: 25.00, discount: 0, date: '2026-10-29T16:15:00Z',
+    customerId: 'cash_cust_2', customer: 'Customer 2', method: 'Credit', status: 'completed'
+});
+for (let i = 0; i < 2; i++) {
+    partnerScenarioOrders.push({
+        id: `ORD-P${++pSeq}`, shiftId: 'SH-P2', grandTotal: 20.00, discount: 0, date: '2026-10-29T16:30:00Z',
+        customerId: 'cash', customer: 'Cash Customer', method: 'Cash', status: 'completed'
+    });
+}
+for (let i = 0; i < 2; i++) {
+    partnerScenarioOrders.push({
+        id: `ORD-P${++pSeq}`, shiftId: 'SH-P2', grandTotal: 45.00, discount: 0, date: '2026-10-29T17:00:00Z',
+        customerId: 'cash', customer: 'Cash Customer', method: 'Mada239', status: 'completed'
+    });
+}
+
+const partnerShifts = [
+    { id: 'SH-P1', cashier: 'Ahmed Ali', openedAt: '2026-10-29T08:00:00Z', closedAt: '2026-10-29T13:00:00Z', status: 'closed' },
+    { id: 'SH-P2', cashier: 'Ahmed Ali', openedAt: '2026-10-29T13:30:00Z', closedAt: '2026-10-29T18:00:00Z', status: 'closed' }
+];
+
+window.orders = partnerScenarioOrders;
+window.shifts = partnerShifts;
+window.reportDateFrom = '2026-10-29';
+window.reportDateTo = '2026-10-29';
+window.currentLang = 'en';
+
+const partnerReportData = window.getDailyShiftsReportData();
+const pTypes = partnerReportData.totalPaymentTypes;
+
+// 1. Separate Partner-specific Credit Groups exist
+const hsGroup = pTypes.find(p => p.key === 'credit_hungerstation');
+const ninjaGroup = pTypes.find(p => p.key === 'credit_ninja');
+const jahizGroup = pTypes.find(p => p.key === 'credit_jahiz');
+const keetaGroup = pTypes.find(p => p.key === 'credit_keeta');
+const toyouGroup = pTypes.find(p => p.key === 'credit_toyou');
+const genericCreditGroup = pTypes.find(p => p.key === 'credit');
+const cashGroup = pTypes.find(p => p.key === 'cash');
+const mada237Group = pTypes.find(p => p.key === 'mada_237');
+const mada239Group = pTypes.find(p => p.key === 'mada_239');
+
+assert('Partner: Credit — Hungerstation group exists independently', hsGroup !== undefined);
+assert('Partner: Credit — ninja group exists independently', ninjaGroup !== undefined);
+assert('Partner: Credit — jahiz group exists independently', jahizGroup !== undefined);
+assert('Partner: Credit — keeta group exists independently', keetaGroup !== undefined);
+assert('Partner: Credit — ToYou group exists independently', toyouGroup !== undefined);
+assert('Partner: Generic Credit group exists independently for unassociated credit', genericCreditGroup !== undefined);
+assert('Standard: Cash group exists independently', cashGroup !== undefined);
+assert('Standard: Mada237 group exists independently', mada237Group !== undefined);
+assert('Standard: Mada239 group exists independently', mada239Group !== undefined);
+
+// 2. Exact Financial Aggregation per Partner (Total 10 Hungerstation orders = 500.00)
+assert('Partner Math: Hungerstation totalSales = 500.00 (10 orders x 50.00)', Math.abs(hsGroup.totalSales - 500.00) < 0.01);
+assert('Partner Math: Ninja totalSales = 200.00 (5 orders x 40.00)', Math.abs(ninjaGroup.totalSales - 200.00) < 0.01);
+assert('Partner Math: Jahez totalSales = 180.00 (3 orders x 60.00)', Math.abs(jahizGroup.totalSales - 180.00) < 0.01);
+assert('Partner Math: Keeta totalSales = 60.00 (2 orders x 30.00)', Math.abs(keetaGroup.totalSales - 60.00) < 0.01);
+assert('Partner Math: ToYou totalSales = 45.00 (1 order x 45.00)', Math.abs(toyouGroup.totalSales - 45.00) < 0.01);
+assert('Partner Math: Generic Credit totalSales = 50.00 (2 orders x 25.00)', Math.abs(genericCreditGroup.totalSales - 50.00) < 0.01);
+assert('Partner Math: Cash totalSales = 80.00 (4 orders x 20.00)', Math.abs(cashGroup.totalSales - 80.00) < 0.01);
+assert('Partner Math: Mada237 totalSales = 70.00 (2 orders x 35.00)', Math.abs(mada237Group.totalSales - 70.00) < 0.01);
+assert('Partner Math: Mada239 totalSales = 90.00 (2 orders x 45.00)', Math.abs(mada239Group.totalSales - 90.00) < 0.01);
+
+// 3. No Partner combinations, no double-counting
+const sumGroupSales = pTypes.reduce((acc, p) => acc + p.totalSales, 0);
+assert('Attribution: Sum of payment groups matches overall sales exactly (1275.00)', Math.abs(sumGroupSales - partnerReportData.overall.totalSales) < 0.01 && Math.abs(sumGroupSales - 1275.00) < 0.01);
+
+// 4. Partner Registered Arabic Company Names preserved
+assert('Company Name: Hungerstation has "شركة هنجر"', hsGroup.companyNameAr === 'شركة هنجر');
+assert('Company Name: Jahez has "شركة جاهز الدولية"', jahizGroup.companyNameAr === 'شركة جاهز الدولية');
+assert('Company Name: Ninja has "شركة الخيال / نينجا"', ninjaGroup.companyNameAr === 'شركة الخيال / نينجا');
+assert('Company Name: Keeta has "تطبيق كيتا"', keetaGroup.companyNameAr === 'تطبيق كيتا');
+assert('Company Name: ToYou has "شركة تطبيق تويو"', toyouGroup.companyNameAr === 'شركة تطبيق تويو');
+assert('Company Name: Generic credit has no fabricated company name', genericCreditGroup.companyNameAr === '');
+
+// 5. DOM Rendering of Partner-specific Headings with text-direction isolation
+window.renderDailyShiftsReport(container);
+const hsCard = container.querySelector('.payment-type-breakdown-card[data-payment-key="credit_hungerstation"]');
+assert('DOM: Hungerstation card rendered in DOM', hsCard !== null);
+const hsHeading = hsCard?.querySelector('.payment-type-card-header');
+assert('DOM: Heading contains "Credit"', hsHeading && hsHeading.textContent.includes('Credit'));
+assert('DOM: Heading contains "Hungerstation"', hsHeading && hsHeading.textContent.includes('Hungerstation'));
+assert('DOM: Heading contains "شركة هنجر"', hsHeading && hsHeading.textContent.includes('شركة هنجر'));
+assert('DOM: Heading contains ": Payment Type"', hsHeading && hsHeading.textContent.includes('Payment Type'));
+assert('DOM: Uses <bdi> tokens for text direction isolation', hsHeading && hsHeading.innerHTML.includes('<bdi'));
+
+// 6. Level 2: Individual Shift Payment Breakdown with Partner Credit
+const pShifts = partnerReportData.shifts;
+assert('Shifts: Exactly 2 shifts found', pShifts.length === 2);
+assert('Sequence Title: Shift 1 is "Ahmed Ali (1)"', pShifts[0].sequenceTitle === 'Ahmed Ali (1)');
+assert('Sequence Title: Shift 2 is "Ahmed Ali (2)"', pShifts[1].sequenceTitle === 'Ahmed Ali (2)');
+
+const s1Pms = pShifts[0].financials.paymentMethods;
+const s1Hs = s1Pms.find(p => p.key === 'credit_hungerstation');
+const s1Ninja = s1Pms.find(p => p.key === 'credit_ninja');
+const s1ToYou = s1Pms.find(p => p.key === 'credit_toyou');
+assert('Shift 1 Level 2: Hungerstation has 6 orders = 300.00', s1Hs && Math.abs(s1Hs.totalSales - 300.00) < 0.01);
+assert('Shift 1 Level 2: Ninja has 3 orders = 120.00', s1Ninja && Math.abs(s1Ninja.totalSales - 120.00) < 0.01);
+assert('Shift 1 Level 2: ToYou does NOT appear in Shift 1', s1ToYou === undefined);
+
+const s2Pms = pShifts[1].financials.paymentMethods;
+const s2Hs = s2Pms.find(p => p.key === 'credit_hungerstation');
+const s2ToYou = s2Pms.find(p => p.key === 'credit_toyou');
+assert('Shift 2 Level 2: Hungerstation has 4 orders = 200.00', s2Hs && Math.abs(s2Hs.totalSales - 200.00) < 0.01);
+assert('Shift 2 Level 2: ToYou appears in Shift 2 with 45.00', s2ToYou && Math.abs(s2ToYou.totalSales - 45.00) < 0.01);
+
+// 7. Visual Format Verification: "<value> : <label>" and Color Hierarchy (Parts 13, 14, 15)
+console.log('\n--- Suite 7: Visual Format & Color Hierarchy Verification ---');
+const firstCell = hsCard.querySelector('.grid-cell.col-left.row-top');
+assert('Format: Cell displays "<value> : <label>" format', firstCell && firstCell.textContent.includes(':') && firstCell.textContent.includes('Net Total'));
+assert('Color Class: Cell value has class .cell-value', firstCell && firstCell.querySelector('.cell-value') !== null);
+assert('Color Class: Cell label has class .cell-label', firstCell && firstCell.querySelector('.cell-label') !== null);
+assert('Color Class: Cell colon has class .cell-colon', firstCell && firstCell.querySelector('.cell-colon') !== null);
+
+// Check CSS rules for exact color palette
+assert('CSS Color: Section divider text has #534358 (Dark Purple/Grey)', reportsCss.includes('.shift-reports-divider .divider-text') && reportsCss.includes('#534358'));
+assert('CSS Color: Section divider line has #0d9488 (Teal)', reportsCss.includes('.shift-reports-divider .divider-line') && reportsCss.includes('#0d9488'));
+assert('CSS Color: Numeric values have #0f172a (Dark Charcoal)', reportsCss.includes('.cell-value') && reportsCss.includes('#0f172a'));
+assert('CSS Color: Financial labels have #534358 (Dark Purple/Grey)', reportsCss.includes('.cell-label') && reportsCss.includes('#534358'));
+assert('CSS Color: Payment Type labels have #534358', reportsCss.includes('.pm-type-label') && reportsCss.includes('#534358'));
+assert('CSS Color: Payment Method names have #1e293b', reportsCss.includes('.pm-name') && reportsCss.includes('#1e293b'));
+
 console.log(`\n=== RESULTS: ${passedTests} PASSED, ${failedTests} FAILED ===\n`);
 if (failedTests > 0) {
     process.exit(1);
