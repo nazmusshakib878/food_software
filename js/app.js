@@ -748,15 +748,11 @@ async function kioskSubmitLogin() {
         };
         persistData();
         updateUserBadge();
-        closeLoginModal();
-        closeSideDrawer();
-        switchView('pos');
-
-        const welcomeName = currentLang === 'ar' ? (currentUser.nameAr || currentUser.name) : (currentUser.nameEn || currentUser.name);
-        showToast(currentLang === 'ar' ? `مرحباً بك (${welcomeName})` : `Welcome (${welcomeName})`, "success");
-
         kioskPinDigits = [];
         updateKioskPinDisplay();
+
+        // Redirect to Welcome Dashboard as required by POS workflow
+        window.location.href = 'dashboard.html';
     } else {
         showToast(currentLang === 'ar' ? "الرمز السري غير صحيح!" : "Invalid PIN!", "danger");
         triggerKioskShake();

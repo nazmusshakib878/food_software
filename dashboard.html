@@ -7,7 +7,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;500;600&family=Noto+Sans+Arabic:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;500;600&family=Noto+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -150,6 +150,12 @@
             border-color: #1a2536;
             box-shadow: 0 0 0 2px rgba(26, 37, 54, 0.2);
         }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
     </style>
 </head>
 <body>
@@ -162,23 +168,136 @@
         </div>
 
         <!-- Greeting Line -->
-        <div class="greeting">
-            <span class="english" dir="ltr">Hello,</span>
-            <span class="arabic" dir="rtl">محمد نور</span>
+        <div class="greeting" id="greetingContainer">
+            <span class="english" id="greetingHello" dir="ltr">Hello,</span>
+            <span class="arabic" id="greetingUserName" dir="auto">User</span>
         </div>
 
         <!-- Action Buttons -->
         <div class="action-buttons">
-            <!-- Navigates to another dashboard -->
-            <a href="new_shift.html" class="btn">Start Selling</a>
-            <button class="btn" onclick="handleLogout()">Log Out</button>
+            <button type="button" id="btnStartSelling" class="btn" onclick="handleStartSelling()">Start Selling</button>
+            <button type="button" id="btnLogout" class="btn" onclick="handleLogout()">Log Out</button>
         </div>
     </div>
 
     <script>
-        function handleLogout() {
-            localStorage.removeItem('nurpos_user');
-            localStorage.removeItem('nurpos_current_shift');
+        // Initialize Welcome Dashboard with Authenticated User
+        (function initDashboard() {
+            let user = null;
+            try {
+                user = JSON.parse(localStorage.getItem('nurpos_user') || 'null');
+            } catch(e) {}
+
+            // If not authenticated, redirect to Login Screen
+            if (!user || user.role === 'guest' || !user.role) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const helloEl = document.getElementById('greetingHello');
+            const nameEl = document.getElementById('greetingUserName');
+            const startBtn = document.getElementById('btnStartSelling');
+            const logoutBtn = document.getElementById('btnLogout');
+
+            let currentLang = 'en';
+            try { currentLang = localStorage.getItem('nurpos_lang') || 'en'; } catch(e) {}
+
+            // Determine greeting display name based on verified user account
+            const displayName = (currentLang === 'ar') 
+                ? (user.nameAr || user.name || 'كاشير') 
+                : (user.nameEn || user.name || 'Cashier');
+
+            if (nameEl) {
+                nameEl.textContent = displayName;
+            }
+
+            if (currentLang === 'ar') {
+                if (helloEl) {
+                    helloEl.textContent = 'مرحباً،';
+                    helloEl.setAttribute('dir', 'rtl');
+                }
+                if (startBtn) startBtn.textContent = 'بدء البيع';
+                if (logoutBtn) logoutBtn.textContent = 'تسجيل الخروج';
+            } else {
+                if (helloEl) {
+                    helloEl.textContent = 'Hello,';
+                    helloEl.setAttribute('dir', 'ltr');
+                }
+                if (startBtn) startBtn.textContent = 'Start Selling';
+                if (logoutBtn) logoutBtn.textContent = 'Log Out';
+            }
+        })();
+
+        let isActionPending = false;
+
+        function handleStartSelling() {
+            if (isActionPending) return;
+            isActionPending = true;
+
+            const btn = document.getElementById('btnStartSelling');
+            if (btn) btn.disabled = true;
+
+            try {
+                const user = JSON.parse(localStorage.getItem('nurpos_user') || 'null');
+                if (!user || user.role === 'guest') {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Check existing active shift
+                let shifts = [];
+                try {
+                    shifts = JSON.parse(localStorage.getItem('nurpos_shifts') || 'null');
+                } catch(e) {}
+
+                let activeShift = null;
+                if (Array.isArray(shifts) && shifts.length > 0) {
+                    activeShift = shifts.find(s => s.status === 'active');
+                } else {
+                    // Check nurpos_current_shift
+                    try {
+                        const cur = JSON.parse(localStorage.getItem('nurpos_current_shift') || 'null');
+                        if (cur && cur.status === 'active' && Number(cur.openingCash) > 0) {
+                            activeShift = cur;
+                        }
+                    } catch(e) {}
+                }
+
+                if (activeShift) {
+                    // STEP 7A: Resume existing active shift without creating duplicate shift
+                    window.location.href = 'index.html';
+                } else {
+                    // STEP 7B: No active shift exists -> open New Shift screen
+                    window.location.href = 'new_shift.html';
+                }
+            } catch(err) {
+                console.error('Error starting selling:', err);
+                window.location.href = 'new_shift.html';
+            }
+        }
+
+        async function handleLogout() {
+            if (isActionPending) return;
+            isActionPending = true;
+
+            const btn = document.getElementById('btnLogout');
+            if (btn) btn.disabled = true;
+
+            try {
+                let token = null;
+                try { token = sessionStorage.getItem('nurpos_token'); } catch(e) {}
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+                    }
+                }).catch(() => {});
+            } catch(e) {}
+
+            try { sessionStorage.removeItem('nurpos_token'); } catch(e) {}
+            localStorage.setItem('nurpos_user', JSON.stringify({ role: 'guest', name: 'Guest', canOpenSidebar: false }));
+
             window.location.href = 'index.html';
         }
     </script>

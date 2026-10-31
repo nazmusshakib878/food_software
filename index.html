@@ -2024,25 +2024,42 @@
 <script>
     (() => {
         const params = new URLSearchParams(window.location.search);
-        if (params.get('shift') !== 'started') return;
+        let savedUser = null;
+        try { savedUser = JSON.parse(localStorage.getItem('nurpos_user') || 'null'); } catch(e){}
 
-        try {
-            const shift = JSON.parse(localStorage.getItem('nurpos_current_shift') || 'null');
-            if (!shift || Number(shift.openingCash) <= 0) return;
+        if (params.get('shift') === 'started') {
+            try {
+                const shift = JSON.parse(localStorage.getItem('nurpos_current_shift') || 'null');
+                if (shift && Number(shift.openingCash) > 0) {
+                    if (savedUser && savedUser.role && savedUser.role !== 'guest') {
+                        currentUser = savedUser;
+                    }
+                    persistData();
+                    updateUserBadge();
+                    closeLoginModal();
+                    closeSideDrawer();
+                    switchView('pos');
+                    window.history.replaceState({}, document.title, 'index.html');
+                    return;
+                }
+            } catch (error) {
+                console.error('Unable to resume the new shift:', error);
+            }
+        }
 
-            currentUser = {
-                role: 'staff',
-                name: shift.englishName || shift.name || 'Cashier 1',
-                nameEn: shift.englishName || shift.name || 'Cashier 1',
-                nameAr: shift.name || 'محمد نور'
-            };
-            persistData();
-            updateUserBadge();
-            closeLoginModal();
-            switchView('pos');
-            window.history.replaceState({}, document.title, 'index.html');
-        } catch (error) {
-            console.error('Unable to resume the new shift:', error);
+        // Browser refresh logic: if user is already authenticated with an active shift, stay in POS
+        if (savedUser && savedUser.role && savedUser.role !== 'guest') {
+            let shiftsList = [];
+            try { shiftsList = JSON.parse(localStorage.getItem('nurpos_shifts') || 'null'); } catch(e){}
+            const hasActiveShift = (Array.isArray(shiftsList) && shiftsList.some(s => s.status === 'active')) ||
+                (typeof DEFAULT_SHIFTS !== 'undefined' && Array.isArray(DEFAULT_SHIFTS) && DEFAULT_SHIFTS.some(s => s.status === 'active'));
+            if (hasActiveShift) {
+                currentUser = savedUser;
+                closeLoginModal();
+                updateUserBadge();
+                switchView('pos');
+                return;
+            }
         }
     })();
 </script>
