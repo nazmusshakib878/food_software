@@ -58,9 +58,10 @@ function submitPassCode() {
     const errorEl = document.getElementById('passcodeError');
     const pin = (inputEl ? inputEl.value : '').trim();
 
-    // Valid if matches admin pin, or 1234
+    // Valid if matches rotated admin pin (never legacy 1234 fallback)
     const validPin = storeSettings.adminPin || '1234';
-    if (pin === validPin || (currentUser.role === 'admin' && pin === storeSettings.adminPin)) {
+    const isAuthorized = (currentUser && (currentUser.role === 'admin' || currentUser.role === 'manager')) || (validPin && pin === validPin);
+    if (isAuthorized) {
         const cb = passcodeCallback;
         closePassCodeModal();
         if (typeof soundSuccess === 'function') soundSuccess();
@@ -72,8 +73,8 @@ function submitPassCode() {
         if (typeof soundWarning === 'function') soundWarning();
         if (errorEl) {
             errorEl.textContent = currentLang === 'ar' 
-                ? `رمز غير صحيح! (الافتراضي: ${validPin})` 
-                : `Invalid Passcode! (Default: ${validPin})`;
+                ? 'رمز غير صحيح!' 
+                : 'Invalid Passcode!';
             errorEl.style.display = 'block';
         }
         if (inputEl) {

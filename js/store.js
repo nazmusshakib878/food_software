@@ -14,8 +14,9 @@ var storeSettings = (() => {
         s.companyNameAr = "شركة صح للتجارة";
         s.vatNumber = "300987654300003";
         // Ensure valid fallback logic
-        if (!s.adminPin) s.adminPin = "1234";
-        if (!s.staffPin) s.staffPin = "0000";
+        // Legacy credential revocation and cleanup
+        if (s.adminPin === "1234") delete s.adminPin;
+        if (s.staffPin === "0000") delete s.staffPin;
         if (!s.currencyAr) s.currencyAr = DEFAULT_STORE.currencyAr;
         if (!s.defaultCustomerId) s.defaultCustomerId = "cash";
         if (!s.defaultOrderTypeId) s.defaultOrderTypeId = "delivery";
@@ -78,9 +79,22 @@ var orders = (() => {
 var currentUser = (() => {
     try {
         const u = JSON.parse(localStorage.getItem('nurpos_user') || 'null');
-        return u ? { nameEn: 'Nawaf Saeed', nameAr: 'نواف سعيد', ...u } : { role: 'admin', name: 'Nawaf Saeed', nameEn: 'Nawaf Saeed', nameAr: 'نواف سعيد' };
+        // Revoke legacy sessions
+        if (u && (u.pin === '1234' || u.pin === '0000' || u.name === 'Nawaf Saeed (Manager)')) {
+            localStorage.removeItem('nurpos_user');
+            return { role: 'guest', name: 'Guest', canOpenSidebar: false };
+        }
+        if (u) {
+            return {
+                nameEn: u.nameEn || u.name || 'Cashier',
+                nameAr: u.nameAr || u.name || 'كاشير',
+                canOpenSidebar: u.role === 'cashier' || u.role === 'admin' || u.canOpenSidebar === true,
+                ...u
+            };
+        }
+        return { role: 'guest', name: 'Guest', canOpenSidebar: false };
     } catch (e) {
-        return { role: 'admin', name: 'Nawaf Saeed', nameEn: 'Nawaf Saeed', nameAr: 'نواف سعيد' };
+        return { role: 'guest', name: 'Guest', canOpenSidebar: false };
     }
 })();
 

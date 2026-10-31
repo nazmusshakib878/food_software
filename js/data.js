@@ -12,8 +12,6 @@ const DEFAULT_STORE = {
     taxRate: 15,
     currency: "SAR",
     currencyAr: "ر.س",
-    adminPin: "1234",
-    staffPin: "0000",
     defaultCustomerId: "cash",
     defaultOrderTypeId: "delivery"
 };
@@ -803,7 +801,7 @@ const i18n = {
         login_role_staff: "كاشير",
         login_role_admin: "مدير",
         login_pin_lbl: "رمز المرور (PIN):",
-        login_hint: "افتراضي: المدير (1234) | الكاشير (0000)",
+        login_hint: "",
         btn_login: "دخول",
 
         // Drawer
@@ -935,7 +933,6 @@ const i18n = {
         table_6: "طاولة 6",
         btn_login_kiosk: "تسجيل الدخول",
         about_app: "عن التطبيق",
-        demo_admin_pin: "المدير: 1234",
         demo_cashier_pin: "كاشير: 0000"
     },
     en: {
@@ -1170,7 +1167,7 @@ const i18n = {
         login_role_staff: "Cashier",
         login_role_admin: "Admin",
         login_pin_lbl: "Security PIN:",
-        login_hint: "Default: Admin (1234) | Cashier (0000)",
+        login_hint: "",
         btn_login: "Sign In",
 
         // Drawer
@@ -1302,7 +1299,6 @@ const i18n = {
         table_6: "Table 6",
         btn_login_kiosk: "Log In",
         about_app: "About App",
-        demo_admin_pin: "Manager: 1234",
         demo_cashier_pin: "Cashier: 0000"
     }
 };

@@ -234,6 +234,13 @@ function getFilteredOrders() {
 
 // Set Active Report Screen
 function openReportModule(moduleId) {
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'staff') {
+        if (typeof showToast === 'function') {
+            showToast(typeof currentLang !== 'undefined' && currentLang === 'ar' ? "غير مصرح: لا تملك صلاحية الوصول للتقارير" : "ACCESS DENIED: Insufficient permissions", "danger");
+        }
+        if (typeof switchView === 'function') switchView('pos');
+        return;
+    }
     activeReportModule = moduleId;
     switchView('reports_screen');
     renderActiveReport();
@@ -244,6 +251,14 @@ function openReportModule(moduleId) {
 function renderActiveReport() {
     const container = document.getElementById('reportModuleContent');
     if (!container) return;
+
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'staff') {
+        container.innerHTML = `<div class="access-denied-box" style="padding: 60px 20px; text-align: center; color: #dc2626; font-size: 20px; font-weight: 800;">
+            <i class="fa-solid fa-ban" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+            ACCESS DENIED: Management Reports are restricted
+        </div>`;
+        return;
+    }
 
     // Highlight active link in side drawer (including sub-items like items_report)
     document.querySelectorAll('.drawer-menu-item, .drawer-sub-item').forEach(el => {
