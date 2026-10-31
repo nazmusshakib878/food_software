@@ -200,7 +200,7 @@ function submitLogin(e) {
             persistData();
             window.location.href = 'dashboard.html';
         } else {
-            showToast(currentLang === 'ar' ? `رمز المدير غير صحيح! (افتراضي: ${storeSettings.adminPin})` : "Invalid Admin PIN!", "danger");
+            showToast(currentLang === 'ar' ? "رمز المدير غير صحيح!" : "Invalid Admin PIN!", "danger");
         }
     } else {
         if (pin === storeSettings.staffPin) {
@@ -208,7 +208,7 @@ function submitLogin(e) {
             persistData();
             window.location.href = 'dashboard.html';
         } else {
-            showToast(currentLang === 'ar' ? `رمز الكاشير غير صحيح! (افتراضي: ${storeSettings.staffPin})` : "Invalid Staff PIN!", "danger");
+            showToast(currentLang === 'ar' ? "رمز الكاشير غير صحيح!" : "Invalid Staff PIN!", "danger");
         }
     }
 }

@@ -43,3 +43,4 @@ module.exports = async function handler(req, res) {
         message: 'Authorized access to management report telemetry'
     });
 };
+

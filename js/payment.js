@@ -379,6 +379,10 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
         phone: currentClientPhone,
         status: 'new',
         cashier: currentUser.name || 'Cashier',
+        userId: currentUser.id || null,
+        staffId: currentUser.staffId || null,
+        companyId: currentUser.companyId || 'CMP-001',
+        branchId: currentUser.branchId || 'BR-001',
         items: currentCart.map(i => ({
             lineId: i.lineId || generateCartLineId(),
             id: i.id,

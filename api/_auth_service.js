@@ -247,5 +247,7 @@ module.exports = {
     parseCookies,
     checkRateLimit,
     recordSecurityEvent,
-    securityAuditEvents
+    securityAuditEvents,
+    clearFailedAttempts
 };
+

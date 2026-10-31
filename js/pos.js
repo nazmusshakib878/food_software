@@ -1522,7 +1522,23 @@ function logoutPosUser() {
         if (!confirm(msg)) return;
     }
     closeMorePanel();
-    currentUser = { role: 'guest', name: 'Guest' };
+    if (typeof closeSideDrawer === 'function') closeSideDrawer();
+
+    // Revoke this device's server-side session token
+    try {
+        let token = null;
+        try { token = sessionStorage.getItem('nurpos_token'); } catch (e) {}
+        fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+            }
+        }).catch(() => {});
+    } catch (e) {}
+    try { sessionStorage.removeItem('nurpos_token'); } catch (e) {}
+
+    currentUser = { role: 'guest', name: 'Guest', canOpenSidebar: false };
     persistData();
     if (typeof updateUserBadge === 'function') updateUserBadge();
     if (typeof openLoginModal === 'function') openLoginModal();
