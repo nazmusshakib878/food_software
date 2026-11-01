@@ -264,26 +264,29 @@ function restoreActiveOrderState() {
         if (!raw) return false;
         const state = JSON.parse(raw);
         if (state && typeof state === 'object') {
+            const isStaff = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'staff');
             if (Array.isArray(state.cart) && state.cart.length > 0) {
                 currentCart = state.cart;
             }
-            if (state.customerId) {
+            if (state.customerId && (!isStaff || state.customerId === 'cash')) {
                 currentCustomerId = state.customerId;
+            } else {
+                currentCustomerId = 'cash';
             }
             if (state.orderTypeId) {
                 currentOrderTypeId = state.orderTypeId;
                 currentOrderType = state.orderType || state.orderTypeId;
             }
-            if (state.selectionSource) {
+            if (state.selectionSource && (!isStaff || currentCustomerId === 'cash')) {
                 orderTypeSelectionSource = state.selectionSource;
-            } else if (state.customerId && state.customerId !== 'cash') {
+            } else if (state.customerId && state.customerId !== 'cash' && !isStaff) {
                 orderTypeSelectionSource = 'automatic';
             } else if (state.orderTypeId && state.orderTypeId !== 'delivery') {
                 orderTypeSelectionSource = 'manual';
             } else {
                 orderTypeSelectionSource = 'default';
             }
-            if (state.displayLabel !== undefined) {
+            if (state.displayLabel !== undefined && !isStaff) {
                 orderTypeDisplayLabel = state.displayLabel;
             } else {
                 orderTypeDisplayLabel = null;

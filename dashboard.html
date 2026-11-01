@@ -296,6 +296,7 @@
             } catch(e) {}
 
             try { sessionStorage.removeItem('nurpos_token'); } catch(e) {}
+            try { localStorage.removeItem('nurpos_active_order'); } catch(e) {}
             localStorage.setItem('nurpos_user', JSON.stringify({ role: 'guest', name: 'Guest', canOpenSidebar: false }));
 
             window.location.href = 'index.html';

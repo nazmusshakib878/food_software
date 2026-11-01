@@ -316,15 +316,15 @@ const DEFAULT_ITEMS = [
 
 /* Customers & Order Sources */
 const DEFAULT_CUSTOMERS = [
-    { id: "cash", nameAr: "عميل نقدي", nameEn: "Cash customer" },
-    { id: "hungerstation", nameAr: "شركة هنجر", nameEn: "Hungerstation - شركة هنجر" },
-    { id: "jahiz", nameAr: "شركة جاهز الدولية", nameEn: "jahiz - شركة جاهز الدولية" },
-    { id: "ninja", nameAr: "شركة الخيال / نينجا", nameEn: "ninja - شركة الخيال / نينجا" },
+    { id: "cash", nameAr: "عميل نقدي", nameEn: "Cash Customer" },
+    { id: "hungerstation", nameAr: "شركة هنجر", nameEn: "Hungerstation" },
+    { id: "jahiz", nameAr: "شركة جاهز الدولية", nameEn: "jahiz" },
+    { id: "ninja", nameAr: "شركة الخيال / نينجا", nameEn: "ninja" },
+    { id: "keeta", nameAr: "تطبيق كيتا", nameEn: "keeta" },
+    { id: "mrsool", nameAr: "مرسول - شركة تطبيق", nameEn: "Mrsool" },
+    { id: "toyou", nameAr: "ToYou - شركة تطبيق تويو", nameEn: "ToYou" },
+    { id: "thechefz", nameAr: "The chefz - تطبيق ذا شفز", nameEn: "The chefz" },
     { id: "management", nameAr: "Management Staff", nameEn: "Management Staff" },
-    { id: "keeta", nameAr: "تطبيق كيتا", nameEn: "keeta - تطبيق كيتا" },
-    { id: "mrsool", nameAr: "شركة تطبيق", nameEn: "مرسول - شركة تطبيق" },
-    { id: "toyou", nameAr: "شركة تطبيق تويو", nameEn: "ToYou - شركة تطبيق تويو" },
-    { id: "thechefz", nameAr: "تطبيق ذا شفز", nameEn: "The chefz - تطبيق ذا شفز" },
     { id: "mosque", nameAr: "عميل مسجد", nameEn: "عميل مسجد" }
 ];
 

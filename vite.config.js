@@ -10,6 +10,7 @@ function apiServerPlugin() {
   const sessionHandler = require('./api/auth/session.js');
   const logoutHandler = require('./api/auth/logout.js');
   const reportsHandler = require('./api/reports.js');
+  const ordersHandler = require('./api/orders.js');
 
   function setupMiddleware(server) {
     server.middlewares.use(async (req, res, next) => {
@@ -44,6 +45,8 @@ function apiServerPlugin() {
           return logoutHandler(req, res);
         } else if (url === '/api/reports') {
           return reportsHandler(req, res);
+        } else if (url === '/api/orders') {
+          return ordersHandler(req, res);
         } else {
           return res.status(404).json({ error: 'Endpoint not found' });
         }

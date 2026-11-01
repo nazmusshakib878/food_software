@@ -40,6 +40,15 @@ function switchView(viewName) {
         document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
         document.querySelector('.bottom-nav-btn.btn-main-screen')?.classList.add('active');
 
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'staff' && currentCustomerId !== 'cash') {
+            currentCustomerId = 'cash';
+            currentOrderTypeId = 'delivery';
+            currentOrderType = 'delivery';
+            orderTypeSelectionSource = 'default';
+            orderTypeDisplayLabel = null;
+        }
+        if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
+        if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
         renderProducts();
         if (typeof applyCatalogViewMode === 'function') applyCatalogViewMode();
         updatePosOrderBadge();
@@ -551,7 +560,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof restoreActiveOrderState === 'function') {
         restoreActiveOrderState();
     }
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'staff' && currentCustomerId !== 'cash') {
+        currentCustomerId = 'cash';
+        currentOrderTypeId = 'delivery';
+        currentOrderType = 'delivery';
+        orderTypeSelectionSource = 'default';
+        orderTypeDisplayLabel = null;
+    }
     applyLanguage(currentLang);
+    if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
+    if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
     updateUserBadge();
     updatePosOrderBadge();
     renderCategoriesRibbon();
@@ -746,6 +764,16 @@ async function kioskSubmitLogin() {
             permissions: authUser.permissions,
             canOpenSidebar: authUser.canOpenSidebar
         };
+
+        // Reset Dropdowns to default values on fresh login (Part 8)
+        currentCustomerId = 'cash';
+        currentOrderTypeId = 'delivery';
+        currentOrderType = 'delivery';
+        orderTypeSelectionSource = 'default';
+        orderTypeDisplayLabel = null;
+        currentCart = [];
+        try { localStorage.removeItem('nurpos_active_order'); } catch (e) {}
+
         persistData();
         updateUserBadge();
         kioskPinDigits = [];

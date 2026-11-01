@@ -32,13 +32,60 @@ function updateOrderPanelMeta() {
     renderOrderTypeSelector();
 }
 
-// 1. Dynamic Customer Selector
+// 1. Dynamic Customer Selector (Role-Based Access Control)
 function renderCustomerSelector() {
     const select = document.getElementById('posCustomerSelect');
     if (!select) return;
 
-    select.innerHTML = customers.map(c => {
-        const name = currentLang === 'ar' ? c.nameAr : c.nameEn;
+    const isStaff = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'staff');
+
+    // Canonical 10 authorized Customer identities in strict required order (Part 3)
+    const ALL_AUTHORIZED_CUSTOMERS = [
+        { id: "cash", nameEn: "Cash Customer", nameAr: "عميل نقدي" },
+        { id: "hungerstation", nameEn: "Hungerstation", nameAr: "شركة هنجر" },
+        { id: "jahiz", nameEn: "jahiz", nameAr: "شركة جاهز الدولية" },
+        { id: "ninja", nameEn: "ninja", nameAr: "شركة الخيال / نينجا" },
+        { id: "keeta", nameEn: "keeta", nameAr: "تطبيق كيتا" },
+        { id: "mrsool", nameEn: "Mrsool", nameAr: "مرسول - شركة تطبيق" },
+        { id: "toyou", nameEn: "ToYou", nameAr: "ToYou - شركة تطبيق تويو" },
+        { id: "thechefz", nameEn: "The chefz", nameAr: "The chefz - تطبيق ذا شفز" },
+        { id: "management", nameEn: "Management Staff", nameAr: "Management Staff" },
+        { id: "mosque", nameEn: "عميل مسجد", nameAr: "عميل مسجد" }
+    ];
+
+    let availableCustomers;
+    if (isStaff) {
+        // Staff role: EXACTLY ONE option — Cash Customer only (Part 4)
+        availableCustomers = ALL_AUTHORIZED_CUSTOMERS.filter(c => c.id === 'cash');
+        if (currentCustomerId !== 'cash') {
+            currentCustomerId = 'cash';
+            if (currentOrderTypeId !== 'delivery' && orderTypeSelectionSource === 'automatic') {
+                currentOrderTypeId = 'delivery';
+                currentOrderType = 'delivery';
+                orderTypeSelectionSource = 'default';
+                orderTypeDisplayLabel = null;
+            }
+        }
+    } else {
+        // Cashier / Admin role: EXACTLY TEN authorized options (Part 3)
+        availableCustomers = ALL_AUTHORIZED_CUSTOMERS;
+    }
+
+    const availableIds = availableCustomers.map(c => c.id);
+    if (!availableIds.includes(currentCustomerId)) {
+        currentCustomerId = 'cash';
+    }
+
+    select.innerHTML = availableCustomers.map(c => {
+        const cust = (typeof customers !== 'undefined' && Array.isArray(customers))
+            ? customers.find(item => item.id === c.id)
+            : null;
+        let name;
+        if (currentLang === 'ar') {
+            name = (cust && cust.nameAr) ? cust.nameAr : c.nameAr;
+        } else {
+            name = c.nameEn;
+        }
         const selected = (c.id === currentCustomerId) ? 'selected' : '';
         return `<option value="${escapeHtml(c.id)}" ${selected}>${escapeHtml(name)}</option>`;
     }).join('');
@@ -104,13 +151,24 @@ function getPosOrderTypeDisplayedLabel() {
 }
 
 function onPosCustomerChange(newId) {
+    const isStaff = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'staff');
+    if (isStaff && newId !== 'cash') {
+        currentCustomerId = 'cash';
+        renderCustomerSelector();
+        renderOrderTypeSelector();
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? 'غير مصرح للموظف باختيار تطبيقات التوصيل. مسموح بالعميل النقدي فقط.' : 'ACCESS DENIED: Staff role cannot select Delivery Partners. Cash Customer only.', 'danger');
+        }
+        return;
+    }
+
     currentCustomerId = newId;
     if (typeof orderTypeSelectionSource !== 'undefined') {
         orderTypeSelectionSource = 'automatic';
     }
     
     const cust = (typeof customers !== 'undefined' && Array.isArray(customers)) ? customers.find(c => c.id === newId) : null;
-    if (cust) {
+    if (cust || newId) {
         const mapping = (typeof getCustomerDeliveryMapping === 'function')
             ? getCustomerDeliveryMapping(newId)
             : { orderTypeId: 'delivery', displayEn: 'Delivery', displayAr: 'توصيل' };
@@ -130,44 +188,53 @@ function onPosCustomerChange(newId) {
         }
 
         if (typeof showToast === 'function') {
-            const name = currentLang === 'ar' ? cust.nameAr : cust.nameEn;
+            const name = (currentLang === 'ar')
+                ? ((cust && cust.nameAr) || (newId === 'mosque' ? 'عميل مسجد' : newId))
+                : ((cust && cust.nameEn) || newId);
             showToast(currentLang === 'ar' ? `العميل المحدد: ${name}` : `Customer selected: ${name}`, 'info');
         }
 
-        // Auto-open Notes for Special Channels
-        const autoNoteChannels = [
-            'hungerstation', 'jahiz', 'ninja', 'management', 'keeta', 'mrsool', 'toyou', 'thechefz', 'mosque'
-        ];
-        if (autoNoteChannels.includes(newId)) {
-            const modal = document.getElementById('notesModal');
-            if (!modal || !modal.classList.contains('open')) {
-                openNotesModal();
+        // Auto-open Notes for Special Channels (Cashier only)
+        if (!isStaff) {
+            const autoNoteChannels = [
+                'hungerstation', 'jahiz', 'ninja', 'management', 'keeta', 'mrsool', 'toyou', 'thechefz', 'mosque'
+            ];
+            if (autoNoteChannels.includes(newId)) {
+                const modal = document.getElementById('notesModal');
+                if (!modal || !modal.classList.contains('open')) {
+                    openNotesModal();
+                }
             }
         }
     }
     if (typeof saveActiveOrderState === 'function') saveActiveOrderState();
 }
 
-// Gear Icon 1 — Default Client Type Modal Functions
+// Gear Icon 1 — Default Client Type Modal Functions (Role-Protected)
 function openDefaultClientTypeModal() {
     const modal = document.getElementById('defaultClientTypeModal');
     if (!modal) return;
 
     const select = document.getElementById('defaultClientTypeSelect');
     if (select) {
-        // Exactly the 10 reference Customer identities in order:
-        const clientOptions = [
-            { id: "cash", nameEn: "Cash customer", nameAr: "عميل نقدي" },
+        const isStaff = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'staff');
+
+        let clientOptions = [
+            { id: "cash", nameEn: "Cash Customer", nameAr: "عميل نقدي" },
             { id: "hungerstation", nameEn: "Hungerstation", nameAr: "شركة هنجر" },
             { id: "jahiz", nameEn: "jahiz", nameAr: "شركة جاهز الدولية" },
             { id: "ninja", nameEn: "ninja", nameAr: "شركة الخيال / نينجا" },
-            { id: "management", nameEn: "Management Staff", nameAr: "Management Staff" },
             { id: "keeta", nameEn: "keeta", nameAr: "تطبيق كيتا" },
             { id: "mrsool", nameEn: "Mrsool", nameAr: "مرسول - شركة تطبيق" },
             { id: "toyou", nameEn: "ToYou", nameAr: "ToYou - شركة تطبيق تويو" },
             { id: "thechefz", nameEn: "The chefz", nameAr: "The chefz - تطبيق ذا شفز" },
+            { id: "management", nameEn: "Management Staff", nameAr: "Management Staff" },
             { id: "mosque", nameEn: "عميل مسجد", nameAr: "عميل مسجد" }
         ];
+
+        if (isStaff) {
+            clientOptions = clientOptions.filter(o => o.id === 'cash');
+        }
 
         select.innerHTML = clientOptions.map(opt => {
             const cust = (typeof customers !== 'undefined' && Array.isArray(customers))
@@ -177,14 +244,14 @@ function openDefaultClientTypeModal() {
             if (currentLang === 'ar') {
                 label = (cust && cust.nameAr) ? cust.nameAr : opt.nameAr;
             } else {
-                label = (cust && cust.nameEn) ? cust.nameEn : opt.nameEn;
+                label = opt.nameEn;
             }
             return `<option value="${escapeHtml(opt.id)}">${escapeHtml(label)}</option>`;
         }).join('');
 
-        const savedDefault = (typeof storeSettings !== 'undefined' && storeSettings.defaultCustomerId)
-            ? storeSettings.defaultCustomerId
-            : 'cash';
+        const savedDefault = isStaff
+            ? 'cash'
+            : ((typeof storeSettings !== 'undefined' && storeSettings.defaultCustomerId) ? storeSettings.defaultCustomerId : 'cash');
         select.value = savedDefault;
     }
 
@@ -204,8 +271,20 @@ function saveDefaultClientType() {
     const select = document.getElementById('defaultClientTypeSelect');
     if (!select) return;
     const val = select.value;
+    const isStaff = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'staff');
 
-    const allowed = ['cash', 'hungerstation', 'jahiz', 'ninja', 'management', 'keeta', 'mrsool', 'toyou', 'thechefz', 'mosque'];
+    if (isStaff && val !== 'cash') {
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? 'غير مصرح للموظف بتعيين شريك توصيل كإعداد افتراضي' : 'ACCESS DENIED: Staff cannot set delivery partner default', 'danger');
+        }
+        closeDefaultClientTypeModal();
+        return;
+    }
+
+    const allowed = isStaff
+        ? ['cash']
+        : ['cash', 'hungerstation', 'jahiz', 'ninja', 'keeta', 'mrsool', 'toyou', 'thechefz', 'management', 'mosque'];
+
     if (!allowed.includes(val)) return;
 
     if (typeof storeSettings !== 'undefined') {
@@ -225,7 +304,6 @@ function promptAddCustomer() {
     openDefaultClientTypeModal();
 }
 
-// Preserved Customer Creation capability
 function promptAddCustomerLegacy() {
     const nameAr = prompt(currentLang === 'ar' ? "اسم العميل الجديد:" : "Customer Name (Arabic):", "");
     if (!nameAr) return;
@@ -1539,7 +1617,26 @@ function logoutPosUser() {
     try { sessionStorage.removeItem('nurpos_token'); } catch (e) {}
 
     currentUser = { role: 'guest', name: 'Guest', canOpenSidebar: false };
+
+    // Reset Dropdown & Order States (Part 8, 9, 10)
+    currentCart = [];
+    selectedCartLineId = null;
+    selectedCartItemIndex = null;
+    currentOrderNotes = '';
+    currentClientPhone = '';
+    customDiscount = 0;
+    currentCustomerId = 'cash';
+    currentOrderTypeId = 'delivery';
+    currentOrderType = 'delivery';
+    orderTypeSelectionSource = 'default';
+    orderTypeDisplayLabel = null;
+
+    try { localStorage.removeItem('nurpos_active_order'); } catch (e) {}
     persistData();
+
+    if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
+    if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
+    if (typeof renderCartTable === 'function') renderCartTable();
     if (typeof updateUserBadge === 'function') updateUserBadge();
     if (typeof openLoginModal === 'function') openLoginModal();
     if (typeof showToast === 'function') {

@@ -320,6 +320,18 @@ function processCheckoutPay() {
 
 // Modified to accept custom breakdown
 function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", breakdown = {}, paidAmount = 0) {
+    // Role-based security guard: Staff cannot submit Delivery Partner orders (Part 17)
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'staff' && currentCustomerId !== 'cash') {
+        isProcessingCheckout = false;
+        currentCustomerId = 'cash';
+        if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
+        if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
+        if (typeof soundWarning === 'function') soundWarning();
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? "غير مصرح: لا يمكن للموظف تقديم طلبات خاصة بشركاء التوصيل!" : "ACCESS DENIED: Staff role cannot submit Delivery Partner orders. Cash Customer only.", "danger");
+        }
+        return;
+    }
     const totals = calculateCartTotals();
     if (currentCart.length === 0) {
         isProcessingCheckout = false;
@@ -449,7 +461,28 @@ function completeOrderAndShowReceipt(staffAllocation = null, method = "Cash", br
     currentClientPhone = '';
     customDiscount = 0;
     resetPaymentState();
-    const defCust = (typeof storeSettings !== 'undefined' && storeSettings.defaultCustomerId) ? storeSettings.defaultCustomerId : 'cash';
+    // Async backend validation dispatch
+    try {
+        let token = null;
+        try { token = sessionStorage.getItem('nurpos_token'); } catch (e) {}
+        fetch('/api/orders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+            },
+            body: JSON.stringify({
+                orderId: orderRecord.id,
+                customerId: currentCustomerId,
+                orderTypeId: currentOrderTypeId,
+                total: totals.grandTotal,
+                role: currentUser ? currentUser.role : 'guest'
+            })
+        }).catch(() => {});
+    } catch (e) {}
+
+    const isStaff = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'staff');
+    const defCust = isStaff ? 'cash' : ((typeof storeSettings !== 'undefined' && storeSettings.defaultCustomerId) ? storeSettings.defaultCustomerId : 'cash');
     const defType = (typeof storeSettings !== 'undefined' && storeSettings.defaultOrderTypeId) ? storeSettings.defaultOrderTypeId : 'delivery';
     currentCustomerId = defCust;
     currentOrderTypeId = defType;
