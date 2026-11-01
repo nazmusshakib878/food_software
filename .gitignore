@@ -28,3 +28,13 @@ sync_to_app.js
 scratch/
 
 test_result_*.png
+
+# Laravel Backend Exclusions
+backend/vendor/
+backend/.env
+backend/storage/*.key
+backend/database/*.sqlite
+backend/database/*.sqlite-journal
+backend/node_modules/
+backend/public/storage
+backend/public/hot
