@@ -127,5 +127,119 @@ class PosApiTest extends TestCase
             ->assertStatus(201)
             ->assertJsonFragment(['success' => true]);
     }
+
+    /**
+     * Test 6: Multi-Device Simultaneous Sessions & Independent Logout.
+     */
+    public function test_multi_device_simultaneous_sessions(): void
+    {
+        // Device 1: Cashier logs in
+        $resDev1 = $this->postJson('/api/auth/login', ['pin' => '1050'])->assertStatus(200);
+        $token1 = $resDev1->json('session.token');
+
+        // Device 2: Staff 1 logs in
+        $resDev2 = $this->postJson('/api/auth/login', ['pin' => '1051'])->assertStatus(200);
+        $token2 = $resDev2->json('session.token');
+
+        // Device 3: Staff 2 logs in
+        $resDev3 = $this->postJson('/api/auth/login', ['pin' => '1052'])->assertStatus(200);
+        $token3 = $resDev3->json('session.token');
+
+        // All 3 tokens are distinct
+        $this->assertNotEquals($token1, $token2);
+        $this->assertNotEquals($token2, $token3);
+
+        // Verify Device 2 session is active
+        $this->withHeader('Authorization', 'Bearer ' . $token2)
+            ->getJson('/api/auth/session')
+            ->assertStatus(200)
+            ->assertJsonFragment(['staffId' => 'STF-1051']);
+
+        // Device 1 logs out
+        $this->flushHeaders();
+        $this->withHeader('Authorization', 'Bearer ' . $token1)
+            ->postJson('/api/auth/logout')
+            ->assertStatus(200);
+
+        // Device 1 token is revoked
+        $this->flushHeaders();
+        $this->app['auth']->forgetGuards();
+        $this->withHeader('Authorization', 'Bearer ' . $token1)
+            ->getJson('/api/auth/session')
+            ->assertStatus(401);
+
+        // Device 2 and Device 3 remain active
+        $this->flushHeaders();
+        $this->app['auth']->forgetGuards();
+        $this->withHeader('Authorization', 'Bearer ' . $token2)
+            ->getJson('/api/auth/session')
+            ->assertStatus(200)
+            ->assertJsonFragment(['staffId' => 'STF-1051']);
+
+        $this->flushHeaders();
+        $this->app['auth']->forgetGuards();
+        $this->withHeader('Authorization', 'Bearer ' . $token3)
+            ->getJson('/api/auth/session')
+            ->assertStatus(200)
+            ->assertJsonFragment(['staffId' => 'STF-1052']);
+    }
+
+    /**
+     * Test 7: Shifts Management - Active Shift & Shift Creation.
+     */
+    public function test_shift_management(): void
+    {
+        $cashierUser = User::where('staff_id', 'STF-1050')->first();
+
+        // 1. Get active shift
+        $this->actingAs($cashierUser, 'sanctum')
+            ->getJson('/api/shifts/active')
+            ->assertStatus(200)
+            ->assertJsonFragment(['id' => 'SH-101', 'status' => 'active']);
+
+        // 2. Open new shift
+        $res = $this->actingAs($cashierUser, 'sanctum')
+            ->postJson('/api/shifts', [
+                'openingCash' => 350.00,
+                'notes' => 'Evening shift'
+            ])
+            ->assertStatus(201)
+            ->assertJsonFragment(['success' => true]);
+
+        $newShiftId = $res->json('shift.id');
+
+        // 3. Close the shift
+        $this->actingAs($cashierUser, 'sanctum')
+            ->postJson("/api/shifts/{$newShiftId}/close")
+            ->assertStatus(200)
+            ->assertJsonFragment(['status' => 'closed']);
+    }
+
+    /**
+     * Test 8: Canonical Customers & Delivery Partners Endpoint.
+     */
+    public function test_customers_endpoint(): void
+    {
+        $cashierUser = User::where('staff_id', 'STF-1050')->first();
+
+        $res = $this->actingAs($cashierUser, 'sanctum')
+            ->getJson('/api/customers')
+            ->assertStatus(200)
+            ->assertJsonFragment(['success' => true]);
+
+        $customers = $res->json('customers');
+        $this->assertCount(10, $customers);
+        $ids = array_column($customers, 'id');
+        $this->assertContains('cash', $ids);
+        $this->assertContains('hungerstation', $ids);
+        $this->assertContains('jahiz', $ids);
+        $this->assertContains('ninja', $ids);
+        $this->assertContains('keeta', $ids);
+        $this->assertContains('mrsool', $ids);
+        $this->assertContains('toyou', $ids);
+        $this->assertContains('thechefz', $ids);
+        $this->assertContains('management', $ids);
+        $this->assertContains('mosque', $ids);
+    }
 }
 
