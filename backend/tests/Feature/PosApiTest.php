@@ -241,5 +241,44 @@ class PosApiTest extends TestCase
         $this->assertContains('management', $ids);
         $this->assertContains('mosque', $ids);
     }
+
+    public function test_order_history_is_scoped_to_authenticated_tenant(): void
+    {
+        $cashier = User::where('staff_id', 'STF-1050')->first();
+        \App\Models\PosOrder::create([
+            'id' => 'ORD-OWN', 'company_id' => $cashier->company_id, 'branch_id' => $cashier->branch_id,
+            'grand_total' => 10, 'paid' => 10,
+        ]);
+        \App\Models\PosOrder::create([
+            'id' => 'ORD-OTHER', 'company_id' => 'CMP-OTHER', 'branch_id' => 'BR-OTHER',
+            'grand_total' => 99, 'paid' => 99,
+        ]);
+
+        $this->actingAs($cashier, 'sanctum')
+            ->getJson('/api/orders')
+            ->assertOk()
+            ->assertJsonFragment(['id' => 'ORD-OWN'])
+            ->assertJsonMissing(['id' => 'ORD-OTHER']);
+    }
+
+    public function test_shift_reads_and_close_are_scoped_to_authenticated_tenant(): void
+    {
+        $cashier = User::where('staff_id', 'STF-1050')->first();
+        \App\Models\PosShift::create([
+            'id' => 'SH-OTHER', 'shift_number' => '999', 'cashier' => 'Other',
+            'company_id' => 'CMP-OTHER', 'branch_id' => 'BR-OTHER', 'status' => 'active',
+            'opening_cash' => 0, 'opened_at' => now(),
+        ]);
+
+        $this->actingAs($cashier, 'sanctum')
+            ->getJson('/api/shifts/active')
+            ->assertOk()
+            ->assertJsonMissing(['id' => 'SH-OTHER']);
+
+        $this->actingAs($cashier, 'sanctum')
+            ->postJson('/api/shifts/SH-OTHER/close')
+            ->assertNotFound();
+        $this->assertDatabaseHas('pos_shifts', ['id' => 'SH-OTHER', 'status' => 'active']);
+    }
 }
 

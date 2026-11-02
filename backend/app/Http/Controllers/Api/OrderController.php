@@ -24,7 +24,13 @@ class OrderController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $orders = PosOrder::with('items')->latest()->limit(50)->get();
+        $user = $request->user();
+        $orders = PosOrder::with('items')
+            ->where('company_id', $user->company_id)
+            ->where('branch_id', $user->branch_id)
+            ->latest()
+            ->limit(50)
+            ->get();
 
         return response()->json([
             'success' => true,

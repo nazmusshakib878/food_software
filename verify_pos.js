@@ -113,6 +113,7 @@ function assert(desc, condition) {
 // TEST 1: Categories & Items Initialized
 assert("DEFAULT_CATEGORIES exists with 4 categories", categories.length >= 4);
 assert("DEFAULT_ITEMS loaded properly", items.length >= 20);
+assert("Sample order follows VAT-inclusive totals", SAMPLE_ORD_1013.total === 179.50 && SAMPLE_ORD_1013.paidAmount === 179.50 && SAMPLE_ORD_1013.tax === 23.41);
 assert("DEFAULT_CUSTOMERS loaded with 10 sources", customers.length >= 10);
 assert("DEFAULT_ORDER_TYPES loaded with 5 types", orderTypes.length >= 5);
 assert("DEFAULT_PRINTERS loaded with Cashier, Kitchen, Reports", printers.length === 3);

@@ -14,7 +14,12 @@ class ShiftController extends Controller
      */
     public function active(Request $request): JsonResponse
     {
-        $shift = PosShift::where('status', 'active')->latest()->first();
+        $user = $request->user();
+        $shift = PosShift::where('company_id', $user->company_id)
+            ->where('branch_id', $user->branch_id)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
 
         return response()->json([
             'success' => true,
@@ -63,7 +68,10 @@ class ShiftController extends Controller
      */
     public function close(Request $request, string $id): JsonResponse
     {
-        $shift = PosShift::find($id);
+        $user = $request->user();
+        $shift = PosShift::where('company_id', $user->company_id)
+            ->where('branch_id', $user->branch_id)
+            ->find($id);
 
         if (!$shift) {
             return response()->json([
