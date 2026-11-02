@@ -3,6 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\PosInventoryMovement;
+use App\Models\PosProduct;
+use App\Models\PosOrder;
+use App\Models\Branch;
+use App\Models\Company;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,6 +20,12 @@ class PosApiTest extends TestCase
     {
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
+    }
+
+    private function createOtherTenant(): void
+    {
+        Company::create(['id' => 'CMP-OTHER', 'name' => 'Other Company', 'currency' => 'SAR', 'status' => 'active']);
+        Branch::create(['company_id' => 'CMP-OTHER', 'code' => 'BR-OTHER', 'name' => 'Other Branch', 'timezone' => 'Asia/Riyadh', 'status' => 'active']);
     }
 
     /**
@@ -36,7 +47,8 @@ class PosApiTest extends TestCase
                 ]
             ]);
 
-        $this->assertNotEmpty($response->json('session.token'));
+        $response->assertCookie('nurpos_session', null, false);
+        $this->assertArrayNotHasKey('token', $response->json('session'));
     }
 
     /**
@@ -56,7 +68,8 @@ class PosApiTest extends TestCase
                         'canOpenSidebar' => false,
                     ]
                 ]
-            ]);
+            ])
+            ->assertCookie('nurpos_session', null, false);
     }
 
     /**
@@ -96,36 +109,33 @@ class PosApiTest extends TestCase
     {
         $staffUser = User::where('staff_id', 'STF-1051')->first();
         $cashierUser = User::where('staff_id', 'STF-1050')->first();
+        $baseOrder = [
+            'orderId' => 'CLIENT-RBAC-1', 'orderTypeId' => 'delivery', 'paid' => 13.50, 'method' => 'Cash',
+            'items' => [['id' => 'item_meat_burger', 'qty' => 1]],
+        ];
+        $staffShift = $this->actingAs($staffUser, 'sanctum')->postJson('/api/shifts', ['openingCash' => 20])
+            ->assertCreated()->json('shift.id');
+        $baseOrder['shiftId'] = $staffShift;
 
         // 1. Staff submitting Hungerstation is rejected with 403 Forbidden
         $this->actingAs($staffUser, 'sanctum')
-            ->postJson('/api/orders', [
-                'customerId' => 'hungerstation',
-                'orderTypeId' => 'delivery',
-                'total' => 35.00
-            ])
+            ->postJson('/api/orders', array_merge($baseOrder, ['customerId' => 'hungerstation']))
             ->assertStatus(403)
-            ->assertJsonFragment(['error' => 'ACCESS DENIED: Staff role cannot submit Delivery Partner orders. Cash Customer only.']);
+            ->assertJsonFragment(['error' => 'Staff may only submit cash customer orders.']);
 
         // 2. Staff submitting Cash Customer order is accepted with 201 Created
         $this->actingAs($staffUser, 'sanctum')
-            ->postJson('/api/orders', [
-                'customerId' => 'cash',
-                'orderTypeId' => 'delivery',
-                'total' => 25.00
-            ])
+            ->postJson('/api/orders', array_merge($baseOrder, ['orderId' => 'CLIENT-RBAC-2', 'customerId' => 'cash']))
             ->assertStatus(201)
-            ->assertJsonFragment(['success' => true]);
+            ->assertJsonPath('order.grand_total', '13.50');
 
         // 3. Cashier submitting Hungerstation order is accepted with 201 Created
+        $cashierOrder = $baseOrder;
+        unset($cashierOrder['shiftId']);
         $this->actingAs($cashierUser, 'sanctum')
-            ->postJson('/api/orders', [
-                'customerId' => 'hungerstation',
-                'orderTypeId' => 'delivery',
-                'total' => 48.00
-            ])
+            ->postJson('/api/orders', array_merge($cashierOrder, ['orderId' => 'CLIENT-RBAC-3', 'customerId' => 'hungerstation', 'method' => 'Ajel']))
             ->assertStatus(201)
-            ->assertJsonFragment(['success' => true]);
+            ->assertJsonPath('order.grand_total', '13.50');
     }
 
     /**
@@ -135,15 +145,15 @@ class PosApiTest extends TestCase
     {
         // Device 1: Cashier logs in
         $resDev1 = $this->postJson('/api/auth/login', ['pin' => '1050'])->assertStatus(200);
-        $token1 = $resDev1->json('session.token');
+        $token1 = $resDev1->getCookie('nurpos_session', false)->getValue();
 
         // Device 2: Staff 1 logs in
         $resDev2 = $this->postJson('/api/auth/login', ['pin' => '1051'])->assertStatus(200);
-        $token2 = $resDev2->json('session.token');
+        $token2 = $resDev2->getCookie('nurpos_session', false)->getValue();
 
         // Device 3: Staff 2 logs in
         $resDev3 = $this->postJson('/api/auth/login', ['pin' => '1052'])->assertStatus(200);
-        $token3 = $resDev3->json('session.token');
+        $token3 = $resDev3->getCookie('nurpos_session', false)->getValue();
 
         // All 3 tokens are distinct
         $this->assertNotEquals($token1, $token2);
@@ -197,7 +207,15 @@ class PosApiTest extends TestCase
             ->assertStatus(200)
             ->assertJsonFragment(['id' => 'SH-101', 'status' => 'active']);
 
-        // 2. Open new shift
+        // 2. Prevent a duplicate active shift until the seeded one is closed.
+        $this->actingAs($cashierUser, 'sanctum')->postJson('/api/shifts', [
+            'openingCash' => 350.00,
+            'notes' => 'Evening shift',
+        ])->assertStatus(409);
+
+        $this->actingAs($cashierUser, 'sanctum')->postJson('/api/shifts/SH-101/close')->assertOk();
+
+        // 3. Open a new shift after closing the current shift.
         $res = $this->actingAs($cashierUser, 'sanctum')
             ->postJson('/api/shifts', [
                 'openingCash' => 350.00,
@@ -208,7 +226,7 @@ class PosApiTest extends TestCase
 
         $newShiftId = $res->json('shift.id');
 
-        // 3. Close the shift
+        // 4. Close the shift
         $this->actingAs($cashierUser, 'sanctum')
             ->postJson("/api/shifts/{$newShiftId}/close")
             ->assertStatus(200)
@@ -244,6 +262,7 @@ class PosApiTest extends TestCase
 
     public function test_order_history_is_scoped_to_authenticated_tenant(): void
     {
+        $this->createOtherTenant();
         $cashier = User::where('staff_id', 'STF-1050')->first();
         \App\Models\PosOrder::create([
             'id' => 'ORD-OWN', 'company_id' => $cashier->company_id, 'branch_id' => $cashier->branch_id,
@@ -263,6 +282,7 @@ class PosApiTest extends TestCase
 
     public function test_shift_reads_and_close_are_scoped_to_authenticated_tenant(): void
     {
+        $this->createOtherTenant();
         $cashier = User::where('staff_id', 'STF-1050')->first();
         \App\Models\PosShift::create([
             'id' => 'SH-OTHER', 'shift_number' => '999', 'cashier' => 'Other',
@@ -279,6 +299,253 @@ class PosApiTest extends TestCase
             ->postJson('/api/shifts/SH-OTHER/close')
             ->assertNotFound();
         $this->assertDatabaseHas('pos_shifts', ['id' => 'SH-OTHER', 'status' => 'active']);
+    }
+
+    public function test_catalog_is_seeded_and_scoped_to_authenticated_branch(): void
+    {
+        $this->createOtherTenant();
+        $cashier = User::where('staff_id', 'STF-1050')->first();
+        $this->actingAs($cashier, 'sanctum')->getJson('/api/catalog/categories')
+            ->assertOk()->assertJsonCount(4, 'categories');
+        $this->actingAs($cashier, 'sanctum')->getJson('/api/catalog/products')
+            ->assertOk()->assertJsonCount(24, 'products');
+
+        PosProduct::create([
+            'product_id' => 'other-item', 'company_id' => 'CMP-OTHER', 'branch_id' => 'BR-OTHER',
+            'category_id' => 'meals', 'name_en' => 'Other Item', 'name_ar' => 'منتج',
+            'price' => 1, 'tax_rate' => 15, 'available' => true, 'track_stock' => true,
+            'stock_on_hand' => 9, 'low_stock_threshold' => 2,
+        ]);
+        $this->actingAs($cashier, 'sanctum')->getJson('/api/catalog/products')
+            ->assertOk()->assertJsonMissing(['product_id' => 'other-item']);
+        $this->actingAs($cashier, 'sanctum')->getJson('/api/inventory')
+            ->assertOk()->assertJsonMissing(['product_id' => 'other-item']);
+    }
+
+    public function test_order_totals_use_server_prices_and_retry_is_idempotent(): void
+    {
+        $cashier = User::where('staff_id', 'STF-1050')->first();
+        $payload = [
+            'orderId' => 'client-order-test-1', 'customerId' => 'cash', 'orderTypeId' => 'delivery',
+            'paid' => 30, 'method' => 'Cash', 'total' => 1, 'tax' => 0,
+            'items' => [
+                ['id' => 'item_meat_burger', 'qty' => 1, 'price' => 0],
+                ['id' => 'item_meat_burger', 'qty' => 1, 'price' => 0],
+            ],
+        ];
+        $response = $this->actingAs($cashier, 'sanctum')->postJson('/api/orders', $payload)
+            ->assertCreated()->assertJsonPath('order.subtotal', '27.00')
+            ->assertJsonPath('order.tax', '3.52')->assertJsonPath('order.grand_total', '27.00')
+            ->assertJsonPath('order.change', '3.00');
+        $orderId = $response->json('order.id');
+        $this->assertDatabaseCount('pos_order_items', 2);
+        $this->assertDatabaseHas('pos_payment_transactions', [
+            'order_id' => $orderId, 'company_id' => $cashier->company_id,
+            'method' => 'Cash', 'amount' => '30.00', 'status' => 'recorded_manual',
+        ]);
+
+        $this->actingAs($cashier, 'sanctum')->postJson('/api/orders', $payload)
+            ->assertOk()->assertJsonPath('duplicate', true)->assertJsonPath('order.id', $orderId);
+        $this->assertDatabaseCount('pos_orders', 1);
+    }
+
+    public function test_split_tender_records_each_manual_payment_part(): void
+    {
+        $cashier = User::where('staff_id', 'STF-1050')->first();
+        $response = $this->actingAs($cashier, 'sanctum')->postJson('/api/orders', [
+            'orderId' => 'client-order-split-1', 'customerId' => 'cash', 'orderTypeId' => 'delivery',
+            'paid' => 27, 'method' => 'Split', 'paymentBreakdown' => ['cash' => 10, 'credit' => 17],
+            'items' => [['id' => 'item_meat_burger', 'qty' => 2]],
+        ])->assertCreated();
+        $orderId = $response->json('order.id');
+        $this->assertDatabaseCount('pos_payment_transactions', 2);
+        $this->assertDatabaseHas('pos_payment_transactions', ['order_id' => $orderId, 'method' => 'Cash', 'amount' => '10.00']);
+        $this->assertDatabaseHas('pos_payment_transactions', ['order_id' => $orderId, 'method' => 'Ajel', 'amount' => '17.00']);
+    }
+
+    public function test_inventory_decrements_on_sale_and_restores_once_on_cancellation(): void
+    {
+        $cashier = User::where('staff_id', 'STF-1050')->first();
+        $cashier->permissions = array_merge($cashier->permissions ?? [], ['orders_cancel']);
+        $cashier->save();
+        $product = PosProduct::where('product_id', 'item_meat_burger')->firstOrFail();
+        $product->track_stock = true;
+        $product->stock_on_hand = 5;
+        $product->save();
+
+        $created = $this->actingAs($cashier, 'sanctum')->postJson('/api/orders', [
+            'orderId' => 'client-order-stock-1', 'customerId' => 'cash', 'orderTypeId' => 'delivery',
+            'paid' => 30, 'method' => 'Cash', 'items' => [['id' => $product->product_id, 'qty' => 2]],
+        ])->assertCreated();
+        $orderId = $created->json('order.id');
+        $this->assertSame('3.000', $product->fresh()->stock_on_hand);
+
+        $this->actingAs($cashier, 'sanctum')->postJson("/api/orders/{$orderId}/cancel", ['reason' => 'Mistaken order'])
+            ->assertOk()->assertJsonPath('order.status', 'cancelled');
+        $this->assertSame('5.000', $product->fresh()->stock_on_hand);
+        $this->assertCount(2, PosInventoryMovement::where('order_id', $orderId)->get());
+
+        $this->actingAs($cashier, 'sanctum')->postJson("/api/orders/{$orderId}/cancel", ['reason' => 'Repeat request'])
+            ->assertOk();
+        $this->assertSame('5.000', $product->fresh()->stock_on_hand);
+        $this->assertCount(2, PosInventoryMovement::where('order_id', $orderId)->get());
+    }
+
+    public function test_reports_aggregate_persisted_branch_orders_only(): void
+    {
+        $this->createOtherTenant();
+        $cashier = User::where('staff_id', 'STF-1050')->first();
+        PosOrder::create([
+            'id' => 'ORD-REPORT-OWN', 'company_id' => $cashier->company_id, 'branch_id' => $cashier->branch_id,
+            'status' => 'completed', 'grand_total' => 20, 'tax' => 2.61, 'discount' => 0,
+        ]);
+        PosOrder::create([
+            'id' => 'ORD-REPORT-OTHER', 'company_id' => 'CMP-OTHER', 'branch_id' => 'BR-OTHER',
+            'status' => 'completed', 'grand_total' => 500, 'tax' => 65.22, 'discount' => 0,
+        ]);
+
+        $this->actingAs($cashier, 'sanctum')->getJson('/api/reports?period=day&date='.now()->format('Y-m-d'))
+            ->assertOk()->assertJsonPath('summary.totalOrders', 1)
+            ->assertJsonPath('summary.totalSales', 20)
+            ->assertJsonPath('orders.0.id', 'ORD-REPORT-OWN');
+    }
+
+    public function test_branch_administration_is_company_scoped_and_permission_checked(): void
+    {
+        $cashier = User::where('staff_id', 'STF-1050')->first();
+        $this->actingAs($cashier, 'sanctum')->getJson('/api/branches')
+            ->assertOk()->assertJsonCount(1, 'branches')->assertJsonPath('branches.0.code', 'BR-001');
+        $this->actingAs($cashier, 'sanctum')->postJson('/api/branches', ['code' => 'BR-002', 'name' => 'Second Branch'])
+            ->assertForbidden();
+        $cashier->permissions = array_merge($cashier->permissions ?? [], ['branches_manage']);
+        $cashier->save();
+        $this->actingAs($cashier, 'sanctum')->postJson('/api/branches', [
+            'code' => 'BR-002', 'name' => 'Second Branch', 'timezone' => 'Asia/Riyadh',
+        ])->assertCreated()->assertJsonPath('branch.company_id', 'CMP-001');
+        $this->actingAs($cashier, 'sanctum')->postJson('/api/branches', [
+            'code' => 'BR-002', 'name' => 'Duplicate Branch',
+        ])->assertUnprocessable();
+    }
+
+    public function test_tenant_provisioning_command_creates_scoped_company_branch_and_admin(): void
+    {
+        $this->artisan('pos:provision-tenant')
+            ->expectsQuestion('Company ID (letters, numbers, dash, underscore)', 'CMP-NEW')
+            ->expectsQuestion('Company name', 'New Tenant')
+            ->expectsQuestion('Initial branch code', 'BR-NEW')
+            ->expectsQuestion('Initial branch name', 'Main Branch')
+            ->expectsQuestion('Administrator name', 'Tenant Admin')
+            ->expectsQuestion('Administrator email', 'admin@example.test')
+            ->expectsQuestion('Administrator 4-digit POS PIN', '6789')
+            ->assertExitCode(0);
+
+        $admin = User::where('email', 'admin@example.test')->firstOrFail();
+        $this->assertSame('CMP-NEW', $admin->company_id);
+        $this->assertSame('BR-NEW', $admin->branch_id);
+        $this->assertNotSame('6789', $admin->pin_hash);
+        $this->assertDatabaseHas('branches', ['company_id' => 'CMP-NEW', 'code' => 'BR-NEW']);
+    }
+
+    public function test_catalog_write_permissions_and_branch_validation(): void
+    {
+        $cashier = User::where('staff_id', 'STF-1050')->first();
+        $payload = ['categoryId' => 'new-cat', 'nameEn' => 'New Category', 'nameAr' => 'Ù‚Ø³Ù…', 'sortOrder' => 10];
+        $this->actingAs($cashier, 'sanctum')->postJson('/api/catalog/categories', $payload)->assertForbidden();
+
+        $cashier->permissions = array_merge($cashier->permissions ?? [], ['catalog_manage']);
+        $cashier->save();
+        $this->actingAs($cashier, 'sanctum')->postJson('/api/catalog/categories', $payload)
+            ->assertCreated()->assertJsonPath('category.category_id', 'new-cat');
+        $this->actingAs($cashier, 'sanctum')->postJson('/api/catalog/products', [
+            'productId' => 'new-product', 'categoryId' => 'outside-branch', 'nameEn' => 'Item', 'nameAr' => 'ØµÙ†Ù',
+            'price' => 5, 'taxRate' => 15,
+        ])->assertNotFound();
+    }
+
+    public function test_designated_cashier_can_close_another_users_branch_shift(): void
+    {
+        $cashier = User::where('staff_id', 'STF-1050')->first();
+        $otherCashier = User::where('staff_id', 'STF-1052')->first();
+        \App\Models\PosShift::create([
+            'id' => 'SH-OWNED-BY-OTHER', 'shift_number' => '998', 'cashier' => 'Other Cashier',
+            'user_id' => (string)$otherCashier->id, 'company_id' => $cashier->company_id,
+            'branch_id' => $cashier->branch_id, 'status' => 'active', 'opening_cash' => 50, 'opened_at' => now(),
+        ]);
+        $this->actingAs($cashier, 'sanctum')->postJson('/api/shifts/SH-OWNED-BY-OTHER/close')
+            ->assertOk()->assertJsonPath('shift.status', 'closed');
+        $this->assertDatabaseHas('pos_shifts', ['id' => 'SH-OWNED-BY-OTHER', 'status' => 'closed']);
+    }
+
+    public function test_designated_staff_share_branch_shifts_without_sharing_order_entry(): void
+    {
+        $staff = User::where('staff_id', 'STF-1051')->first();
+        $otherStaff = User::where('staff_id', 'STF-1052')->first();
+        $opened = $this->actingAs($staff, 'sanctum')->postJson('/api/shifts', ['openingCash' => 20]);
+        $opened->assertCreated()->assertJsonPath('shift.user_id', (string) $staff->id);
+        $shiftId = $opened->json('shift.id');
+
+        $this->actingAs($staff, 'sanctum')->getJson('/api/shifts')
+            ->assertOk()->assertJsonFragment(['id' => $shiftId])->assertJsonFragment(['id' => 'SH-101']);
+        $this->actingAs($staff, 'sanctum')->postJson('/api/shifts', ['openingCash' => 25])->assertStatus(409);
+        $this->actingAs($otherStaff, 'sanctum')->getJson('/api/shifts')
+            ->assertOk()->assertJsonFragment(['id' => $shiftId])->assertJsonFragment(['id' => 'SH-101']);
+        $this->actingAs($otherStaff, 'sanctum')->getJson("/api/shifts/{$shiftId}/report")->assertOk();
+
+        $this->actingAs($staff, 'sanctum')->postJson('/api/orders', [
+            'orderId' => 'STAFF-SHIFT-INVOICE', 'shiftId' => $shiftId, 'customerId' => 'cash',
+            'orderTypeId' => 'delivery', 'paid' => 13.50, 'method' => 'Cash',
+            'items' => [['id' => 'item_meat_burger', 'qty' => 1]],
+        ])->assertCreated();
+        $this->actingAs($staff, 'sanctum')->getJson("/api/shifts/{$shiftId}/invoices")
+            ->assertOk()->assertJsonCount(1, 'orders')->assertJsonPath('orders.0.shift_id', $shiftId);
+        $this->actingAs($otherStaff, 'sanctum')->getJson("/api/shifts/{$shiftId}/invoices")
+            ->assertOk()->assertJsonCount(1, 'orders');
+        $this->actingAs($otherStaff, 'sanctum')->postJson("/api/shifts/{$shiftId}/close")
+            ->assertOk()->assertJsonPath('shift.status', 'closed');
+
+        $this->assertDatabaseHas('pos_orders', ['client_order_id' => 'STAFF-SHIFT-INVOICE', 'shift_id' => $shiftId, 'user_id' => (string) $staff->id]);
+        $this->assertNotNull(\App\Models\PosShift::find($shiftId)->closed_at);
+        $this->actingAs($staff, 'sanctum')->getJson("/api/shifts/{$shiftId}/report")
+            ->assertOk()->assertJsonPath('shift.status', 'closed')->assertJsonPath('summary.orderCount', 1)
+            ->assertJsonPath('summary.grandTotal', 13.5);
+
+        $unprivilegedStaff = $staff->replicate();
+        $unprivilegedStaff->staff_id = 'STF-1053';
+        $unprivilegedStaff->email = 'staff3@nurfoodes.com';
+        $unprivilegedStaff->permissions = ['pos_login', 'pos_orders', 'staff_shifts'];
+        $unprivilegedStaff->save();
+        $this->actingAs($unprivilegedStaff, 'sanctum')->getJson('/api/shifts')
+            ->assertOk()->assertJsonCount(0, 'shifts');
+        $this->actingAs($unprivilegedStaff, 'sanctum')->postJson('/api/shifts/close-branch')->assertForbidden();
+
+        $this->actingAs($staff, 'sanctum')->patchJson('/api/orders/ORD-ANY/status', ['status' => 'served'])->assertForbidden();
+    }
+
+    public function test_designated_staff_can_close_all_active_shifts_in_their_branch_only(): void
+    {
+        $this->createOtherTenant();
+        $cashier = User::where('staff_id', 'STF-1050')->firstOrFail();
+        $staff = User::where('staff_id', 'STF-1051')->firstOrFail();
+        $otherStaff = User::where('staff_id', 'STF-1052')->firstOrFail();
+        \App\Models\PosShift::create([
+            'id' => 'SH-OTHER-BRANCH', 'shift_number' => '997', 'cashier' => 'Other Branch',
+            'user_id' => (string) $otherStaff->id, 'company_id' => 'CMP-OTHER', 'branch_id' => 'BR-OTHER',
+            'status' => 'active', 'opening_cash' => 10, 'opened_at' => now(),
+        ]);
+        foreach ([['SH-CASHIER', $cashier], ['SH-STAFF-2', $otherStaff], ['SH-STAFF-1', $staff]] as [$id, $owner]) {
+            \App\Models\PosShift::create([
+                'id' => $id, 'shift_number' => $id, 'cashier' => $owner->name,
+                'user_id' => (string) $owner->id, 'company_id' => $owner->company_id, 'branch_id' => $owner->branch_id,
+                'status' => 'active', 'opening_cash' => 10, 'opened_at' => now(),
+            ]);
+        }
+
+        $this->actingAs($staff, 'sanctum')->postJson('/api/shifts/close-branch')
+            ->assertOk()->assertJsonPath('success', true)->assertJsonPath('closedCount', 4);
+        foreach (['SH-101', 'SH-CASHIER', 'SH-STAFF-1', 'SH-STAFF-2'] as $id) {
+            $this->assertDatabaseHas('pos_shifts', ['id' => $id, 'status' => 'closed']);
+        }
+        $this->assertDatabaseHas('pos_shifts', ['id' => 'SH-OTHER-BRANCH', 'status' => 'active']);
     }
 }
 

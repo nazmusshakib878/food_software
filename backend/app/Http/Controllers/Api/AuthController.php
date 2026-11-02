@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
@@ -51,18 +50,14 @@ class AuthController extends Controller
         foreach ($users as $u) {
             // Check PBKDF2 hash if salt exists
             if (!empty($u->salt) && !empty($u->pin_hash)) {
-                $calcHash = hash_pbkdf2('sha256', $pin, $u->salt, 100000, 64, false);
+                // Node's PBKDF2 registry uses 64 bytes, which PHP represents as 128 hex characters.
+                $calcHash = hash_pbkdf2('sha256', $pin, $u->salt, 100000, 128, false);
                 if (hash_equals($u->pin_hash, $calcHash)) {
                     $authenticatedUser = $u;
                     break;
                 }
             }
 
-            // Fallback to standard Bcrypt password
-            if (Hash::check($pin, $u->password)) {
-                $authenticatedUser = $u;
-                break;
-            }
         }
 
         if (!$authenticatedUser) {
@@ -79,11 +74,10 @@ class AuthController extends Controller
         // Revoke previous tokens for this user on this device if needed
         $token = $authenticatedUser->createToken('pos_session')->plainTextToken;
 
-        return response()->json([
+        $response = response()->json([
             'success' => true,
             'message' => 'Authenticated successfully',
             'session' => [
-                'token' => $token,
                 'user' => [
                     'id' => $authenticatedUser->id,
                     'staffId' => $authenticatedUser->staff_id,
@@ -98,6 +92,19 @@ class AuthController extends Controller
                 ],
             ],
         ], 200);
+
+        $secureCookie = app()->environment('production') || $request->isSecure() || (bool)config('session.secure');
+        return $response->withCookie(cookie(
+            'nurpos_session',
+            $token,
+            (int)(config('sanctum.expiration') ?? 480),
+            '/',
+            null,
+            $secureCookie,
+            true,
+            false,
+            'lax'
+        ));
     }
 
     /**
@@ -149,7 +156,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Logged out successfully',
-        ], 200);
+        ], 200)->withCookie(cookie()->forget('nurpos_session'));
     }
 }
 

@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 dist/
+.env
+.env.local
 
 # Logs
 npm-debug.log*
@@ -38,3 +40,28 @@ backend/database/*.sqlite-journal
 backend/node_modules/
 backend/public/storage
 backend/public/hot
+
+# Frontend build and local-only files
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.*.local
+frontend/tools/archive/
+!frontend/tools/archive/
+frontend/tools/archive/*
+!frontend/tools/archive/scratch/
+frontend/tools/archive/scratch/*
+!frontend/tools/archive/scratch/eslint_test/
+!frontend/tools/archive/scratch/eslint_test/package.json
+!frontend/tools/archive/scratch/eslint_test/package-lock.json
+!frontend/tools/archive/scratch/fix_index.js
+!frontend/tools/archive/scratch/fix_pos.js
+!frontend/tools/archive/scratch/fix_syntax.js
+!frontend/tools/archive/scratch/fix_syntax2.js
+!frontend/tools/archive/scratch/fix_syntax3.js
+
+# Vite cache
+.vite/
+frontend/.vite/
+frontend/vite.stdout.log
+frontend/vite.stderr.log

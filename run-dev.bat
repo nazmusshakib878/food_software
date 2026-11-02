@@ -1,6 +1,6 @@
 @echo off
 title Nur Foodes POS Launcher
-cd /d "%~dp0"
+cd /d "%~dp0frontend"
 echo ==============================================
 echo   Starting Nur Foodes Restaurant POS App...
 echo ==============================================
@@ -13,7 +13,8 @@ if %ERRORLEVEL% EQU 0 (
     echo Node.js/npm detected! Launching dev server...
     call npm.cmd run dev
 ) else (
-    echo Opening application directly in your default browser...
-    start "" "%~dp0index.html"
+    echo Node.js/npm is required to run the POS application.
+    echo Install Node.js, then run this launcher again.
+    pause
 )
 pause

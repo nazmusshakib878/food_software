@@ -1,0 +1,1984 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Nur Foodes - Restaurant POS & Management System</title>
+    
+    <script>
+        // Global Image Error Handler to prevent reference errors before store.js loads
+        function getCategoryFallbackImage(catId) {
+            switch (catId) {
+                case 'sandwiches': return 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=400&q=80';
+                case 'pastries': return 'https://images.unsplash.com/photo-1509365465994-3e284000301a?auto=format&fit=crop&w=400&q=80';
+                case 'salads': return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80';
+                case 'drinks': return 'https://images.unsplash.com/photo-1556881286-fc6915169721?auto=format&fit=crop&w=400&q=80';
+                case 'icecream': return 'https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=400&q=80';
+                case 'fastfood': return 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?auto=format&fit=crop&w=400&q=80';
+                case 'pizza': return 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=400&q=80';
+                case 'pasta': return 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=400&q=80';
+                case 'desserts': return 'https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=400&q=80';
+                default: return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=400&q=80';
+            }
+        }
+        function handleImageError(imgEl, catId) {
+            if (!imgEl) return;
+            imgEl.onerror = null;
+            imgEl.src = getCategoryFallbackImage(catId);
+        }
+    </script>
+    
+    <!-- PWA Manifest & App Store Meta -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f766e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NurPOS">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Modular CSS Architecture -->
+    <link rel="stylesheet" href="css/style.css?v=20260910_04">
+    <link rel="stylesheet" href="css/pos.css?v=20260910_03">
+    <link rel="stylesheet" href="css/admin.css?v=20260909_06">
+    <link rel="stylesheet" href="css/receipt.css?v=20260909_06">
+    <link rel="stylesheet" href="css/reports.css?v=20260909_06">
+    <link rel="stylesheet" href="css/returns.css?v=1">
+    <link rel="stylesheet" href="css/responsive.css?v=20260909_06">
+    <link rel="stylesheet" href="css/checkout.css?v=1">
+    <link rel="stylesheet" href="css/shifts.css?v=3">
+
+    <!-- Core Vendor Libraries (PDF, QR Code & Confetti) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+    
+    <!-- Top Application Bar -->
+    <header class="app-topbar">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button class="icon-btn-top drawer-toggle-btn" id="drawerToggleBtn" onclick="toggleSideDrawer()" title="Main Menu" data-i18n-title="drawer_title">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="brand-zone" onclick="switchView('pos')">
+                <div class="brand-logo-badge">
+                    <span class="nur">Nur</span>
+                    <span class="foodes">foodes</span>
+                </div>
+                <div class="brand-meta">
+                    <h1 id="topbarStoreName">Nur foodes</h1>
+                    <p id="topbarCompanyName">شركة صح للتجارة</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Tabs for Tablets & Laptops -->
+        <div class="topbar-center-nav">
+            <button class="nav-tab-btn active" id="tabPosBtn" onclick="switchView('pos')">
+                <i class="fa-solid fa-cash-register"></i>
+                <span data-i18n="pos_nav">POS Cashier</span>
+            </button>
+            <button class="nav-tab-btn" id="tabKdsBtn" onclick="switchView('kds')">
+                <i class="fa-solid fa-bell-concierge"></i>
+                <span data-i18n="kds_nav">Kitchen (KDS)</span>
+            </button>
+            <button class="nav-tab-btn" id="tabAdminBtn" onclick="requestAdminAccess()">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span data-i18n="admin_nav">Admin & Reports</span>
+            </button>
+</div>
+
+        <!-- Right User Actions -->
+        <div class="topbar-right-actions">
+            <div class="badge-pill" id="userRoleBadge">
+                <i class="fa-solid fa-user-shield"></i>
+                <span id="userRoleText">Admin</span>
+            </div>
+            <button class="icon-btn-top" id="soundToggleBtn" onclick="toggleSound()" title="Sound Effects">
+                <i class="fa-solid fa-volume-high"></i>
+            </button>
+            <button class="icon-btn-top" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark Mode">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            <button class="icon-btn-top" onclick="toggleLanguage()" title="Toggle Language">
+                <i class="fa-solid fa-globe"></i>
+            </button>
+            <button class="icon-btn-top" onclick="openLoginModal()" title="Switch User Account">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- App Views Shell -->
+    <div class="workspace-content">
+        
+        <!-- ================= VIEW 1: POS CASHIER VIEW ================= -->
+        <div class="screen-view active" id="posView">
+            <div class="pos-layout" id="posMainLayout">
+                
+                <!-- Left Panel: Live Cart / Ticket -->
+                <aside class="pos-order-panel" id="posOrderPanel">
+                    <div class="order-panel-header">
+                        <div class="order-meta-row">
+                            <span id="currentOrderNumBadge"><i class="fa-solid fa-receipt"></i> #ORD-1001</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span id="cashierNameDisplay"><i class="fa-solid fa-user"></i> Cashier</span>
+                                <span id="currentCompanyDisplay" class="company-badge-text" style="font-size: 11px; font-weight: 700; color: var(--teal);"><i class="fa-solid fa-store"></i> Nur foodes</span>
+                                <button class="icon-btn-top mobile-cart-close-btn" onclick="closeMobileCart()" title="إغلاق السلة" data-i18n-title="btn_close" id="closeMobileCartBtn">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Customer & Order Type Selectors -->
+                        <div class="pos-meta-selectors-card">
+                            <div class="selector-field-row">
+                                <label><i class="fa-solid fa-user-tag"></i> <span data-i18n="customer_lbl">العميل:</span></label>
+                                <div class="select-wrap">
+                                    <select id="posCustomerSelect" class="form-select-pos" onchange="onPosCustomerChange(this.value)"></select>
+                                    <button type="button" class="btn-gear-icon" onclick="promptAddCustomer()" title="إضافة عميل" data-i18n-title="add_customer_title"><i class="fa-solid fa-gear"></i></button>
+                                </div>
+                            </div>
+                            <div class="selector-field-row">
+                                <label><i class="fa-solid fa-truck-ramp-box"></i> <span data-i18n="order_type_lbl">نوع الطلب:</span></label>
+                                <div class="select-wrap order-type-select-wrap">
+                                    <div class="select-box-wrap">
+                                        <div id="posOrderTypeDisplayBadge" class="pos-select-display-overlay" aria-hidden="true"><bdi>Delivery</bdi></div>
+                                        <select id="posOrderTypeSelect" class="form-select-pos" onchange="onPosOrderTypeChange(this.value)"></select>
+                                    </div>
+                                    <button type="button" class="btn-gear-icon" onclick="promptAddOrderType()" title="إضافة نوع طلب" data-i18n-title="add_order_type_title"><i class="fa-solid fa-gear"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Table Picker -->
+                        <div class="table-picker-row" id="tablePickerRow">
+                            <label style="font-size: 11.5px; font-weight: 700;" data-i18n="table_num">الطاولة:</label>
+                            <select class="table-picker-select" id="tableSelect">
+                                <option value="Table 1" data-i18n="table_1">Table 1 (طاولة ١)</option>
+                                <option value="Table 2" data-i18n="table_2">Table 2 (طاولة ٢)</option>
+                                <option value="Table 3" data-i18n="table_3">Table 3 (طاولة ٣)</option>
+                                <option value="Table 4" data-i18n="table_4">Table 4 (طاولة ٤)</option>
+                                <option value="Table 5" data-i18n="table_5">Table 5 (طاولة ٥)</option>
+                                <option value="Table 6" data-i18n="table_6">Table 6</option>
+                                <option value="Terrace" data-i18n="terrace_table">Outdoor Terrace</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Cart Item Rows (Rendered dynamically as table #, Name, Qty, Price, Total) -->
+                    <div class="pos-cart-table-wrapper" id="posCartTableWrapper">
+                        <!-- Rendered via renderCart() in js/pos.js -->
+                    </div>
+
+                    <!-- Cart Sticky Footer (Discount, Tax, Grand Total & Pay CTA) -->
+                    <div class="pos-cart-footer">
+                        
+                        <!-- Totals Breakdown Lines -->
+                        <div class="totals-breakdown order-summary-card">
+                            <div class="row">
+                                <span class="lbl"><i class="fa-solid fa-plus"></i> Additions</span>
+                                <span id="cartAddonsTotal">SAR 0.00</span>
+                            </div>
+                            <div class="row">
+                                <span class="lbl"><i class="fa-solid fa-percent"></i> Discounts</span>
+                                <span id="cartDiscount">SAR 0.00</span>
+                            </div>
+                            <div class="row">
+                                <span class="lbl"><i class="fa-solid fa-file-invoice"></i> Taxes</span>
+                                <span id="cartTax">SAR 0.00</span>
+                            </div>
+                            <!-- Grand Total triggers existing payment modal -->
+                            <div class="row total-row" onclick="openPaymentModal()">
+                                <span class="lbl"><i class="fa-solid fa-wallet"></i> Grand Total</span>
+                                <span id="cartGrandTotal" class="grand-val">SAR 0.00</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </aside>
+
+                <!-- Mobile Cart Floater (Visible only on mobile via CSS) -->
+                <div class="mobile-cart-floater" onclick="openMobileCart()">
+                    <div class="left-info">
+                        <span class="badge-count" id="floatCartBadge">0</span>
+                        <span class="total-price" id="floatCartTotalText">SAR 0.00</span>
+                    </div>
+                    <div class="right-action">
+                        <span data-i18n="view_cart">View Cart</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Right Area Container (Catalog OR Orders) -->
+                <div class="pos-right-pane" id="posRightPane">
+                    
+                    <!-- Right Panel A: Catalog, Categories & Main Touch Action Buttons -->
+                    <main class="pos-catalog-panel" id="posCatalogPanel">
+                        
+                        <!-- 4 MAIN POS ACTION BUTTONS (Cancel, Discounts, Notes, More) -->
+                        <div id="globalActionBar" class="pos-top-actions-bar">
+                            <button type="button" class="pos-action-btn btn-cancel" onclick="safeCancelOrder()" title="إلغاء الطلب الحالي" data-i18n-title="btn_cancel">
+                                <i class="fa-solid fa-ban"></i>
+                                <span data-i18n="btn_cancel">إلغاء</span>
+                            </button>
+                            <button type="button" class="pos-action-btn btn-discounts" onclick="openDiscountModal()" title="تطبيق خصم" data-i18n-title="btn_discount">
+                                <i class="fa-solid fa-tags"></i>
+                                <span data-i18n="btn_discount">الخصومات</span>
+                            </button>
+                            <button type="button" class="pos-action-btn btn-notes" onclick="openNotesModal()" title="ملاحظات الطلب والعميل" data-i18n-title="btn_notes">
+                                <i class="fa-solid fa-clipboard"></i>
+                                <span data-i18n="btn_notes">الملاحظات</span>
+                            </button>
+                            <button type="button" class="pos-action-btn btn-more" onclick="toggleMorePanel()" title="المزيد والإعدادات" data-i18n-title="btn_more">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                                <span data-i18n="btn_more">المزيد</span>
+                            </button>
+                        </div>
+
+                        <!-- ITEM LEVEL ACTION BAR -->
+                        <div id="itemActionBar" class="pos-top-actions-bar" style="display: none;">
+                            <button type="button" class="pos-action-btn btn-cancel" onclick="deleteActiveCartItem()" style="background: #e83e8c; color: white; border: none;" title="حذف الصنف">
+                                <i class="fa-solid fa-trash-can"></i>
+                                <span data-i18n="btn_delete">حذف</span>
+                            </button>
+                            <button type="button" class="pos-action-btn btn-quantity" onclick="openQuantityModal()" style="background: #007bff; color: white; border: none;" title="Quantity">
+                                <span>Quantity</span>
+                            </button>
+                            <button type="button" class="pos-action-btn btn-discounts" onclick="changeActiveCartQty(-1)" style="background: #6f42c1; color: white; border: none;" title="تقليل الكمية">
+                                <i class="fa-solid fa-minus"></i>
+                                <span>تقليل</span>
+                            </button>
+                            <button type="button" class="pos-action-btn btn-notes" onclick="changeActiveCartQty(1)" style="background: #17a2b8; color: white; border: none;" title="زيادة الكمية">
+                                <i class="fa-solid fa-plus"></i>
+                                <span>زيادة</span>
+                            </button>
+                        </div>
+
+                        <div id="catalogViewsContainer" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                        <!-- Search & Controls -->
+                        <!-- Catalog Mode Toolbar (Image 1 & Image 2 Alignment) -->
+                        <div class="pos-catalog-header-bar">
+                            <div class="catalog-mode-switcher">
+                                <button type="button" class="catalog-mode-btn active" id="btnCatalogGrid8" onclick="setPosCatalogMode('grid8')" title="8-Column Catalog Grid (Image 2)">
+                                    <i class="fa-solid fa-table-cells"></i> <span data-i18n="grid_8_col">8-Column Catalog</span>
+                                </button>
+                                <button type="button" class="catalog-mode-btn" id="btnCatalogSplit" onclick="setPosCatalogMode('split')" title="POS Split View">
+                                    <i class="fa-solid fa-table-columns"></i> <span data-i18n="split_pos">POS Split View</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="catalog-controls">
+                            <div class="search-input-wrap">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="productSearchInput" placeholder="Search product or code..." data-i18n-placeholder="search_placeholder" oninput="filterProducts()">
+                            </div>
+                        </div>
+
+                        <!-- Categories Ribbon / Cards -->
+                        <div class="categories-ribbon" id="categoriesRibbon">
+                            <!-- Rendered dynamically via js/pos.js -->
+                        </div>
+
+                        <!-- Products Grid with Photos -->
+                        <div class="products-grid-scroll">
+                            <div class="products-grid" id="productsGrid">
+                                <!-- Rendered dynamically via js/pos.js -->
+                            </div>
+                        </div>
+                        </div> <!-- /catalogViewsContainer -->
+
+                        <!-- ITEM MODIFIER PANEL -->
+                        <div id="itemModifierPanel" class="item-modifier-panel" style="display: none;">
+                            <div class="modifier-panel-header">
+                                <h3 id="modifierPanelItemName" class="modifier-panel-item-name"></h3>
+                            </div>
+                            
+                            <div class="modifier-panel-body">
+                                <div class="form-group modifier-notes-group">
+                                    <label class="modifier-notes-label"><i class="fa-regular fa-comment-dots"></i> <span data-i18n="item_special_note">ملاحظات خاصة بالصنف:</span></label>
+                                    <textarea id="modifierPanelItemNote" class="form-control-pos item-special-notes" placeholder="أضف ملاحظة لهذا الصنف فقط..." oninput="updateActiveItemNote(this.value)" rows="3" wrap="soft" autocomplete="off" onkeydown="if(event.key==='Enter') event.stopPropagation();"></textarea>
+                                </div>
+
+                                <div id="modifierPanelGroups" class="modifier-panel-groups"></div>
+                            </div>
+                            
+                            <div class="modifier-panel-footer">
+                                <button type="button" id="modifierPanelDoneBtn" class="modifier-done-btn btn-done" onclick="closeItemModifierPanel()" title="Done">
+                                    <i class="fa-solid fa-check"></i>
+                                    <span data-i18n="btn_done">Done</span>
+                                </button>
+                            </div>
+                        </div>
+
+                    </main>
+
+                    <!-- Right Panel B: Orders History View (Orders mode) -->
+                    <section class="orders-history-panel returns-screen-container" id="returnsView" style="display: none;">
+                        <div class="orders-screen-wrapper" id="returnsScreen1">
+                            <!-- Top Filter Tabs -->
+                            <div class="orders-top-tabs" id="ordersTopTabs">
+                                <button type="button" class="order-tab active" onclick="setReturnOrderTab('uncompleted', this)" data-i18n="tab_uncompleted">Uncompleted</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('all', this)" data-i18n="tab_all">All</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('offline', this)" data-i18n="tab_offline">Offline</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('outgoing', this)" data-i18n="tab_outgoing">Outgoing</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('returned', this)" data-i18n="tab_returned">Returned</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('active', this)" data-i18n="tab_active">Active</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('done', this)" data-i18n="tab_done">Done</button>
+                            </div>
+
+                            <!-- Orders Search Bar -->
+                            <div class="orders-search-bar-wrap">
+                                <div class="search-input-wrap">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="text" id="returnsSearchInput" placeholder="Search Invoice ID, Order Number, User Name..." oninput="filterReturnsOrders()">
+                                    <i class="fa-solid fa-xmark clear-search-icon" onclick="clearReturnsSearch()" title="Clear Search"></i>
+                                </div>
+                            </div>
+
+                            <!-- Orders Cards Grid -->
+                            <div class="returns-orders-grid" id="returnsOrdersGrid">
+                                <!-- Populated dynamically via js/returns.js -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- POS Desktop/Tablet Bottom Navigation Bar -->
+                    <nav class="pos-bottom-nav-bar" id="posBottomNavBar">
+                        <button type="button" class="bottom-nav-btn btn-new-order" onclick="bottomNavNewOrder()">
+                            <span data-i18n="bottom_nav_new">New</span>
+                            <i class="far fa-file-alt"></i>
+                        </button>
+                        <button type="button" class="bottom-nav-btn" onclick="bottomNavOrders()">
+                            <span data-i18n="bottom_nav_orders">Orders</span>
+                            <i class="fas fa-layer-group"></i>
+                        </button>
+                        <button type="button" class="bottom-nav-btn" onclick="bottomNavTables()">
+                            <span data-i18n="bottom_nav_tables">Tables</span>
+                            <i class="fas fa-border-all"></i>
+                        </button>
+                        <button type="button" class="bottom-nav-btn btn-main-screen" onclick="bottomNavMainScreen()">
+                            <span data-i18n="bottom_nav_main">Main Screen</span>
+                            <i class="fas fa-home"></i>
+                        </button>
+                    </nav>
+
+                </div>
+            </div>
+            
+            
+        </div>
+
+        <!-- ================= VIEW 2: ADMIN DASHBOARD VIEW ================= -->
+        <div class="screen-view" id="adminView">
+            <div class="admin-layout">
+                
+                <!-- Admin Secondary Navigation -->
+                <div class="admin-subnav">
+                    <button class="admin-nav-item active" onclick="switchAdminTab('overview', this)">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span data-i18n="admin_overview">نظرة عامة والمبيعات</span>
+                    </button>
+                    <button class="admin-nav-item" onclick="switchAdminTab('menu', this)">
+                        <i class="fa-solid fa-burger"></i>
+                        <span data-i18n="admin_menu">إدارة المنيو والأصناف</span>
+                    </button>
+                    <button class="admin-nav-item" onclick="switchAdminTab('categories', this)">
+                        <i class="fa-solid fa-tags"></i>
+                        <span data-i18n="admin_cats">الأقسام</span>
+                    </button>
+                    <button class="admin-nav-item" onclick="switchAdminTab('orders', this)">
+                        <i class="fa-solid fa-receipt"></i>
+                        <span data-i18n="admin_orders">سجل الفواتير</span>
+                    </button>
+                    <button class="admin-nav-item" onclick="switchAdminTab('settings', this)">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span data-i18n="admin_settings">إعدادات المطعم والضريبة</span>
+                    </button>
+                </div>
+
+                <!-- TAB 1: OVERVIEW & KPIS -->
+                <div class="admin-pane active" id="paneOverview">
+                    <div class="kpi-cards-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-info">
+                                <h4 data-i18n="kpi_today_sales">مبيعات اليوم</h4>
+                                <div class="kpi-val" id="kpiTodaySales">SAR 0.00</div>
+                            </div>
+                            <div class="kpi-icon teal"><i class="fa-solid fa-sack-dollar"></i></div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-info">
+                                <h4 data-i18n="kpi_total_orders">إجمالي الطلبات</h4>
+                                <div class="kpi-val" id="kpiTotalOrders">0</div>
+                            </div>
+                            <div class="kpi-icon purple"><i class="fa-solid fa-receipt"></i></div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-info">
+                                <h4 data-i18n="kpi_total_items">الأصناف المتاحة</h4>
+                                <div class="kpi-val" id="kpiTotalItems">0</div>
+                            </div>
+                            <div class="kpi-icon orange"><i class="fa-solid fa-boxes-stacked"></i></div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-info">
+                                <h4 data-i18n="kpi_avg_ticket">متوسط الفاتورة</h4>
+                                <div class="kpi-val" id="kpiAvgTicket">SAR 0.00</div>
+                            </div>
+                            <div class="kpi-icon success"><i class="fa-solid fa-chart-simple"></i></div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Orders Table -->
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h3 data-i18n="recent_orders_title"><i class="fa-solid fa-clock-rotate-left"></i> آخر الطلبات المسجلة</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-primary" style="background: var(--purple);" onclick="openZReportModal()">
+                                    <i class="fa-solid fa-file-invoice-dollar"></i> <span data-i18n="z_report_btn">تقرير Z الوردية</span>
+                                </button>
+                                <button class="btn-primary" onclick="exportOrdersCSV()">
+                                    <i class="fa-solid fa-file-excel"></i> <span data-i18n="export_excel_btn">تصدير البيانات</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="th_order_id">رقم الطلب</th>
+                                        <th data-i18n="th_date_time">الوقت والتاريخ</th>
+                                        <th data-i18n="th_type">النوع</th>
+                                        <th data-i18n="th_cashier">الكاشير</th>
+                                        <th data-i18n="th_total">المجموع</th>
+                                        <th data-i18n="th_payment_method">طريقة الدفع</th>
+                                        <th data-i18n="th_actions">الإجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentOrdersTbody">
+                                    <!-- Injected dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: MENU & ITEMS MANAGEMENT -->
+                <div class="admin-pane" id="paneMenu">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h3><i class="fa-solid fa-utensils"></i> <span data-i18n="admin_menu_title">قائمة الأصناف بالمنيو</span></h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-primary" style="background: var(--teal);" onclick="resetMenuToDefaults()" title="استعادة الأصناف الافتراضية مع الصور" data-i18n-title="btn_restore_images">
+                                    <i class="fa-solid fa-rotate-left"></i> <span data-i18n="btn_restore_images">استعادة الصور الأصلية</span>
+                                </button>
+                                <button class="btn-primary" onclick="openItemModal()">
+                                    <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_item">إضافة صنف جديد</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="th_image">الصورة</th>
+                                        <th data-i18n="th_name_ar">الاسم بالعربي</th>
+                                        <th data-i18n="th_name_en">الاسم بالإنجليزي</th>
+                                        <th data-i18n="th_category_col">القسم</th>
+                                        <th data-i18n="th_price">السعر</th>
+                                        <th data-i18n="th_status">الحالة</th>
+                                        <th data-i18n="th_actions">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminItemsTbody">
+                                    <!-- Injected dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: CATEGORIES -->
+                <div class="admin-pane" id="paneCategories">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h3><i class="fa-solid fa-tags"></i> <span data-i18n="admin_cats_title">تصنيفات المنيو</span></h3>
+                            <button class="btn-primary" onclick="openCategoryModal()">
+                                <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_cat">إضافة قسم جديد</span>
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="th_icon">الأيقونة</th>
+                                        <th data-i18n="th_cat_ar">اسم القسم (عربي)</th>
+                                        <th data-i18n="th_cat_en">اسم القسم (EN)</th>
+                                        <th data-i18n="th_linked_items">الأصناف المرتبطة</th>
+                                        <th data-i18n="th_actions">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminCategoriesTbody">
+                                    <!-- Injected dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: ORDERS HISTORY -->
+                <div class="admin-pane" id="paneOrders">
+                    <div class="admin-card">
+                        <div class="admin-card-header" style="flex-wrap: wrap; gap: 10px;">
+                            <h3><i class="fa-solid fa-receipt"></i> <span data-i18n="admin_orders_title">سجل الفواتير والمبيعات الشامل</span></h3>
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                <input type="text" id="orderSearchInput" class="form-control" placeholder="بحث برقم الفاتورة أو العميل..." data-i18n-placeholder="search_orders_placeholder" oninput="filterOrders()" style="width: 200px; padding: 6px 12px; font-size: 13px;">
+                                <select id="orderStatusFilter" class="form-control" onchange="filterOrders()" style="width: 120px; padding: 6px 10px; font-size: 13px;">
+                                    <option value="all" data-i18n="opt_all_status">كل الحالات</option>
+                                    <option value="completed" data-i18n="opt_completed">مكتمل</option>
+                                    <option value="new" data-i18n="opt_new_prep">جديد / تحضير</option>
+                                    <option value="cancelled" data-i18n="opt_cancelled">ملغي</option>
+                                </select>
+                                <button class="btn-primary" onclick="exportOrdersCSV()">
+                                    <i class="fa-solid fa-file-excel"></i> <span data-i18n="export_excel_btn">تصدير إكسل</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="orders-top-tabs" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; font-weight: 600; font-size: 14px;">
+                            <div class="order-tab active" onclick="setOrderTab('uncompleted', this)" data-i18n="tab_uncompleted" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; background: var(--teal); color: white;">Uncompleted</div>
+                            <div class="order-tab" onclick="setOrderTab('all', this)" data-i18n="tab_all" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">All</div>
+                            <div class="order-tab" onclick="setOrderTab('offline', this)" data-i18n="tab_offline" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Offline</div>
+                            <div class="order-tab" onclick="setOrderTab('outgoing', this)" data-i18n="tab_outgoing" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Outgoing</div>
+                            <div class="order-tab" onclick="setOrderTab('returned', this)" data-i18n="tab_returned" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Returned</div>
+                            <div class="order-tab" onclick="setOrderTab('active', this)" data-i18n="tab_active" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Active</div>
+                            <div class="order-tab" onclick="setOrderTab('done', this)" data-i18n="tab_done" style="cursor: pointer; padding: 6px 12px; border-radius: 20px; color: #64748b;">Done</div>
+                        </div>
+                        <div id="allOrdersContainer" style="display: flex; flex-direction: column; gap: 15px; max-height: calc(100vh - 250px); overflow-y: auto; padding-right: 5px;">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: SETTINGS -->
+                <div class="admin-pane" id="paneSettings">
+                    <div class="admin-card" style="max-width: 600px;">
+                        <div class="admin-card-header">
+                            <h3><i class="fa-solid fa-sliders"></i> <span data-i18n="admin_settings">إعدادات المتجر والضريبة</span></h3>
+                        </div>
+                        <form onsubmit="saveStoreSettings(event)" style="padding: 16px;">
+                            <div class="form-group">
+                                <label data-i18n="lbl_store_name_ar">اسم المطعم (عربي):</label>
+                                <input type="text" class="form-control" id="setStoreNameAr" required>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="lbl_store_name_en">اسم المطعم (English):</label>
+                                <input type="text" class="form-control" id="setStoreNameEn" required>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="lbl_company_name">اسم الشركة / الفرع:</label>
+                                <input type="text" class="form-control" id="setCompanyName" required>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="lbl_vat_number">الرقم الضريبي (VAT Number):</label>
+                                <input type="text" class="form-control" id="setVatNumber" required>
+                            </div>
+                            <div class="form-row-2">
+                                <div class="form-group">
+                                    <label data-i18n="lbl_tax_rate">نسبة الضريبة (%):</label>
+                                    <input type="number" class="form-control" id="setTaxRate" step="0.1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label data-i18n="lbl_currency">العملة:</label>
+                                    <input type="text" class="form-control" id="setCurrency" required>
+                                </div>
+                            </div>
+<button type="submit" class="btn-primary" style="margin-top: 10px; width: 100%; justify-content: center;">
+                                <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save">حفظ الإعدادات</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ================= VIEW 3: KITCHEN DISPLAY SCREEN (KDS) ================= -->
+        <div class="screen-view" id="kdsView">
+            <div class="kds-layout">
+                <div class="kds-topbar">
+                    <div class="kds-counts-summary">
+                        <div class="kds-badge kds-count-new"><span id="kdsCountNew">0</span> <span data-i18n="kds_count_new_lbl">طلبات جديدة New</span></div>
+                        <div class="kds-badge kds-count-prep"><span id="kdsCountPrep">0</span> <span data-i18n="kds_count_prep_lbl">قيد التجهيز Prep</span></div>
+                        <div class="kds-badge kds-count-ready"><span id="kdsCountReady">0</span> <span data-i18n="kds_count_ready_lbl">جاهز Ready</span></div>
+                        <div class="kds-badge kds-stock-alert-badge" id="kdsStockAlertPill" onclick="openKitchenStockModal('out_of_stock')" style="display: none;" title="انقر لإعادة إتاحة الأصناف النافذة فوراً">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span id="kdsStockAlertCount">0</span>
+                            <span data-i18n="kds_items_out">أصناف نفذت (إعادة إتاحة)</span>
+                        </div>
+                    </div>
+                    <div class="kds-topbar-actions">
+                        <button type="button" class="btn-primary kds-btn-stock" onclick="openKitchenStockModal()">
+                            <i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="btn_manage_stock">إدارة المخزون والتوافر</span>
+                        </button>
+                        <button type="button" class="btn-secondary kds-btn-refresh" onclick="renderKdsScreen(); updateKdsStockAlert();">
+                            <i class="fa-solid fa-rotate"></i> <span data-i18n="btn_refresh_kds">تحديث</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="kds-cards-container" id="kdsCardsContainer">
+                    <!-- Dynamic KDS tickets -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 4: REPORTS & MANAGEMENT VIEW ================= -->
+        <div class="screen-view reports-screen-container" id="reportsView">
+            <div id="reportModuleContent">
+                <!-- Rendered dynamically via js/reports.js -->
+            </div>
+        </div>
+
+    </div>
+
+        <!-- ================= VIEW 6: SHIFTS VIEW ================= -->
+        <div class="screen-view shifts-screen-container" id="shiftsView">
+            <!-- Rendered dynamically via js/shifts.js -->
+        </div>
+</div>
+
+<!-- =========================================================
+     SIDE DRAWER (MAIN MANAGEMENT MENU)
+     ========================================================= -->
+<div class="side-drawer-overlay" id="sideDrawerOverlay" onclick="closeSideDrawer()"></div>
+<aside class="side-drawer" id="sideDrawer">
+    <div class="drawer-header">
+        <div class="drawer-brand">
+            <i class="fa-solid fa-cash-register"></i>
+            <span data-i18n="drawer_brand_name">نظام نقاط البيع والإدارة</span>
+        </div>
+        <button type="button" class="drawer-close-btn" onclick="closeSideDrawer()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <div class="drawer-content">
+        <div class="drawer-menu-item" onclick="switchView('pos'); closeSideDrawer();">
+            <i class="fa-solid fa-desktop"></i>
+            <span data-i18n="nav_main_screen">شاشة البيع الرئيسية (POS)</span>
+        </div>
+        
+        <div class="drawer-section-title" data-i18n="drawer_sales_reports_title">تقارير المبيعات والعمليات</div>
+
+        <div class="drawer-menu-item" onclick="toggleDrawerReportsSubmenu()">
+            <i class="fa-solid fa-chart-line"></i>
+            <span style="flex:1;" data-i18n="drawer_rep_sales">1. تقارير المبيعات (Reports)</span>
+            <i class="fa-solid fa-chevron-down" id="drawerReportsArrow" style="font-size: 12px;"></i>
+        </div>
+        <div class="drawer-sub-menu" id="drawerReportsSubmenu">
+            <div class="drawer-sub-item" data-report-id="invoice_reports" onclick="openReportModule('invoice_reports')"><i class="fa-solid fa-receipt"></i> <span data-i18n="rep_sub_invoices">تقارير الفواتير</span></div>
+            <div class="drawer-sub-item" data-report-id="items_report" onclick="openReportModule('items_report')"><i class="fa-solid fa-box-open"></i> <span data-i18n="rep_sub_items">تقرير الأصناف</span></div>
+            <div class="drawer-sub-item" data-report-id="daily_shifts" onclick="openReportModule('daily_shifts')"><i class="fa-solid fa-user-clock"></i> <span data-i18n="rep_sub_shifts">تقارير الورديات اليومية</span></div>
+            <div class="drawer-sub-item" data-report-id="damaged_items" onclick="openReportModule('damaged_items')"><i class="fa-solid fa-trash-can"></i> <span data-i18n="rep_sub_damaged">تقرير التوالف والهالك</span></div>
+            <div class="drawer-sub-item" data-report-id="application_reports" onclick="openReportModule('application_reports')"><i class="fa-solid fa-mobile-screen-button"></i> <span data-i18n="rep_sub_apps">تقارير التطبيقات</span></div>
+            <div class="drawer-sub-item" data-report-id="service_durations" onclick="openReportModule('service_durations')"><i class="fa-solid fa-stopwatch"></i> <span data-i18n="rep_sub_durations">أوقات إنجاز الخدمة</span></div>
+            <div class="drawer-sub-item" data-report-id="totals_report" onclick="openReportModule('totals_report')"><i class="fa-solid fa-calculator"></i> <span data-i18n="rep_sub_totals">تقرير الإجماليات</span></div>
+            <div class="drawer-sub-item" data-report-id="active_meals" onclick="openReportModule('active_meals')"><i class="fa-solid fa-fire"></i> <span data-i18n="rep_sub_active_meals">الوجبات النشطة حالياً</span></div>
+            <div class="drawer-sub-item" data-report-id="meals_reports" onclick="openReportModule('meals_reports')"><i class="fa-solid fa-chart-pie"></i> <span data-i18n="rep_sub_meals_cat">تقارير فئات الوجبات</span></div>
+        </div>
+
+        <div class="drawer-menu-item" data-report-id="payment_type_report" onclick="openReportModule('payment_type_report')">
+            <i class="fa-solid fa-credit-card"></i>
+            <span data-i18n="menu_payment_type_report">2. تقرير طرق الدفع</span>
+        </div>
+
+        <div class="drawer-menu-item" data-report-id="balancing_payments" onclick="openReportModule('balancing_payments')">
+            <i class="fa-solid fa-scale-balanced"></i>
+            <span data-i18n="menu_balancing_payments">3. مطابقة طرق الدفع (Balancing)</span>
+        </div>
+
+        <div class="drawer-menu-item" data-report-id="applications_review" onclick="openReportModule('applications_review')">
+            <i class="fa-solid fa-table-list"></i>
+            <span data-i18n="menu_apps_data_review">4. مراجعة بيانات التطبيقات</span>
+        </div>
+
+        <div class="drawer-menu-item" data-report-id="internal_orders" onclick="openReportModule('internal_orders')">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span data-i18n="menu_internal_orders">5. الطلبات الداخلية</span>
+        </div>
+
+        <div class="drawer-menu-item" data-report-id="inventory_auditing" onclick="openReportModule('inventory_auditing')">
+            <i class="fa-solid fa-clipboard-check"></i>
+            <span data-i18n="menu_inventory_auditing">6. جرد ومطابقة المخزون</span>
+        </div>
+
+        <div class="drawer-menu-item" data-report-id="daily_inventory" onclick="openReportModule('daily_inventory')">
+            <i class="fa-solid fa-warehouse"></i>
+            <span data-i18n="menu_daily_inventory">7. المخزون اليومي</span>
+        </div>
+
+        <div class="drawer-menu-item" data-report-id="daily_stock_calculator" onclick="openReportModule('daily_stock_calculator')">
+            <i class="fa-solid fa-calculator"></i>
+            <span data-i18n="menu_daily_stock_calc">8. حاسبة المخزون اليومي</span>
+        </div>
+    </div>
+</aside>
+
+<!-- =========================================================
+     MODALS SECTION
+     ========================================================= -->
+
+<div class="kiosk-login-overlay open active" id="loginModal">
+    <!-- Language Dropdown -->
+    <div class="kiosk-lang-selector">
+        <button id="kioskLangToggle" onclick="toggleLanguage()">
+            <i class="fa-solid fa-chevron-down"></i> <span id="kioskLangText">العربية</span>
+        </button>
+    </div>
+    
+    <!-- About App -->
+    <div class="kiosk-about-app">
+        <div class="kiosk-about-title"><i class="fa-solid fa-circle-info"></i> <span data-i18n="about_app">About App</span></div>
+        <div class="kiosk-about-version">T.1.5-119</div>
+    </div>
+
+    <!-- Center Card -->
+    <div class="kiosk-login-card">
+        <button type="button" class="kiosk-conn-trigger" id="kioskConnectionBtn" onclick="openConnectionModal()" aria-label="Connection ID" title="Connection ID">
+            <i class="fa-solid fa-link kiosk-logo-icon"></i>
+        </button>
+        
+        <!-- Logo -->
+        <div class="kiosk-logo-container">
+            <h1 class="kiosk-logo-nur">Nur</h1>
+            <div class="kiosk-logo-foodes">foodes</div>
+        </div>
+
+        <!-- 4 PIN Boxes -->
+        <div class="kiosk-pin-container">
+            <div class="kiosk-pin-box" id="kioskPin0"></div>
+            <div class="kiosk-pin-box" id="kioskPin1"></div>
+            <div class="kiosk-pin-box" id="kioskPin2"></div>
+            <div class="kiosk-pin-box" id="kioskPin3"></div>
+        </div>
+
+        <!-- Numpad 3x4 -->
+        <div class="kiosk-numpad">
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('1')">1</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('2')">2</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('3')">3</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('4')">4</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('5')">5</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('6')">6</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('7')">7</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('8')">8</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('9')">9</button>
+            <button class="kiosk-numpad-btn kiosk-numpad-action" onclick="kioskKeyPress('C')">C</button>
+            <button class="kiosk-numpad-btn" onclick="kioskKeyPress('0')">0</button>
+            <button class="kiosk-numpad-btn kiosk-numpad-action backspace-btn" onclick="kioskKeyPress('BACK')"><i class="fa-solid fa-delete-left"></i></button>
+        </div>
+
+        <!-- Login Button -->
+        <button class="kiosk-login-btn" onclick="kioskSubmitLogin()">
+            <span data-i18n="btn_login_kiosk">Log In</span>
+        </button>
+    </div>
+</div>
+
+<!-- MODAL: CONNECTION ID POPUP -->
+<div class="connection-modal-overlay" id="connectionModal" role="dialog" aria-modal="true" aria-labelledby="connModalTitle" aria-hidden="true">
+    <div class="connection-modal-card">
+        <!-- Header -->
+        <div class="connection-modal-header">
+            <div class="connection-header-left">
+                <i class="fa-solid fa-link connection-header-icon" aria-hidden="true"></i>
+                <h2 id="connModalTitle" class="connection-modal-title" data-i18n="connection_id">Connection Id</h2>
+            </div>
+            <button type="button" class="connection-modal-close" onclick="closeConnectionModal()" aria-label="Close dialog">&times;</button>
+        </div>
+
+        <!-- Body -->
+        <div class="connection-modal-body">
+            <p class="connection-instruction" data-i18n="connection_instruction">Please enter your Connection ID:-</p>
+
+            <!-- Two-column row for Account Number & User Key on wide screens -->
+            <div class="connection-form-grid">
+                <!-- Account Number Field -->
+                <div class="connection-field-group">
+                    <label for="connAccountNumber" class="connection-label" data-i18n="account_number">Account Number</label>
+                    <div class="connection-input-action-row">
+                        <input type="text" id="connAccountNumber" class="connection-input" placeholder="e.g. 100234" autocomplete="off" />
+                        <button type="button" id="connCheckBtn" class="connection-action-btn connection-check-btn" onclick="checkConnectionAccount()" data-i18n="btn_check">Check</button>
+                    </div>
+                    <div id="connAccountFeedback" class="connection-feedback" role="alert" aria-live="polite"></div>
+                </div>
+
+                <!-- User Key Field -->
+                <div class="connection-field-group">
+                    <label for="connUserKey" class="connection-label" data-i18n="user_key">User Key</label>
+                    <div class="connection-input-action-row">
+                        <input type="password" id="connUserKey" class="connection-input" placeholder="••••••••••••" autocomplete="new-password" />
+                        <button type="button" id="connToggleEyeBtn" class="connection-action-btn connection-eye-btn" onclick="toggleUserKeyVisibility()" title="Toggle visibility" aria-label="Toggle password visibility">
+                            <i class="fa-solid fa-eye" id="connEyeIcon"></i>
+                        </button>
+                    </div>
+                    <div id="connKeyFeedback" class="connection-feedback" role="alert" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Branch Row -->
+            <div class="connection-field-group connection-branch-group">
+                <label for="connBranchSelect" class="connection-label" data-i18n="branch">Branch</label>
+                <div class="connection-input-action-row">
+                    <select id="connBranchSelect" class="connection-select">
+                        <!-- Populated dynamically via JS -->
+                    </select>
+                    <button type="button" id="connAddBranchBtn" class="connection-action-btn connection-add-btn" onclick="addSelectedBranch()" title="Add Branch" aria-label="Add Branch">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Selected Branches Chips Container -->
+            <div class="connection-selected-branches-section">
+                <span class="connection-chips-heading" data-i18n="selected_branches">Selected Branches:</span>
+                <div id="connSelectedChips" class="connection-chips-wrapper" aria-label="Selected branches list">
+                    <!-- Chips inserted here dynamically -->
+                </div>
+            </div>
+
+            <!-- General Status / Error Banner -->
+            <div id="connGeneralFeedback" class="connection-general-feedback" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Footer / Action Buttons -->
+        <div class="connection-modal-footer">
+            <button type="button" class="connection-footer-btn connection-cancel-btn" onclick="closeConnectionModal()" data-i18n="btn_cancel">Cancel</button>
+            <button type="button" id="connSaveBtn" class="connection-footer-btn connection-save-btn" onclick="saveConnectionSettings()" data-i18n="btn_save">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: CASHIER PAYMENT & NUMPAD -->
+<div class="modal-overlay" id="paymentModal">
+    <div class="modal-card checkout-screen">
+        <div class="checkout-header">
+            <button class="checkout-back-btn" onclick="closePaymentModal()">Back</button>
+            <div class="checkout-remaining">
+                <span id="payModalRemaining">0.00</span> <span>:Remaining</span>
+            </div>
+        </div>
+        
+        <div class="checkout-body">
+            <!-- Left Numpad -->
+            <div class="checkout-numpad">
+                <div class="numpad-key" onclick="pressNumpad('1')">1</div>
+                <div class="numpad-key" onclick="pressNumpad('2')">2</div>
+                <div class="numpad-key" onclick="pressNumpad('3')">3</div>
+                
+                <div class="numpad-key" onclick="pressNumpad('4')">4</div>
+                <div class="numpad-key" onclick="pressNumpad('5')">5</div>
+                <div class="numpad-key" onclick="pressNumpad('6')">6</div>
+                
+                <div class="numpad-key" onclick="pressNumpad('7')">7</div>
+                <div class="numpad-key" onclick="pressNumpad('8')">8</div>
+                <div class="numpad-key" onclick="pressNumpad('9')">9</div>
+                
+                <div class="numpad-key" onclick="pressNumpad('0')">0</div>
+                <div class="numpad-key accent" onclick="pressNumpadQuick('50')">50</div>
+                <div class="numpad-key accent" onclick="pressNumpadQuick('100')">100</div>
+                
+                <div class="numpad-key accent" onclick="pressNumpadQuick('200')">200</div>
+                <div class="numpad-key accent" onclick="pressNumpadQuick('500')">500</div>
+                <div class="numpad-key" onclick="pressNumpad('.')">.</div>
+                
+                <div class="numpad-key numpad-action" onclick="pressNumpad('BACK')">⌫</div>
+                <div class="numpad-key numpad-action" onclick="pressNumpad('CLEAR')">C</div>
+            </div>
+            
+            <div class="checkout-divider"></div>
+            
+            <!-- Right Accordion -->
+            <div class="checkout-methods">
+                <!-- Cash -->
+                <div class="pay-accordion" id="acc_cash">
+                    <div class="pay-accordion-header" onclick="toggleAccordion('cash')">
+                        <span class="pay-accordion-title">Cash</span>
+                        <i class="fa-solid fa-money-bill-1-wave"></i>
+                    </div>
+                    <div class="pay-accordion-body">
+                        <div class="pay-input-row">
+                            <input type="text" id="input_cash" readonly onclick="handleInputTap('cash')" ondblclick="fillRemaining('cash')" placeholder="0.00">
+                            <span>: Cash</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bank 236 -->
+                <div class="pay-accordion" id="acc_bank236">
+                    <div class="pay-accordion-header" onclick="toggleAccordion('bank236')">
+                        <span class="pay-accordion-title">Bank 236</span>
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div class="pay-accordion-body">
+                        <div class="pay-input-split">
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank236_visa" readonly onclick="handleInputTap('bank236_visa')" ondblclick="fillRemaining('bank236_visa')" placeholder="0.00">
+                                <span>: VISA236</span>
+                            </div>
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank236_mada" readonly onclick="handleInputTap('bank236_mada')" ondblclick="fillRemaining('bank236_mada')" placeholder="0.00">
+                                <span>: Mada236</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bank 237 -->
+                <div class="pay-accordion" id="acc_bank237">
+                    <div class="pay-accordion-header" onclick="toggleAccordion('bank237')">
+                        <span class="pay-accordion-title">Bank 237</span>
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div class="pay-accordion-body">
+                        <div class="pay-input-split">
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank237_visa" readonly onclick="handleInputTap('bank237_visa')" ondblclick="fillRemaining('bank237_visa')" placeholder="0.00">
+                                <span>: VISA237</span>
+                            </div>
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank237_mada" readonly onclick="handleInputTap('bank237_mada')" ondblclick="fillRemaining('bank237_mada')" placeholder="0.00">
+                                <span>: Mada237</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bank 238 -->
+                <div class="pay-accordion" id="acc_bank238">
+                    <div class="pay-accordion-header" onclick="toggleAccordion('bank238')">
+                        <span class="pay-accordion-title">Bank 238</span>
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div class="pay-accordion-body">
+                        <div class="pay-input-split">
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank238_visa" readonly onclick="handleInputTap('bank238_visa')" ondblclick="fillRemaining('bank238_visa')" placeholder="0.00">
+                                <span>: VISA238</span>
+                            </div>
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank238_mada" readonly onclick="handleInputTap('bank238_mada')" ondblclick="fillRemaining('bank238_mada')" placeholder="0.00">
+                                <span>: Mada238</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bank 239 -->
+                <div class="pay-accordion" id="acc_bank239">
+                    <div class="pay-accordion-header" onclick="toggleAccordion('bank239')">
+                        <span class="pay-accordion-title">Bank 239</span>
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div class="pay-accordion-body">
+                        <div class="pay-input-split">
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank239_visa" readonly onclick="handleInputTap('bank239_visa')" ondblclick="fillRemaining('bank239_visa')" placeholder="0.00">
+                                <span>: VISA239</span>
+                            </div>
+                            <div class="pay-input-row">
+                                <input type="text" id="input_bank239_mada" readonly onclick="handleInputTap('bank239_mada')" ondblclick="fillRemaining('bank239_mada')" placeholder="0.00">
+                                <span>: Mada239</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ajel -->
+                <div class="pay-accordion" id="acc_credit">
+                    <div class="pay-accordion-header" onclick="toggleAccordion('credit')">
+                        <span class="pay-accordion-title">أجل</span>
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <div class="pay-accordion-body">
+                        <div class="pay-input-row">
+                            <input type="text" id="input_credit" readonly onclick="handleInputTap('credit')" ondblclick="fillRemaining('credit')" placeholder="0.00">
+                            <span>: أجل</span>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <div class="checkout-footer">
+            <button class="checkout-pay-btn" onclick="processCheckoutPay()">Pay  $</button>
+        </div>
+    </div>
+</div>
+
+<!-- STAFF MEAL EXPENSE MODAL -->
+<div class="modal-overlay" id="staffMealExpenseModal">
+    <div class="modal-card staff-meal-modal-card" id="staffMealModalCard">
+        <!-- Top Bar: Back (Top-Left) & Remaining (Top-Right) -->
+        <div class="staff-meal-top-bar" id="staffMealTopBar">
+            <button type="button" class="staff-meal-back-btn" id="staffMealBackBtn" onclick="closeStaffMealExpenseModal()" title="Back">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="staff-meal-remaining-box" id="staffMealRemainingBox">
+                <span class="remaining-lbl" data-i18n="remaining_lbl">Remaining:</span>
+                <span class="remaining-val" id="staffMealRemaining">SAR 0.00</span>
+            </div>
+        </div>
+
+        <!-- Main Expense Area -->
+        <section class="staff-meal-section" id="staffMealSection">
+            <!-- Wajbat Section Header (Far Right) -->
+            <div class="staff-meal-section-header">
+                <div class="staff-meal-wajbat-badge" id="staffMealWajbatToggle" onclick="toggleStaffMealWajbat()" title="Toggle Wajbat">
+                    <i class="fa-solid fa-utensils"></i>
+                    <span data-i18n="staff_meal_wajbat">Wajbat</span>
+                    <i class="fa-solid fa-chevron-up wajbat-toggle-icon" id="wajbatToggleIcon"></i>
+                </div>
+            </div>
+
+            <!-- 2-Column, 2-Row Arrangement -->
+            <div class="staff-meal-section-body" id="staffMealSectionBody">
+                <div class="staff-meal-columns">
+                    <!-- Physical Left Column -->
+                    <div class="staff-meal-col">
+                        <!-- Top: Management Meals -->
+                        <div class="staff-meal-field-card" id="cardStaffManagementMeals">
+                            <label for="staffManagementMeals" data-i18n="staff_management_meals">Management Meals</label>
+                            <input type="number" step="0.01" min="0" id="staffManagementMeals" class="form-control staff-meal-input" placeholder="0.00" value="" oninput="calculateStaffMealRemaining()" ondblclick="handleStaffMealDblClick(this)" ontouchend="handleStaffMealTouchEnd(event, this)">
+                        </div>
+                        <!-- Bottom: Owner Meals -->
+                        <div class="staff-meal-field-card" id="cardStaffOwnerMeals">
+                            <label for="staffOwnerMeals" data-i18n="staff_owner_meals">Owner Meals</label>
+                            <input type="number" step="0.01" min="0" id="staffOwnerMeals" class="form-control staff-meal-input" placeholder="0.00" value="" oninput="calculateStaffMealRemaining()" ondblclick="handleStaffMealDblClick(this)" ontouchend="handleStaffMealTouchEnd(event, this)">
+                        </div>
+                    </div>
+
+                    <!-- Physical Right Column -->
+                    <div class="staff-meal-col">
+                        <!-- Top: Hospitality -->
+                        <div class="staff-meal-field-card" id="cardStaffHospitality">
+                            <label for="staffHospitality" data-i18n="staff_hospitality">Hospitality</label>
+                            <input type="number" step="0.01" min="0" id="staffHospitality" class="form-control staff-meal-input" placeholder="0.00" value="" oninput="calculateStaffMealRemaining()" ondblclick="handleStaffMealDblClick(this)" ontouchend="handleStaffMealTouchEnd(event, this)">
+                        </div>
+                        <!-- Bottom: Employee Meals -->
+                        <div class="staff-meal-field-card" id="cardStaffEmployeeMeals">
+                            <label for="staffEmployeeMeals" data-i18n="staff_employee_meals">Employee Meals</label>
+                            <input type="number" step="0.01" min="0" id="staffEmployeeMeals" class="form-control staff-meal-input" placeholder="0.00" value="" oninput="calculateStaffMealRemaining()" ondblclick="handleStaffMealDblClick(this)" ontouchend="handleStaffMealTouchEnd(event, this)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom: Large Teal Confirm Button -->
+        <button type="button" class="staff-meal-confirm-btn" id="staffMealConfirmBtn" onclick="confirmStaffMealExpense()">
+            <i class="fa-solid fa-check"></i> <span data-i18n="staff_meal_confirm">Confirm</span>
+        </button>
+    </div>
+</div>
+
+<!-- MODAL 3: THERMAL RECEIPT & PDF DOWNLOAD -->
+<div class="modal-overlay" id="receiptModal">
+    <div class="modal-card" style="max-width: 420px;">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-receipt"></i> <span data-i18n="receipt_modal_title">Simplified Tax Invoice</span></h3>
+            <button class="modal-close-btn" onclick="closeReceiptModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            
+            <div class="receipt-container">
+                <!-- Receipt Paper Element for Print & PDF -->
+                <div class="thermal-paper" id="thermalReceiptNode">
+                    <div class="receipt-header">
+                        <h2 id="recStoreName">NUR FOODES</h2>
+                        <p id="recCompanyName" class="header-ar" dir="rtl">شركة صح للتجارة</p>
+                        <p id="recVatNumber" class="vat-line">VAT: 300987654300003</p>
+                        <p class="invoice-badge-title">SIMPLIFIED TAX INVOICE</p>
+                    </div>
+
+                    <div class="receipt-info-grid">
+                        <div class="row">
+                            <span class="info-label">Order No:</span>
+                            <strong id="recOrderNum" class="info-val">ORD-1013</strong>
+                        </div>
+                        <div class="row">
+                            <span class="info-label">Date/Time:</span>
+                            <span id="recDateTime" class="info-val">9/7/2026, 4:13:05 PM</span>
+                        </div>
+                        <div class="row">
+                            <span class="info-label">Type:</span>
+                            <strong id="recOrderType" class="info-val">DINE-IN (Table 1)</strong>
+                        </div>
+                        <div class="row">
+                            <span class="info-label">Cashier:</span>
+                            <span id="recCashier" class="info-val">Nawaf Saeed</span>
+                        </div>
+                    </div>
+
+                    <table class="receipt-table">
+                        <thead>
+                            <tr>
+                                <th class="col-item">Item</th>
+                                <th class="col-qty">Qty</th>
+                                <th class="col-total">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recItemsTbody">
+                            <!-- Injected dynamically via js/receipt.js -->
+                        </tbody>
+                    </table>
+
+                    <div class="receipt-totals-box">
+                        <div class="row">
+                            <span id="recSubtotalLabel">Product Amount:</span>
+                            <span id="recSubtotal">0.00</span>
+                        </div>
+                        <div class="row" id="recNetRow">
+                            <span id="recNetLabel">Net Before VAT:</span>
+                            <span id="recNet">0.00</span>
+                        </div>
+                        <div class="row">
+                            <span id="recTaxLabel">Included VAT (15%):</span>
+                            <span id="recTax">0.00</span>
+                        </div>
+                        <div class="row">
+                            <span>Discount:</span>
+                            <span id="recDiscount">0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="receipt-payment-box">
+                        <div class="row grand-row">
+                            <span class="grand-label">TOTAL DUE:</span>
+                            <span id="recGrandTotal" class="grand-val">SAR 206.43</span>
+                        </div>
+                        <div class="row payment-row">
+                            <span>Paid (<span id="recMethod">Cash</span>):</span>
+                            <span id="recPaid">206.43</span>
+                        </div>
+                        <div class="row payment-row">
+                            <span>Change Return:</span>
+                            <span id="recChange">0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Zatca QR Code -->
+                    <div class="receipt-qr-wrap">
+                        <div id="receiptQr"></div>
+                        <p class="qr-verify-text">SCAN FOR E-INVOICE VERIFICATION</p>
+                    </div>
+
+                    <div class="receipt-footer-text">
+                        <p class="footer-en">Thank you for dining with us!</p>
+                        <p class="footer-ar" dir="rtl">شكراً لزيارتكم ونتمنى لكم يوماً سعيداً</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-footer" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <button type="button" class="btn-primary" onclick="printReceiptDirect()" style="background: var(--teal, #0d9488); font-weight: 700; padding: 10px 22px;">
+                    <i class="fa-solid fa-print"></i> <span data-i18n="btn_print_receipt">Print</span>
+                </button>
+                <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);" onclick="downloadReceiptPdf()">
+                    <i class="fa-solid fa-file-pdf"></i> <span data-i18n="btn_download_pdf">تحميل PDF</span>
+                </button>
+            </div>
+            <button type="button" class="btn-secondary" style="background: #e2e8f0; color: #334155; font-weight: 700; padding: 10px 22px; border: none; border-radius: 8px; cursor: pointer;" onclick="closeReceiptModal()">
+                <span data-i18n="btn_ok">OK</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: KITCHEN ORDER TICKET (KOT) -->
+<div class="modal-overlay" id="kitchenTicketModal">
+    <div class="modal-card" style="max-width: 420px;">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-utensils"></i> <span data-i18n="kitchen_ticket_title">تذكرة تجهيز المطبخ (Kitchen Order Ticket)</span></h3>
+            <button class="modal-close-btn" onclick="closeKitchenTicketModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="receipt-container">
+                <div class="thermal-paper kitchen-paper" id="thermalKitchenNode">
+                    <!-- Injected dynamically via renderKitchenTicket -->
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <button class="btn-primary" onclick="printKitchenTicketDirect()">
+                    <i class="fa-solid fa-print"></i> <span data-i18n="btn_print_kot">طباعة المطبخ (Print KOT)</span>
+                </button>
+            </div>
+            <button class="btn-danger" style="background: var(--muted);" onclick="closeKitchenTicketModal()">
+                <span data-i18n="btn_close">إغلاق</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODAL: CANCEL INVOICE (RETURN WORKFLOW) ================= -->
+<div class="modal-overlay" id="cancelInvoiceModal">
+    <div class="modal-card cancel-invoice-modal-card">
+        
+        <!-- STEP 1: ITEM SELECTION & RETURN QUANTITY -->
+        <div class="cancel-invoice-step" id="returnsScreen2">
+            <!-- Header -->
+            <div class="cancel-invoice-header">
+                <div class="cancel-step1-top-controls">
+                    <button type="button" class="btn-cancel-purple btn-plus" onclick="incrementReturnItem()" title="Add / Increase Quantity"><i class="fa-solid fa-plus"></i></button>
+                    <button type="button" class="btn-cancel-purple btn-minus" onclick="decrementReturnItem()" title="Remove / Decrease Quantity"><i class="fa-solid fa-minus"></i></button>
+                    <button type="button" class="btn-cancel-purple btn-notes" onclick="promptReturnNotes()"><i class="fa-solid fa-note-sticky"></i> <span>Notes</span></button>
+                    <button type="button" class="btn-cancel-purple btn-back-top" onclick="closeCancelInvoiceModal()"><i class="fa-solid fa-arrow-left"></i> <span>Back</span></button>
+                </div>
+                <h2 class="cancel-invoice-title">Cancel Invoice</h2>
+            </div>
+
+            <!-- Table Container -->
+            <div class="cancel-table-container">
+                <table class="cancel-invoice-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 45px; text-align: center;">
+                                <input type="checkbox" id="retSelectAll" onchange="toggleSelectAllReturns(this.checked)">
+                            </th>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th style="text-align: center;">Return Quantity</th>
+                            <th style="text-align: center;">Quantity</th>
+                            <th style="text-align: center;">Damaged Quantity</th>
+                            <th>Total Damage</th>
+                            <th style="text-align: center;">Damaged</th>
+                            <th style="width: 45px; text-align: center;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="returnsItemsTbody">
+                        <!-- Populated dynamically via renderReturnItemsTable() -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Bottom Actions -->
+            <div class="cancel-modal-footer">
+                <button type="button" class="btn-cancel-teal btn-next" onclick="goReturnsScreen3()">
+                    <span>Next</span> <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <button type="button" class="btn-cancel-teal btn-back-bottom" onclick="closeCancelInvoiceModal()">
+                    <i class="fa-solid fa-arrow-left"></i> <span>Back</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 2: REASON, SECURITY & KEYPAD -->
+        <div class="cancel-invoice-step" id="returnsScreen3" style="display: none;">
+            <!-- Header -->
+            <div class="cancel-invoice-header">
+                <h2 class="cancel-invoice-title">Cancel Invoice</h2>
+            </div>
+
+            <!-- Step 2 Content: Split Left / Right -->
+            <div class="cancel-step2-body">
+                <!-- Left Column: Reasons & Inputs -->
+                <div class="cancel-step2-left">
+                    <div class="cancel-reasons-group">
+                        <label class="cancel-radio-label">
+                            <input type="radio" name="cancelReason" value="Error" checked>
+                            <span class="custom-radio-circle"></span>
+                            <span>Error</span>
+                        </label>
+                        <label class="cancel-radio-label">
+                            <input type="radio" name="cancelReason" value="Client Cancellation">
+                            <span class="custom-radio-circle"></span>
+                            <span>Client Cancellation</span>
+                        </label>
+                        <label class="cancel-radio-label">
+                            <input type="radio" name="cancelReason" value="Wrong Order">
+                            <span class="custom-radio-circle"></span>
+                            <span>Wrong Order</span>
+                        </label>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Bottom Actions -->
+            <div class="cancel-modal-footer">
+                <button type="button" class="btn-cancel-teal btn-confirm" onclick="confirmCancellation()">
+                    <span>Confirm Cancellation</span>
+                </button>
+                <button type="button" class="btn-cancel-teal btn-back-step2" onclick="goReturnsScreen2()">
+                    <i class="fa-solid fa-arrow-left"></i> <span>Back</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- MODAL 4: ITEM ADD / EDIT (ADMIN) WITH IMAGE URL -->
+<div class="modal-overlay" id="itemModal">
+    <div class="modal-card" style="max-width: 480px;">
+        <div class="modal-header">
+            <h3 id="itemModalTitle"><i class="fa-solid fa-burger"></i> <span data-i18n="item_modal_title_add">إضافة صنف جديد</span></h3>
+            <button class="modal-close-btn" onclick="closeItemModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form onsubmit="saveItemForm(event)">
+            <div class="modal-body">
+                <input type="hidden" id="editItemId">
+
+                <div class="form-group">
+                    <label data-i18n="lbl_item_ar_name">الاسم بالعربي</label>
+                    <input type="text" class="form-control" id="itemArName" data-i18n-placeholder="item_placeholder_name" placeholder="مثال: برجر لحم مشوي" required>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="lbl_item_en_name">الاسم بالإنجليزي (English)</label>
+                    <input type="text" class="form-control" id="itemEnName" placeholder="Example: Grilled Beef Burger" required>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label data-i18n="lbl_item_category">القسم / التصنيف</label>
+                        <select class="form-control" id="itemCategorySelect" required onchange="renderAdminImagePresets(this.value); updateItemImagePreview(document.getElementById('itemImageInput').value, this.value)">
+                            <!-- Generated via js/admin.js -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="lbl_item_price">السعر (ريال / SAR)</label>
+                        <input type="number" step="any" class="form-control" id="itemPrice" placeholder="18.50" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label style="margin-bottom: 0;" data-i18n="lbl_item_img_url">رابط صورة الصنف (Image URL):</label>
+                        <small style="color: var(--teal); font-weight: 700; font-size: 11px;" data-i18n="lbl_item_img_hint">(أو اختر من المعرض أدناه)</small>
+                    </div>
+                    <input type="url" class="form-control" id="itemImageInput" placeholder="https://images.unsplash.com/..." oninput="updateItemImagePreview(this.value, document.getElementById('itemCategorySelect').value)">
+                </div>
+
+                <!-- 1-Click Image Presets Shelf -->
+                <div class="image-preset-shelf" id="adminImagePresetsShelf">
+                    <!-- Populated dynamically via js/admin.js -->
+                </div>
+
+                <!-- Live Image Preview Card -->
+                <div class="image-preview-box">
+                    <img id="itemPreviewImg" src="" alt="Live Preview" onerror="handleImageError(this, document.getElementById('itemCategorySelect').value)">
+                    <div class="preview-info">
+                        <strong id="itemPreviewTitle" data-i18n="item_preview_live">معاينة مباشرة للصورة</strong>
+                        <small id="itemPreviewNotice" data-i18n="item_preview_sub">ستظهر هذه الصورة في شاشة الكاشير</small>
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label data-i18n="lbl_item_code">كود الصنف (#Code):</label>
+                        <input type="text" class="form-control" id="itemCode" data-i18n-placeholder="item_placeholder_code" placeholder="مثال: 101">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; padding-top: 25px; gap: 8px;">
+                        <input type="checkbox" id="itemAvailable" style="width: 18px; height: 18px;" checked>
+                        <label for="itemAvailable" style="margin-bottom: 0; cursor: pointer;" data-i18n="lbl_item_available">متوفر للطلب حالياً</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeItemModal()"><span data-i18n="btn_cancel">إلغاء</span></button>
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save_item">حفظ الصنف</span></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 5: CATEGORY ADD / EDIT (ADMIN) -->
+<div class="modal-overlay" id="categoryModal">
+    <div class="modal-card" style="max-width: 420px;">
+        <div class="modal-header">
+            <h3 id="categoryModalTitle"><i class="fa-solid fa-tags"></i> <span data-i18n="cat_modal_title_add">إضافة قسم جديد</span></h3>
+            <button class="modal-close-btn" onclick="closeCategoryModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form onsubmit="saveCategoryForm(event)">
+            <div class="modal-body">
+                <input type="hidden" id="editCatId">
+
+                <div class="form-group">
+                    <label data-i18n="lbl_cat_ar_name">اسم القسم بالعربي</label>
+                    <input type="text" class="form-control" id="catArName" data-i18n-placeholder="cat_placeholder_name" placeholder="مثال: مشويات وحلويات" required>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="lbl_cat_en_name">اسم القسم بالإنجليزي (English)</label>
+                    <input type="text" class="form-control" id="catEnName" placeholder="Example: Grills & Desserts" required>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="lbl_cat_icon">أيقونة القسم (FontAwesome Icon):</label>
+                    <select class="form-control" id="catIconSelect">
+                        <option value="fa-burger" data-i18n="cat_icon_burger">🍔 برجر / وجبات (fa-burger)</option>
+                        <option value="fa-hotdog" data-i18n="cat_icon_hotdog">🌭 سندوتشات (fa-hotdog)</option>
+                        <option value="fa-bottle-water" data-i18n="cat_icon_cold">🥤 مشروبات باردة (fa-bottle-water)</option>
+                        <option value="fa-mug-hot" data-i18n="cat_icon_hot">☕ مشروبات ساخنة (fa-mug-hot)</option>
+                        <option value="fa-pizza-slice" data-i18n="cat_icon_pizza">🍕 بيتزا ومعجنات (fa-pizza-slice)</option>
+                        <option value="fa-fish" data-i18n="cat_icon_seafood">🐟 مأكولات بحرية (fa-fish)</option>
+                        <option value="fa-ice-cream" data-i18n="cat_icon_dessert">🍨 آيسكريم وحلى (fa-ice-cream)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeCategoryModal()"><span data-i18n="btn_cancel">إلغاء</span></button>
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save_cat">حفظ القسم</span></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 6: ITEM MODIFIERS / ADDONS CUSTOMIZER -->
+<div class="modal-overlay" id="customizerModal">
+    <div class="modal-card" style="max-width: 480px;">
+        <div class="modal-header">
+            <h3 id="customizerItemTitle"><i class="fa-solid fa-sliders"></i> <span data-i18n="customizer_title">تخصيص إضافات الصنف</span></h3>
+            <button class="modal-close-btn" onclick="closeItemCustomizer()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form onsubmit="saveItemCustomizer(event)">
+            <div class="modal-body">
+                <input type="hidden" id="customizerCartIndex">
+
+                <div style="font-size: 12.5px; font-weight: 700; margin-bottom: 8px; color: var(--muted);" data-i18n="customizer_addons_help">اختر الإضافات المطلوبة لهذا الصنف:</div>
+
+                <!-- Addons Grid -->
+                <div class="modifier-picker-grid" id="modifierGridContainer">
+                    <!-- Populated dynamically via js/pos.js -->
+                </div>
+
+                <div class="form-group" style="margin-top: 14px;">
+                    <label data-i18n="kitchen_notes_label">ملاحظات وتوجيهات المطبخ:</label>
+                    <textarea class="form-control item-special-notes" id="customizerItemNote" data-i18n-placeholder="notes_placeholder" placeholder="مثال: بدون بصل، زيادة صوص..." rows="5" wrap="soft" autocomplete="off" onkeydown="if(event.key==='Enter') event.stopPropagation();"></textarea>
+                    <div class="quick-note-chips" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون بصل')"><span data-i18n="quick_no_onion">بدون بصل</span> 🧅</button>
+                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون مخلل')"><span data-i18n="quick_no_pickles">بدون مخلل</span> 🥒</button>
+                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('زيادة صوص')"><span data-i18n="quick_extra_sauce">زيادة صوص</span> 🥫</button>
+                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون مايونيز')"><span data-i18n="quick_no_mayo">بدون مايونيز</span></button>
+                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('بدون ثوم')"><span data-i18n="quick_no_garlic">بدون ثوم</span> 🧄</button>
+                        <button type="button" class="quick-note-chip" onclick="insertQuickNote('سفري')"><span data-i18n="quick_takeaway">سفري</span> 🛍️</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeItemCustomizer()"><span data-i18n="btn_cancel">إلغاء</span></button>
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> <span data-i18n="save_changes">حفظ التعديل</span></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 7: CASHIER SHIFT END / Z-REPORT -->
+<div class="modal-overlay" id="zReportModal">
+    <div class="modal-card" style="max-width: 420px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, var(--purple-dark), var(--purple));">
+            <h3><i class="fa-solid fa-file-invoice-dollar"></i> <span data-i18n="z_report_btn">تقرير إغلاق الوردية</span></h3>
+            <button class="modal-close-btn" onclick="closeZReportModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="z-report-paper" id="thermalZReportNode">
+                <h2>*** <span data-i18n="z_report_btn">تقرير إغلاق الوردية</span> ***</h2>
+                <div style="text-align: center; font-size: 11px; margin-bottom: 6px;">
+                    <strong id="zStoreName">NUR FOODES</strong><br>
+                    <span id="zDateTime">2026-09-07 15:50</span>
+                </div>
+                <div class="z-line"></div>
+                <div class="z-row"><span data-i18n="z_cashier_lbl">الكاشير المسؤول:</span><strong id="zCashier">Nawaf Saeed</strong></div>
+                <div class="z-row"><span data-i18n="z_first_order_lbl">تاريخ أول طلب:</span><span id="zFirstOrder">-</span></div>
+                <div class="z-row"><span data-i18n="z_last_order_lbl">تاريخ آخر طلب:</span><span id="zLastOrder">-</span></div>
+                <div class="z-line"></div>
+                <div class="z-row bold"><span data-i18n="z_total_issued_lbl">إجمالي الفواتير الصادرة:</span><span id="zTotalOrdersCount">0</span></div>
+                <div class="z-row bold" style="color: var(--danger);"><span data-i18n="z_cancelled_lbl">الطلبات الملغاة:</span><span id="zCancelledCount">0</span></div>
+                <div class="z-line"></div>
+                <div class="z-row"><span data-i18n="z_gross_sales_lbl">المبيعات قبل الضريبة:</span><span id="zGrossSales">0.00</span></div>
+                <div class="z-row"><span data-i18n="z_total_disc_lbl">إجمالي الخصومات:</span><span id="zTotalDiscounts">0.00</span></div>
+                <div class="z-row"><span data-i18n="z_vat_lbl">ضريبة القيمة المضافة (15%):</span><span id="zTotalTax">0.00</span></div>
+                <div class="z-row bold" style="font-size: 13px; color: #000; margin-top: 4px;">
+                    <span data-i18n="sum_net">صافي المبيعات:</span>
+                    <strong id="zNetSales">SAR 0.00</strong>
+                </div>
+                <div class="z-line"></div>
+                <div style="font-weight: 800; font-size: 11.5px; margin-bottom: 4px;" data-i18n="menu_payment_type_report">تفصيل طرق الدفع:</div>
+                <div class="z-row"><span data-i18n="pay_method_cash">نقدي:</span><span id="zCashTotal">0.00</span></div>
+                <div class="z-row"><span data-i18n="pay_method_card">شبكة ومدى:</span><span id="zCardTotal">0.00</span></div>
+                <div class="z-row"><span data-i18n="pay_method_online">تطبيقات التوصيل:</span><span id="zOnlineTotal">0.00</span></div>
+                <div class="z-line"></div>
+                <div style="text-align: center; font-size: 10px; margin-top: 10px;">
+                    <p><span data-i18n="z_cashier_sig">توقيع الكاشير: ____________________</span></p>
+                    <p style="margin-top: 6px;"><span data-i18n="z_supervisor_sig">توقيع المشرف: ____________________</span></p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button class="btn-primary" onclick="printZReport()">
+                <i class="fa-solid fa-print"></i> <span data-i18n="btn_print_report">طباعة التقرير</span>
+            </button>
+            <button class="btn-danger" style="background: var(--muted);" onclick="closeZReportModal()"><span data-i18n="btn_close">إغلاق</span></button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 8: NOTES MODAL (MULTILINE NOTES & CLIENT PHONE) -->
+<div class="modal-overlay" id="notesModal">
+    <div class="modal-card" style="max-width: 440px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #0284c7, #0369a1);">
+            <h3><i class="fa-solid fa-clipboard"></i> <span data-i18n="notes_title">ملاحظات الطلب وبيانات العميل</span></h3>
+            <button class="modal-close-btn" onclick="closeNotesModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label><i class="fa-solid fa-phone"></i> <span data-i18n="phone_label">رقم هاتف العميل</span>:</label>
+                <input type="tel" class="form-control" id="clientPhoneInput" data-i18n-placeholder="phone_placeholder" placeholder="05xxxxxxxx..." dir="ltr" style="text-align: start;">
+            </div>
+            <div class="form-group" style="position: relative;">
+                <label><i class="fa-regular fa-comment-dots"></i> <span data-i18n="notes_label">تعليمات وتجهيز الطلب</span>:</label>
+                <button type="button" id="telephoneQuickChip" onclick="insertTelephoneNote()" style="display: none; position: absolute; top: 32px; right: 10px; background: var(--teal); color: #fff; border: none; border-radius: 12px; padding: 4px 10px; font-size: 12px; font-weight: bold; cursor: pointer; z-index: 10; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-phone"></i> Telephone / هاتف
+                </button>
+                <textarea class="form-control" id="orderNotesInput" rows="4" data-i18n-placeholder="notes_placeholder" placeholder="اكتب أي تعليمات خاصة للشيف هنا..." style="padding-top: 36px;"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button type="button" class="btn-primary" onclick="saveNotesModal()">
+                <i class="fa-solid fa-check"></i> <span data-i18n="btn_done">تم الحفظ</span>
+            </button>
+            <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeNotesModal()">
+                <span data-i18n="btn_cancel">إلغاء</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 9: REUSABLE DISCOUNTS MODAL -->
+<div class="modal-overlay" id="discountModal">
+    <div class="modal-card" style="max-width: 420px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, var(--purple-dark), var(--purple));">
+            <h3><i class="fa-solid fa-tags"></i> <span data-i18n="discount_modal_title">تطبيق خصم على الفاتورة</span></h3>
+            <button class="modal-close-btn" onclick="closeDiscountModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;">
+                <button type="button" class="order-type-btn discount-tab-btn active" data-type="fixed" onclick="setDiscountTab('fixed')">
+                    <i class="fa-solid fa-money-bill"></i> <span data-i18n="opt_fixed_sar">مبلغ ثابت</span>
+                </button>
+                <button type="button" class="order-type-btn discount-tab-btn" data-type="percent" onclick="setDiscountTab('percent')">
+                    <i class="fa-solid fa-percent"></i> <span data-i18n="opt_percent">نسبة مئوية (%)</span>
+                </button>
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_discount_value">قيمة الخصم المطلوبة:</label>
+                <div style="position: relative;">
+                    <input type="number" step="0.01" class="form-control" id="discountModalInput" placeholder="0.00" style="font-size: 18px; font-weight: 800; text-align: center;">
+                    <span id="discountInputUnit" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-weight: 800; color: var(--muted);">SAR</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button type="button" class="btn-primary" onclick="applyDiscountModal()">
+                <i class="fa-solid fa-check"></i> <span data-i18n="btn_apply_discount">تطبيق الخصم</span>
+            </button>
+            <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeDiscountModal()">
+                <span data-i18n="btn_cancel">إلغاء</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 10: MORE / SETTINGS PANEL -->
+<div class="more-settings-overlay" id="moreSettingsOverlay" onclick="closeMorePanel()"></div>
+<div class="more-settings-panel" id="moreSettingsPanel">
+    <div class="more-panel-header">
+        <h3 style="color: #fff; font-size: 16px;"><i class="fa-solid fa-sliders"></i> <span data-i18n="more_settings_title">الإعدادات والتفضيلات</span></h3>
+        <button class="drawer-close-btn" onclick="closeMorePanel()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="more-panel-body">
+        <!-- A. Language -->
+        <div class="more-setting-row">
+            <div class="more-setting-info">
+                <i class="fa-solid fa-language"></i>
+                <span class="title" data-i18n="lbl_language">اللغة</span>
+            </div>
+            <div class="segmented-toggle">
+                <button type="button" class="segmented-btn" id="langArBtn" onclick="changeLanguage('ar')">العربية</button>
+                <button type="button" class="segmented-btn" id="langEnBtn" onclick="changeLanguage('en')">English</button>
+            </div>
+        </div>
+
+        <!-- B. Orders View -->
+        <div class="more-setting-row">
+            <div class="more-setting-info">
+                <i class="fa-solid fa-list-check"></i>
+                <span class="title" data-i18n="lbl_orders_view">طريقة عرض السلة</span>
+            </div>
+            <div class="segmented-toggle">
+                <button type="button" class="segmented-btn" id="ordersViewBriefBtn" onclick="setOrdersViewPreference('briefly')"><span data-i18n="opt_briefly">مختصر</span></button>
+                <button type="button" class="segmented-btn" id="ordersViewDetailBtn" onclick="setOrdersViewPreference('detailed')"><span data-i18n="opt_detailed">مفصل</span></button>
+            </div>
+        </div>
+
+        <!-- C. Stay at category -->
+        <div class="more-setting-row">
+            <div class="more-setting-info">
+                <i class="fa-solid fa-arrows-split-up-and-left"></i>
+                <span class="title" data-i18n="lbl_stay_category">البقاء في القسم المختار بعد الإضافة</span>
+            </div>
+            <div class="segmented-toggle">
+                <button type="button" class="segmented-btn" id="stayCatStayBtn" onclick="setStayAtCategoryPreference('stay')"><span data-i18n="opt_stay">Stay</span></button>
+                <button type="button" class="segmented-btn" id="stayCatExitBtn" onclick="setStayAtCategoryPreference('exit')"><span data-i18n="opt_exit">Exit</span></button>
+            </div>
+        </div>
+
+        <!-- D. Sync Data -->
+        <div class="more-setting-row" style="cursor: pointer;" onclick="triggerSyncData()">
+            <div class="more-setting-info">
+                <i class="fa-solid fa-rotate"></i>
+                <span class="title" data-i18n="lbl_sync_data">مزامنة البيانات</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-teal"><i class="fa-solid fa-cloud-arrow-down"></i> <span data-i18n="btn_sync_now">مزامنة الآن</span></button>
+        </div>
+
+        <!-- E. Sync Printers -->
+        <div class="more-setting-row" style="cursor: pointer;" onclick="syncPrinters()">
+            <div class="more-setting-info">
+                <i class="fa-solid fa-print"></i>
+                <span class="title" data-i18n="lbl_sync_printers">مزامنة الطابعات</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-teal"><i class="fa-solid fa-network-wired"></i> <span data-i18n="btn_refresh">تحديث</span></button>
+        </div>
+
+        <!-- F. Shifts -->
+        <div class="more-setting-row" style="cursor: pointer;" onclick="switchView('shifts'); closeMorePanel();">
+            <div class="more-setting-info">
+                <i class="fa-solid fa-user-clock"></i>
+                <span class="title" id="moreShiftsLabel" data-i18n="lbl_shifts">إدارة الورديات</span>
+            </div>
+            <i class="fa-solid fa-chevron-left" style="color: var(--muted);"></i>
+        </div>
+
+        <!-- G. Printing Devices -->
+        <div class="more-setting-row" style="cursor: pointer;" onclick="openPrintingDevicesProtected(); closeMorePanel();">
+            <div class="more-setting-info">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span class="title" data-i18n="lbl_printing_devices">أجهزة الطباعة</span>
+            </div>
+            <i class="fa-solid fa-lock" style="color: var(--muted); font-size: 13px;"></i>
+        </div>
+
+        <!-- H. Log Out -->
+        <div class="more-setting-row" style="cursor: pointer; border-color: rgba(225, 29, 72, 0.3);" onclick="logoutPosUser()">
+            <div class="more-setting-info">
+                <i class="fa-solid fa-right-from-bracket" style="color: var(--danger);"></i>
+                <span class="title" style="color: var(--danger);" data-i18n="lbl_logout">تسجيل الخروج</span>
+            </div>
+            <i class="fa-solid fa-arrow-left" style="color: var(--danger);"></i>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 11: PASSCODE MODAL -->
+<div class="modal-overlay" id="passcodeModal">
+    <div class="modal-card" style="max-width: 360px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+            <h3 id="passcodeModalTitle"><i class="fa-solid fa-lock"></i> <span data-i18n="passcode_title">رمز التحقق الأمني</span></h3>
+            <button class="modal-close-btn" onclick="closePassCodeModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label data-i18n="lbl_user_key">رمز الدخول / المفتاح السري:</label>
+                <div style="position: relative;">
+                    <input type="password" class="form-control" id="passcodeInput" maxlength="12" placeholder="****" style="font-size: 20px; text-align: center; letter-spacing: 3px;">
+                    <button type="button" id="passcodeToggleEye" class="btn-gear-icon" style="position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px;" onclick="togglePasscodeVisibility()">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <div id="passcodeError" style="display: none; color: var(--danger); font-size: 12px; margin-top: 6px; text-align: center; font-weight: 700;"></div>
+            </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button type="button" class="btn-primary" onclick="submitPassCode()">
+                <i class="fa-solid fa-check"></i> <span data-i18n="btn_verify">تأكيد الدخول</span>
+            </button>
+            <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closePassCodeModal()">
+                <span data-i18n="btn_cancel">إلغاء</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 12: PRINTING DEVICES MODAL -->
+<div class="modal-overlay" id="printingDevicesModal">
+    <div class="modal-card" style="max-width: 620px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, var(--teal-dark), var(--teal));">
+            <h3><i class="fa-solid fa-print"></i> <span data-i18n="printers_title">إدارة أجهزة الطباعة</span></h3>
+            <button class="modal-close-btn" onclick="closePrintingDevicesModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="autoPrintToggle" style="width: 18px; height: 18px; cursor: pointer;" onchange="onAutoPrintToggled(this.checked)">
+                    <label for="autoPrintToggle" style="font-weight: 700; font-size: 13px; cursor: pointer; margin-bottom: 0;" data-i18n="printers_auto_print">الطباعة التلقائية عند إتمام الطلب</label>
+                </div>
+                <button type="button" class="btn btn-sm btn-teal" onclick="promptAddPrinter()">
+                    <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_printer">إضافة طابعة جديدة (+)</span>
+                </button>
+            </div>
+            <div id="printersListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto;">
+                <!-- Injected dynamically via js/printers.js -->
+            </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button type="button" class="btn-primary" onclick="savePrintingDevicesSettings()">
+                <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save">حفظ الإعدادات</span>
+            </button>
+            <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closePrintingDevicesModal()">
+                <span data-i18n="btn_close">إغلاق</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 12B: KITCHEN PRINTER MENU MODAL -->
+<div class="modal-overlay" id="kitchenPrinterMenuModal">
+    <div class="modal-card" style="max-width: 500px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, var(--teal-dark), var(--teal));">
+            <h3 id="kitchenMenuModalTitle"><i class="fa-solid fa-list-check"></i> <span id="kitchenMenuModalTitleSpan">Kitchen Printer – Menu Printing</span></h3>
+            <button class="modal-close-btn" onclick="closeKitchenMenuSettings()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                <label for="kitchenMenuAllToggle" style="font-weight: bold; font-size: 15px; margin-bottom: 0; cursor: pointer;" id="kitchenMenuModalAllLabel">All Categories</label>
+                <input type="checkbox" id="kitchenMenuAllToggle" style="width: 20px; height: 20px; cursor: pointer;" onchange="toggleAllKitchenMenuCategories(this.checked)">
+            </div>
+            <div id="kitchenMenuCategoriesList" style="display: flex; flex-direction: column; gap: 12px; max-height: 50vh; overflow-y: auto;">
+                <!-- Dynamically populated via js/printers.js -->
+            </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button type="button" class="btn-primary" onclick="saveKitchenMenuSettings()">
+                <i class="fa-solid fa-floppy-disk"></i> <span id="kitchenMenuModalSaveLabel">Save</span>
+            </button>
+            <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeKitchenMenuSettings()">
+                <span id="kitchenMenuModalCancelLabel">Cancel</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 13: TABLE PICKER MODAL -->
+<div class="modal-overlay" id="tablePickerModal">
+    <div class="modal-card" style="max-width: 480px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, var(--teal-dark), var(--teal));">
+            <h3><i class="fa-solid fa-chair"></i> <span data-i18n="table_picker_title">اختيار طاولة المحل</span></h3>
+            <button class="modal-close-btn" onclick="closeTablePickerModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div id="tablePickerGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px;">
+                <!-- Populated dynamically via openTablePickerModal() with active language -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-danger" style="background: var(--muted);" onclick="closeTablePickerModal()"><span data-i18n="btn_cancel">إلغاء</span></button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 14: KITCHEN STOCK & RESTOCK MODAL -->
+<div class="modal-overlay" id="kitchenStockModal">
+    <div class="modal-card kds-stock-modal-card">
+        <div class="modal-header" style="background: linear-gradient(135deg, var(--teal-dark), var(--teal));">
+            <div>
+                <h3><i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="kitchen_stock_title">إدارة مخزون وتوافر أطباق المطبخ</span></h3>
+                <p style="font-size: 11px; opacity: 0.85; margin-top: 2px;" data-i18n="kitchen_stock_subtitle">تحديد الكميات وإعادة إتاحة الأصناف النافذة فوراً للطلب</p>
+            </div>
+            <button class="modal-close-btn" onclick="closeKitchenStockModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="kds-stock-modal-toolbar">
+            <div class="kds-stock-search-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="kitchenStockSearch" placeholder="بحث عن صنف بالاسم أو الكود..." oninput="filterKitchenStock()">
+            </div>
+            <div class="kds-stock-filter-chips">
+                <button type="button" class="kds-stock-filter-chip active" data-filter="all" onclick="setKitchenStockFilter('all')">
+                    الكل (<span id="kdsFilterTotalCount">0</span>)
+                </button>
+                <button type="button" class="kds-stock-filter-chip out" data-filter="out_of_stock" onclick="setKitchenStockFilter('out_of_stock')">
+                    <i class="fa-solid fa-circle-exclamation"></i> نفذت الكمية (<span id="kdsFilterOutCount">0</span>)
+                </button>
+                <button type="button" class="kds-stock-filter-chip low" data-filter="low_stock" onclick="setKitchenStockFilter('low_stock')">
+                    <i class="fa-solid fa-triangle-exclamation"></i> كمية قليلة (<span id="kdsFilterLowCount">0</span>)
+                </button>
+                <button type="button" class="kds-stock-filter-chip avail" data-filter="available" onclick="setKitchenStockFilter('available')">
+                    <i class="fa-solid fa-circle-check"></i> متوفر
+                </button>
+            </div>
+        </div>
+
+        <div class="modal-body kds-stock-modal-body">
+            <div id="kitchenStockGrid" class="kds-stock-grid">
+                <!-- Populated dynamically via renderKitchenStock() -->
+            </div>
+        </div>
+
+        <div class="modal-footer kds-stock-modal-footer">
+            <div style="font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-circle-info" style="color: var(--teal);"></i>
+                <span data-i18n="kitchen_stock_instant_tip">أي تعديل في كمية الصنف أو إتاحته يُطبّق فوراً على شاشة الكاشير</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-primary" onclick="saveKitchenStock()"><i class="fa-solid fa-check"></i> <span data-i18n="btn_done">تم وحفظ</span></button>
+                <button type="button" class="btn-secondary" onclick="closeKitchenStockModal()"><span data-i18n="btn_close">إغلاق</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QUANTITY MODAL -->
+<div class="modal-overlay" id="quantityModal" style="display: none; align-items: center; justify-content: center; z-index: 9999; background: rgba(0,0,0,0.5);">
+    <div class="modal-card quantity-modal-card" style="background: white; border-radius: 12px; width: 320px; max-width: 90vw; overflow: hidden; display: flex; flex-direction: column;">
+        <div class="modal-header" style="background: #f8f0f8; color: #800080; padding: 15px; text-align: center; border-bottom: 1px solid #eee;">
+            <h3 style="margin: 0; font-weight: bold; font-size: 1.4rem;">Quantity</h3>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold; text-align: left;">Quantity:</label>
+            <input type="text" id="quantityModalInput" readonly style="width: 100%; padding: 15px; font-size: 1.5rem; text-align: center; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; background: #fafafa; color: #333;">
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('1')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">1</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('2')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">2</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('3')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">3</button>
+                
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('4')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">4</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('5')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">5</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('6')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">6</button>
+                
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('7')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">7</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('8')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">8</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('9')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">9</button>
+                
+                <button type="button" class="qty-btn" onclick="clearQuantityInput()" style="padding: 15px; font-size: 1.2rem; border: none; background: #555; color: white; border-radius: 8px; cursor: pointer;">C</button>
+                <button type="button" class="qty-btn" onclick="appendQuantityDigit('0')" style="padding: 15px; font-size: 1.2rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer;">0</button>
+                <button type="button" class="qty-btn" onclick="backspaceQuantityInput()" style="padding: 15px; font-size: 1.2rem; border: none; background: #555; color: white; border-radius: 8px; cursor: pointer;">⌫</button>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="confirmQuantityModal()" style="flex: 1; padding: 15px; font-size: 1.1rem; font-weight: bold; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer;">Ok</button>
+                <button type="button" onclick="closeQuantityModal()" style="flex: 1; padding: 15px; font-size: 1.1rem; font-weight: bold; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer;">Back</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: DEFAULT CLIENT TYPE (GEAR ICON 1) -->
+<div class="modal-overlay" id="defaultClientTypeModal" style="display: none; align-items: center; justify-content: center; z-index: 9999; background: rgba(0,0,0,0.5);" onclick="if(event.target === this) closeDefaultClientTypeModal()">
+    <div class="modal-card default-settings-modal-card">
+        <div class="modal-header default-settings-modal-header">
+            <h3 id="defaultClientTypeModalTitle" data-i18n="default_client_type_title">Default Client Type</h3>
+        </div>
+        <div class="modal-body default-settings-modal-body">
+            <div class="form-group default-settings-form-group">
+                <label for="defaultClientTypeSelect" class="default-settings-label" data-i18n="select_default_client_type">Select Default Client Type</label>
+                <div class="default-settings-select-wrap">
+                    <select id="defaultClientTypeSelect" class="default-settings-select"></select>
+                    <span class="default-settings-dropdown-arrow" aria-hidden="true">&#9660;</span>
+                </div>
+            </div>
+            <div class="modal-footer default-settings-modal-footer">
+                <button type="button" id="btnDefaultClientOk" class="btn-teal-settings btn-teal-ok" onclick="saveDefaultClientType()">Ok</button>
+                <button type="button" id="btnDefaultClientBack" class="btn-teal-settings btn-teal-back" onclick="closeDefaultClientTypeModal()">Back</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: DEFAULT DELIVERY TYPE (GEAR ICON 2) -->
+<div class="modal-overlay" id="defaultDeliveryTypeModal" style="display: none; align-items: center; justify-content: center; z-index: 9999; background: rgba(0,0,0,0.5);" onclick="if(event.target === this) closeDefaultDeliveryTypeModal()">
+    <div class="modal-card default-settings-modal-card">
+        <div class="modal-header default-settings-modal-header">
+            <h3 id="defaultDeliveryTypeModalTitle" data-i18n="default_delivery_type_title">Default Delivery Type</h3>
+        </div>
+        <div class="modal-body default-settings-modal-body">
+            <div class="form-group default-settings-form-group">
+                <label for="defaultDeliveryTypeSelect" class="default-settings-label" data-i18n="select_default_delivery_type">Select Default Delivery Type</label>
+                <div class="default-settings-select-wrap">
+                    <select id="defaultDeliveryTypeSelect" class="default-settings-select"></select>
+                    <span class="default-settings-dropdown-arrow" aria-hidden="true">&#9660;</span>
+                </div>
+            </div>
+            <div class="modal-footer default-settings-modal-footer">
+                <button type="button" id="btnDefaultDeliveryOk" class="btn-teal-settings btn-teal-ok" onclick="saveDefaultDeliveryType()">Ok</button>
+                <button type="button" id="btnDefaultDeliveryBack" class="btn-teal-settings btn-teal-back" onclick="closeDefaultDeliveryTypeModal()">Back</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- Toast Shelf -->
+<div class="toast-shelf" id="toastShelf"></div>
+
+<!-- Responsive Mobile Bottom Navigation Bar -->
+<nav class="mobile-bottom-bar" id="mobileBottomBar">
+    <button type="button" class="mobile-nav-btn active" id="mobileNavPos" onclick="switchView('pos')">
+        <i class="fa-solid fa-cash-register"></i>
+        <span data-i18n="pos_nav">نقطة البيع</span>
+    </button>
+    <button type="button" class="mobile-nav-btn" id="mobileNavReturns" onclick="switchView('returns')">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span data-i18n="returns_nav">Orders</span>
+    </button>
+    <button type="button" class="mobile-nav-btn" id="mobileNavKds" onclick="switchView('kds')">
+        <i class="fa-solid fa-bell-concierge"></i>
+        <span data-i18n="kds_nav">المطبخ</span>
+    </button>
+    <button type="button" class="mobile-nav-btn" id="mobileNavAdmin" onclick="requestAdminAccess()">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span data-i18n="admin_nav">الإدارة</span>
+    </button>
+    <button type="button" class="mobile-nav-btn" id="mobileReportsButton" onclick="requestReportsAccess()">
+        <i class="fa-solid fa-chart-line"></i>
+        <span data-i18n="reports_nav">التقارير</span>
+    </button>
+</nav>
+
+<!-- Silent Thermal Print Frame (Rendered in viewport behind UI so Chrome/Edge compositor does not skip painting) -->
+<iframe id="posSilentPrintFrame" style="position:fixed;right:0;bottom:0;width:80mm;height:100vh;border:none;opacity:1;visibility:visible;pointer-events:none;z-index:-9999;"></iframe>
+
+<!-- =========================================================
+     MODULAR JAVASCRIPT ARCHITECTURE
+     ========================================================= -->
+<script src="js/data.js?v=20260913_01"></script>
+<script src="js/store.js?v=20260913_01"></script>
+<script src="js/printers.js?v=20260910_02"></script>
+<script src="js/reports.js?v=20261103_01"></script>
+<script src="js/pos.js?v=20260913_02"></script>
+<script src="js/payment.js?v=20260910_02"></script>
+<script src="js/receipt.js?v=20260910_02"></script>
+<script src="js/admin.js?v=20260910_02"></script>
+<script src="js/returns.js?v=2"></script>
+<script src="js/shifts.js?v=3"></script>
+<script src="js/app.js?v=20261103_02"></script>
+<script src="js/kitchen_stock.js?v=2"></script>
+</body>
+</html>

@@ -13,6 +13,7 @@ class PosOrder extends Model
 
     protected $fillable = [
         'id',
+        'client_order_id',
         'seq',
         'shift_id',
         'user_id',
@@ -26,6 +27,9 @@ class PosOrder extends Model
         'delivery_display',
         'table',
         'status',
+        'payment_status',
+        'cancelled_at',
+        'cancellation_reason',
         'subtotal',
         'tax',
         'tax_rate',
@@ -34,6 +38,7 @@ class PosOrder extends Model
         'paid',
         'change',
         'method',
+        'payment_breakdown',
         'notes',
         'phone',
         'raw_payload',
@@ -48,6 +53,8 @@ class PosOrder extends Model
         'paid' => 'decimal:2',
         'change' => 'decimal:2',
         'raw_payload' => 'array',
+        'payment_breakdown' => 'array',
+        'cancelled_at' => 'datetime',
     ];
 
     public function items(): HasMany

@@ -1,0 +1,880 @@
+/* =========================================================
+   PRINTERS.JS - Printing Devices Management, PassCode Security
+   & Unified Print Routing Service
+   ========================================================= */
+
+// PassCode Modal Controller
+let passcodeCallback = null;
+
+function openPassCodeModal(options = {}) {
+    const modal = document.getElementById('passcodeModal');
+    const titleEl = document.getElementById('passcodeModalTitle');
+    const inputEl = document.getElementById('passcodeInput');
+    const errorEl = document.getElementById('passcodeError');
+
+    passcodeCallback = options.onSuccess || null;
+
+    if (titleEl) {
+        titleEl.textContent = options.title || (currentLang === 'ar' ? 'رمز المرور' : 'Security PassCode');
+    }
+    if (inputEl) {
+        inputEl.value = '';
+        inputEl.type = 'password';
+        const eyeBtn = document.getElementById('passcodeToggleEye');
+        if (eyeBtn) eyeBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+    }
+    if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.style.display = 'none';
+    }
+
+    if (modal) {
+        modal.classList.add('open');
+        setTimeout(() => inputEl?.focus(), 100);
+    }
+}
+
+function closePassCodeModal() {
+    const modal = document.getElementById('passcodeModal');
+    if (modal) modal.classList.remove('open');
+    passcodeCallback = null;
+}
+
+function togglePasscodeVisibility() {
+    const inputEl = document.getElementById('passcodeInput');
+    const eyeBtn = document.getElementById('passcodeToggleEye');
+    if (!inputEl) return;
+    if (inputEl.type === 'password') {
+        inputEl.type = 'text';
+        if (eyeBtn) eyeBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+    } else {
+        inputEl.type = 'password';
+        if (eyeBtn) eyeBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+    }
+}
+
+function submitPassCode() {
+    const inputEl = document.getElementById('passcodeInput');
+    const errorEl = document.getElementById('passcodeError');
+    const pin = (inputEl ? inputEl.value : '').trim();
+
+    // Authorization comes from the server-issued user profile; a browser PIN is never trusted.
+    const isAuthorized = !!(currentUser && (
+        currentUser.role === 'admin' ||
+        (currentUser.permissions || []).some(permission => ['printer_manage', 'settings_manage'].includes(permission))
+    ));
+    if (isAuthorized) {
+        const cb = passcodeCallback;
+        closePassCodeModal();
+        if (typeof soundSuccess === 'function') soundSuccess();
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? 'تم تأكيد الرمز بنجاح' : 'Access Granted', 'success');
+        }
+        if (cb) cb();
+    } else {
+        if (typeof soundWarning === 'function') soundWarning();
+        if (errorEl) {
+            errorEl.textContent = currentLang === 'ar' 
+                ? 'رمز غير صحيح!' 
+                : 'Invalid Passcode!';
+            errorEl.style.display = 'block';
+        }
+        if (inputEl) {
+            inputEl.value = '';
+            inputEl.focus();
+        }
+    }
+}
+
+// Protected Entrance to Printing Devices
+function openPrintingDevicesProtected() {
+    // Check with PassCode
+    openPassCodeModal({
+        title: currentLang === 'ar' ? 'التحقق من الصلاحية - إدارة الطابعات' : 'PassCode - Printing Devices',
+        onSuccess: () => {
+            renderPrintingDevicesModal();
+            const modal = document.getElementById('printingDevicesModal');
+            if (modal) modal.classList.add('open');
+        }
+    });
+}
+
+function closePrintingDevicesModal() {
+    const modal = document.getElementById('printingDevicesModal');
+    if (modal) modal.classList.remove('open');
+}
+
+// Render Printing Devices List
+function renderPrintingDevicesModal() {
+    const listEl = document.getElementById('printersListContainer');
+    const autoPrintToggle = document.getElementById('autoPrintToggle');
+
+    if (autoPrintToggle) {
+        autoPrintToggle.checked = !!posPreferences.autoPrint;
+    }
+
+    if (!listEl) return;
+
+    if (!printers || printers.length === 0) {
+        listEl.innerHTML = `
+            <div class="empty-state-box">
+                <i class="fa-solid fa-print"></i>
+                <p>${currentLang === 'ar' ? 'لا توجد طابعات مضافة حالياً' : 'No printing devices configured'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    const cashierPrn = printers.find(p => p.role === 'cashier');
+    const kitchenPrn = printers.find(p => p.role === 'kitchen');
+    const sameDestination = cashierPrn && kitchenPrn && cashierPrn.ip && kitchenPrn.ip &&
+        (cashierPrn.ip.trim().toLowerCase() === kitchenPrn.ip.trim().toLowerCase());
+
+    let sameIpNoticeHtml = '';
+    if (sameDestination) {
+        sameIpNoticeHtml = `
+            <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; font-size: 12px; color: #1e40af; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-circle-info" style="font-size: 16px; flex-shrink: 0;"></i>
+                <div>
+                    <strong>${currentLang === 'ar' ? 'تنبيه الوجهة الموحدة:' : 'Shared Device Destination:'}</strong>
+                    ${currentLang === 'ar' 
+                        ? `طابعة الكاشير وطابعة المطبخ تشتركان في نفس العنوان (${escapeHtml(cashierPrn.ip)}). سيتم إرسال الفاتورة وبون المطبخ كمهمتي طباعة مستقلتين تماماً.` 
+                        : `Cashier and Kitchen printers point to the same destination (${escapeHtml(cashierPrn.ip)}). Customer Invoice and KOT are processed as separate independent jobs.`}
+                </div>
+            </div>
+        `;
+    }
+
+    listEl.innerHTML = sameIpNoticeHtml + printers.map(p => {
+        const roleName = p.role === 'cashier' 
+            ? (currentLang === 'ar' ? 'طابعة الكاشير والفواتير' : 'Cashier Printer')
+            : p.role === 'kitchen'
+                ? (currentLang === 'ar' ? 'طابعة بون المطبخ' : 'Kitchen Printer')
+                : (currentLang === 'ar' ? 'طابعة التقارير والمحاسبة' : 'Reports Printer');
+
+        const statusClass = p.status === 'online' ? 'status-online' : 'status-offline';
+        const statusText = p.status === 'online' 
+            ? (currentLang === 'ar' ? 'متصل' : 'Online') 
+            : (currentLang === 'ar' ? 'غير متصل' : 'Offline');
+
+        return `
+            <div class="printer-device-card" id="printer_card_${p.id}">
+                <div class="printer-info">
+                    <div class="printer-title-row">
+                        <i class="fa-solid fa-print"></i>
+                        <span class="printer-name">${escapeHtml(currentLang === 'ar' ? (p.nameAr || p.name) : (p.nameEn || p.name))}</span>
+                        <span class="printer-role-badge badge-${p.role}">${roleName}</span>
+                    </div>
+                    <div class="printer-meta-row">
+                        <span class="printer-ip"><i class="fa-solid fa-network-wired"></i> ${escapeHtml(p.ip)}</span>
+                        <span class="printer-status-pill ${statusClass}"><i class="fa-solid fa-circle"></i> ${statusText}</span>
+                    </div>
+                </div>
+                <div class="printer-actions-row">
+                    ${p.role === 'kitchen' ? `
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="openKitchenMenuSettings('${p.id}')">
+                        <i class="fa-solid fa-list-check"></i> ${currentLang === 'ar' ? 'فئات الطباعة' : 'Menu Printing'}
+                    </button>
+                    ` : ''}
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="testPrinterDevice('${p.id}')">
+                        <i class="fa-solid fa-paper-plane"></i> ${currentLang === 'ar' ? 'اختبار' : 'Test'}
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="editPrinterDevice('${p.id}')">
+                        <i class="fa-solid fa-pen"></i> ${currentLang === 'ar' ? 'تعديل' : 'Edit'}
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deletePrinterDevice('${p.id}')">
+                        <i class="fa-solid fa-trash"></i> ${currentLang === 'ar' ? 'حذف' : 'Delete'}
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Add/Edit Printer Device
+function promptAddPrinter() {
+    const name = prompt(currentLang === 'ar' ? "اسم الطابعة:" : "Printer Name:", "New Thermal 80mm");
+    if (!name) return;
+    const ip = prompt(currentLang === 'ar' ? "عنوان IP أو المنفذ:" : "IP address / Network Endpoint:", "192.168.1.105");
+    if (!ip) return;
+    const roleChoice = prompt(currentLang === 'ar' ? "نوع الطابعة (1: كاشير, 2: مطبخ, 3: تقارير):" : "Printer Role (1: Cashier, 2: Kitchen, 3: Reports):", "1");
+    
+    let role = 'cashier';
+    if (roleChoice === '2') role = 'kitchen';
+    if (roleChoice === '3') role = 'reports';
+
+    const newPrinter = {
+        id: "prn_" + Date.now(),
+        name: name.trim(),
+        role: role,
+        ip: ip.trim(),
+        status: "online",
+        isDefault: false
+    };
+
+    printers.push(newPrinter);
+    persistData();
+    renderPrintingDevicesModal();
+    if (typeof showToast === 'function') {
+        showToast(currentLang === 'ar' ? 'تمت إضافة الطابعة بنجاح' : 'Printer added successfully', 'success');
+    }
+}
+
+function editPrinterDevice(printerId) {
+    const p = printers.find(x => x.id === printerId);
+    if (!p) return;
+    const newName = prompt(currentLang === 'ar' ? "تعديل اسم الطابعة:" : "Edit Printer Name:", p.name);
+    if (newName) p.name = newName.trim();
+    const newIp = prompt(currentLang === 'ar' ? "تعديل عنوان IP:" : "Edit IP Address:", p.ip);
+    if (newIp) p.ip = newIp.trim();
+
+    persistData();
+    renderPrintingDevicesModal();
+    if (typeof showToast === 'function') {
+        showToast(currentLang === 'ar' ? 'تم تحديث بيانات الطابعة' : 'Printer updated', 'info');
+    }
+}
+
+function deletePrinterDevice(printerId) {
+    const p = printers.find(x => x.id === printerId);
+    if (!p) return;
+    if (confirm(currentLang === 'ar' ? `هل أنت متأكد من حذف ${p.name}؟` : `Delete printer ${p.name}?`)) {
+        printers = printers.filter(x => x.id !== printerId);
+        persistData();
+        renderPrintingDevicesModal();
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? 'تم حذف الطابعة' : 'Printer deleted', 'info');
+        }
+    }
+}
+
+// Hardware health checks require a printer bridge that is not present in this project.
+function testPrinterDevice(printerId) {
+    const printer = printers.find(item => item.id === printerId);
+    if (!printer) return;
+    if (typeof showToast === 'function') {
+        showToast('Direct printer connectivity checks are not configured. Printing uses the browser print dialog.', 'warning');
+    }
+}
+// Auto-Print Toggle Saver
+function onAutoPrintToggled(checked) {
+    setPosPreference('autoPrint', checked);
+    if (typeof showToast === 'function') {
+        showToast(
+            checked 
+                ? (currentLang === 'ar' ? 'تم تفعيل الطباعة التلقائية' : 'Automatic printing enabled')
+                : (currentLang === 'ar' ? 'تم تعطيل الطباعة التلقائية' : 'Automatic printing disabled'),
+            'info'
+        );
+    }
+}
+
+// Save Printing Devices Settings
+function savePrintingDevicesSettings() {
+    const toggle = document.getElementById('autoPrintToggle');
+    if (toggle) {
+        setPosPreference('autoPrint', toggle.checked);
+    }
+    persistData();
+    closePrintingDevicesModal();
+    if (typeof showToast === 'function') {
+        showToast(currentLang === 'ar' ? 'تم حفظ إعدادات الطابعات بنجاح' : 'Printer settings saved successfully', 'success');
+    }
+}
+
+// Kitchen Printer Menu Settings Logic
+let currentEditingKitchenPrinterId = null;
+
+function openKitchenMenuSettings(printerId) {
+    currentEditingKitchenPrinterId = printerId;
+    
+    // Localization
+    const titleSpan = document.getElementById('kitchenMenuModalTitleSpan');
+    const allLabel = document.getElementById('kitchenMenuModalAllLabel');
+    const saveBtnLabel = document.getElementById('kitchenMenuModalSaveLabel');
+    const cancelBtnLabel = document.getElementById('kitchenMenuModalCancelLabel');
+    
+    if (titleSpan) titleSpan.textContent = currentLang === 'ar' ? 'إعدادات طباعة فئات المطبخ' : 'Kitchen Printer – Menu Printing';
+    if (allLabel) allLabel.textContent = currentLang === 'ar' ? 'جميع الفئات' : 'All Categories';
+    if (saveBtnLabel) saveBtnLabel.textContent = currentLang === 'ar' ? 'حفظ' : 'Save';
+    if (cancelBtnLabel) cancelBtnLabel.textContent = currentLang === 'ar' ? 'إلغاء' : 'Cancel';
+    
+    renderKitchenMenuSettings(printerId);
+    
+    const modal = document.getElementById('kitchenPrinterMenuModal');
+    if (modal) modal.classList.add('open');
+}
+
+function closeKitchenMenuSettings() {
+    const modal = document.getElementById('kitchenPrinterMenuModal');
+    if (modal) modal.classList.remove('open');
+    currentEditingKitchenPrinterId = null;
+}
+
+function renderKitchenMenuSettings(printerId) {
+    const listEl = document.getElementById('kitchenMenuCategoriesList');
+    if (!listEl) return;
+    
+    const p = printers.find(x => x.id === printerId);
+    if (!p) return;
+    
+    // Check if printer has a disabledCategories array. If not, default is all ON (empty array).
+    const disabledCategories = Array.isArray(p.disabledCategories) ? p.disabledCategories : [];
+    
+    let allOn = true;
+    let someOn = false;
+    
+    listEl.innerHTML = categories.map(cat => {
+        const isOff = disabledCategories.includes(cat.id);
+        const isOn = !isOff;
+        
+        if (isOn) someOn = true;
+        if (isOff) allOn = false;
+        
+        const catName = currentLang === 'ar' ? (cat.categoryAr || cat.category) : (cat.categoryEn || cat.category);
+        
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--border-color);">
+                <label for="kpc_${cat.id}" style="font-size: 14px; margin-bottom: 0; cursor: pointer; flex: 1;">${escapeHtml(catName)}</label>
+                <input type="checkbox" class="kitchen-cat-toggle" id="kpc_${cat.id}" data-catid="${escapeHtml(cat.id)}" style="width: 18px; height: 18px; cursor: pointer;" ${isOn ? 'checked' : ''} onchange="updateKitchenMenuAllToggleState()">
+            </div>
+        `;
+    }).join('');
+    
+    const allToggle = document.getElementById('kitchenMenuAllToggle');
+    if (allToggle) {
+        allToggle.checked = allOn;
+        allToggle.indeterminate = (!allOn && someOn);
+    }
+}
+
+function updateKitchenMenuAllToggleState() {
+    const allToggle = document.getElementById('kitchenMenuAllToggle');
+    if (!allToggle) return;
+    
+    const toggles = Array.from(document.querySelectorAll('.kitchen-cat-toggle'));
+    if (toggles.length === 0) return;
+    
+    const allOn = toggles.every(t => t.checked);
+    const someOn = toggles.some(t => t.checked);
+    
+    allToggle.checked = allOn;
+    allToggle.indeterminate = (!allOn && someOn);
+}
+
+function toggleAllKitchenMenuCategories(checked) {
+    const toggles = document.querySelectorAll('.kitchen-cat-toggle');
+    toggles.forEach(t => {
+        t.checked = checked;
+    });
+}
+
+function saveKitchenMenuSettings() {
+    if (!currentEditingKitchenPrinterId) return;
+    
+    const p = printers.find(x => x.id === currentEditingKitchenPrinterId);
+    if (!p) return;
+    
+    const toggles = Array.from(document.querySelectorAll('.kitchen-cat-toggle'));
+    const disabledIds = [];
+    
+    toggles.forEach(t => {
+        if (!t.checked) {
+            disabledIds.push(t.dataset.catid);
+        }
+    });
+    
+    p.disabledCategories = disabledIds;
+    persistData();
+    
+    if (typeof showToast === 'function') {
+        showToast(currentLang === 'ar' ? 'تم حفظ إعدادات طباعة الفئات بنجاح' : 'Menu printing settings saved successfully', 'success');
+    }
+    
+    closeKitchenMenuSettings();
+}
+
+// Network discovery requires a printer bridge; do not simulate online devices.
+function syncPrinters() {
+    if (typeof showToast === 'function') {
+        showToast('Network printer discovery is not configured. Use the browser print dialog.', 'warning');
+    }
+}
+// Unified Print Router
+function routePrintJob(role, contentHtml, title = 'Print Job') {
+    return new Promise((resolve) => {
+        const targetPrinter = printers.find(p => p.role === role && p.status === 'online') || printers.find(p => p.role === role) || printers[0];
+
+        if (!targetPrinter) {
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? 'تنبيه: لم يتم العثور على طابعة مهيأة لهذا الدور' : 'Warning: No printer found for this role', 'warning');
+            }
+        } else {
+            console.log(`[PrintRouter] Routing job "${title}" to printer "${targetPrinter.name}" (${targetPrinter.ip})`);
+        }
+
+        const safeTimeoutResolve = (handler, target, delay) => {
+            setTimeout(() => {
+                try {
+                    target.removeEventListener('afterprint', handler);
+                } catch(e) {}
+                resolve();
+            }, delay);
+        };
+
+        // If receipt modal is open and printing cashier receipt, use direct native window.print() (Zero blank pages, full rasterization)
+        const receiptModal = document.getElementById('receiptModal');
+        if (role === 'cashier' && receiptModal && receiptModal.classList.contains('open')) {
+            const afterHandler = () => {
+                window.removeEventListener('afterprint', afterHandler);
+                resolve();
+            };
+            window.addEventListener('afterprint', afterHandler);
+
+            setTimeout(() => {
+                window.print();
+                safeTimeoutResolve(afterHandler, window, 5000);
+            }, 150);
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? `تم إرسال أمر الطباعة (${escapeHtml(title)})` : `Print job sent (${escapeHtml(title)})`, 'success');
+            }
+            return;
+        }
+
+        // If kitchen modal is open and printing kitchen ticket, use direct native window.print()
+        const kitchenModal = document.getElementById('kitchenTicketModal');
+        if (role === 'kitchen' && kitchenModal && kitchenModal.classList.contains('open')) {
+            const afterHandler = () => {
+                window.removeEventListener('afterprint', afterHandler);
+                resolve();
+            };
+            window.addEventListener('afterprint', afterHandler);
+
+            setTimeout(() => {
+                window.print();
+                safeTimeoutResolve(afterHandler, window, 5000);
+            }, 150);
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? `تم إرسال أمر طباعة المطبخ (${escapeHtml(title)})` : `Kitchen print job sent (${escapeHtml(title)})`, 'success');
+            }
+            return;
+        }
+
+        // Silent IFrame Execution for Reports or Background Print Jobs
+        try {
+            let printFrame = document.getElementById('posSilentPrintFrame');
+            if (!printFrame) {
+                printFrame = document.createElement('iframe');
+                printFrame.id = 'posSilentPrintFrame';
+                document.body.appendChild(printFrame);
+            }
+
+            const safePrintWidth = (targetPrinter && targetPrinter.paperWidth === '58mm') ? '48mm' : '72mm';
+
+            // Render in viewport behind UI so Chrome/Edge compositor does not cull it
+            printFrame.style.position = 'fixed';
+            printFrame.style.right = '0';
+            printFrame.style.bottom = '0';
+            printFrame.style.width = (targetPrinter && targetPrinter.paperWidth === '58mm') ? '58mm' : '80mm';
+            printFrame.style.height = '100vh';
+            printFrame.style.border = 'none';
+            printFrame.style.opacity = '1';
+            printFrame.style.visibility = 'visible';
+            printFrame.style.pointerEvents = 'none';
+            printFrame.style.zIndex = '-9999';
+            printFrame.style.display = 'block';
+
+            const frameDoc = (printFrame.contentWindow && printFrame.contentWindow.document) 
+                ? printFrame.contentWindow.document 
+                : (printFrame.contentDocument || null);
+            if (!frameDoc) {
+                if (typeof window !== 'undefined' && typeof window.print === 'function') {
+                    const afterHandler = () => {
+                        window.removeEventListener('afterprint', afterHandler);
+                        resolve();
+                    };
+                    window.addEventListener('afterprint', afterHandler);
+                    window.print();
+                    safeTimeoutResolve(afterHandler, window, 5000);
+                } else {
+                    resolve();
+                }
+                return;
+            }
+
+            const stylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).map(el => el.outerHTML).join('\n');
+
+            frameDoc.open();
+            frameDoc.write(`
+                <!DOCTYPE html>
+                <html lang="${currentLang}" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
+                <head>
+                    <meta charset="UTF-8">
+                    <base href="${window.location.origin}${window.location.pathname}">
+                    <title>${escapeHtml(title)}</title>
+                    ${stylesheets}
+                    <style>
+                        @page {
+                            margin: 0;
+                            size: auto;
+                        }
+                        * {
+                            box-sizing: border-box;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                            box-shadow: none !important;
+                            text-shadow: none !important;
+                        }
+                        html, body {
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            background: #ffffff !important;
+                            background-color: #ffffff !important;
+                            color: #000000 !important;
+                            width: 100% !important;
+                            height: auto !important;
+                            font-family: 'Courier Prime', 'Courier New', 'Cairo', 'Inter', Courier, monospace, sans-serif !important;
+                            -webkit-font-smoothing: antialiased;
+                        }
+                        #receiptModal,
+                        #kitchenTicketModal,
+                        .modal-card,
+                        .receipt-container {
+                            display: block !important;
+                            position: static !important;
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            margin: 0 auto !important;
+                            padding: 0 !important;
+                            border: none !important;
+                            box-shadow: none !important;
+                            background: #ffffff !important;
+                            background-color: #ffffff !important;
+                            overflow: visible !important;
+                        }
+                        .modal-header,
+                        .modal-footer,
+                        .modal-close-btn {
+                            display: none !important;
+                        }
+                        .thermal-paper {
+                            display: block !important;
+                            visibility: visible !important;
+                            position: static !important;
+                            width: ${safePrintWidth} !important;
+                            max-width: ${safePrintWidth} !important;
+                            margin: 0 auto !important;
+                            padding: 2mm 2mm 4mm 2mm !important;
+                            box-shadow: none !important;
+                            border: none !important;
+                            outline: none !important;
+                            color: #000000 !important;
+                            background: #ffffff !important;
+                            background-color: #ffffff !important;
+                            font-family: 'Courier Prime', 'Courier New', 'Cairo', Courier, monospace, sans-serif !important;
+                            font-size: 11.5px !important;
+                            line-height: 1.35 !important;
+                            overflow: visible !important;
+                            box-sizing: border-box !important;
+                        }
+                        .thermal-paper * {
+                            visibility: visible !important;
+                            color: #000000 !important;
+                        }
+                        .receipt-header {
+                            text-align: center !important;
+                            margin-bottom: 8px !important;
+                            border-bottom: 1px dashed #000 !important;
+                            padding-bottom: 8px !important;
+                        }
+                        .receipt-header h2 {
+                            font-size: 19px !important;
+                            font-weight: 900 !important;
+                            margin: 0 0 3px 0 !important;
+                            letter-spacing: 0.5px !important;
+                        }
+                        .receipt-header .header-ar {
+                            font-family: 'Cairo', sans-serif !important;
+                            font-size: 13.5px !important;
+                            font-weight: 700 !important;
+                            margin: 2px 0 !important;
+                            direction: rtl !important;
+                        }
+                        .receipt-header .vat-line {
+                            font-size: 11.5px !important;
+                            font-weight: 600 !important;
+                            margin: 2px 0 !important;
+                        }
+                        .receipt-header .invoice-badge-title {
+                            font-size: 11px !important;
+                            font-weight: 800 !important;
+                            border: 1px dashed #000 !important;
+                            display: inline-block !important;
+                            padding: 2px 8px !important;
+                            margin: 5px 0 0 0 !important;
+                        }
+                        .receipt-info-grid {
+                            margin: 8px 0 !important;
+                            padding-bottom: 6px !important;
+                            border-bottom: 1px dashed #000 !important;
+                        }
+                        .receipt-info-grid .row {
+                            display: flex !important;
+                            justify-content: space-between !important;
+                            font-size: 11px !important;
+                            margin: 2px 0 !important;
+                        }
+                        .receipt-table {
+                            width: 100% !important;
+                            border-collapse: collapse !important;
+                            margin: 8px 0 !important;
+                        }
+                        .receipt-table th {
+                            border-top: 1px dashed #000 !important;
+                            border-bottom: 1px dashed #000 !important;
+                            padding: 4px 2px !important;
+                            font-size: 11px !important;
+                            font-weight: 800 !important;
+                        }
+                        .receipt-table td {
+                            padding: 4px 2px !important;
+                            font-size: 11px !important;
+                            border-bottom: 1px dashed #e0e0e0 !important;
+                            vertical-align: top !important;
+                        }
+                        .rec-item-name-cell {
+                            display: flex !important;
+                            flex-direction: column !important;
+                        }
+                        .rec-item-name-cell .rec-ar {
+                            font-family: 'Cairo', sans-serif !important;
+                            font-size: 11.5px !important;
+                            font-weight: 700 !important;
+                        }
+                        .rec-item-name-cell .rec-en {
+                            font-size: 10.5px !important;
+                            color: #333 !important;
+                        }
+                        .rec-addon-line {
+                            font-size: 10px !important;
+                            color: #555 !important;
+                        }
+                        .rec-note-line {
+                            font-size: 10px !important;
+                            font-style: italic !important;
+                            white-space: pre-wrap !important;
+                        }
+                        .receipt-totals {
+                            margin: 8px 0 !important;
+                            border-top: 1px dashed #000 !important;
+                            padding-top: 4px !important;
+                        }
+                        .receipt-totals .row {
+                            display: flex !important;
+                            justify-content: space-between !important;
+                            font-size: 11px !important;
+                            margin: 2px 0 !important;
+                        }
+                        .receipt-totals .grand-total {
+                            font-size: 14px !important;
+                            font-weight: 900 !important;
+                            border-top: 1px solid #000 !important;
+                            border-bottom: 1px solid #000 !important;
+                            padding: 5px 0 !important;
+                            margin: 4px 0 !important;
+                        }
+                        .receipt-qr-zone {
+                            text-align: center !important;
+                            margin: 10px auto !important;
+                            display: flex !important;
+                            justify-content: center !important;
+                            align-items: center !important;
+                        }
+                        .receipt-qr-zone img,
+                        .receipt-qr-zone canvas {
+                            display: block !important;
+                            margin: 0 auto !important;
+                            max-width: 110px !important;
+                            max-height: 110px !important;
+                        }
+                        .receipt-footer-text {
+                            text-align: center !important;
+                            margin-top: 8px !important;
+                            font-size: 10.5px !important;
+                        }
+                    </style>
+                </head>
+                <body style="margin:0;padding:0;background:#ffffff;background-color:#ffffff;">
+                    <div style="width:100%;margin:0 auto;padding:0;background:#ffffff;background-color:#ffffff;">
+                        ${contentHtml}
+                    </div>
+                </body>
+                </html>
+            `);
+            frameDoc.close();
+
+            setTimeout(() => {
+                try {
+                    const afterHandler = () => {
+                        try {
+                            printFrame.contentWindow.removeEventListener('afterprint', afterHandler);
+                        } catch(e) {}
+                        resolve();
+                    };
+                    printFrame.contentWindow.addEventListener('afterprint', afterHandler);
+
+                    printFrame.contentWindow.focus();
+                    printFrame.contentWindow.print();
+
+                    safeTimeoutResolve(afterHandler, printFrame.contentWindow, 5000);
+                } catch (err) {
+                    console.warn("Print execution note:", err);
+                    resolve();
+                }
+            }, 300);
+
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? `تم إرسال أمر الطباعة (${escapeHtml(title)})` : `Print job sent (${escapeHtml(title)})`, 'success');
+            }
+        } catch (e) {
+            console.error("Print Router Error:", e);
+            if (typeof showToast === 'function') {
+                showToast(currentLang === 'ar' ? 'تعذر إتمام أمر الطباعة' : 'Failed to print document', 'danger');
+            }
+            resolve();
+        }
+    });
+}
+
+// Execute Kitchen Print explicitly — used by both manual (admin.js) and auto-pay sequence
+// Returns a Promise that resolves AFTER the physical KOT print job is dispatched.
+// IMPORTANT: This function does NOT touch receiptModal — the caller manages that.
+function executeKitchenPrint(order) {
+    return new Promise(resolve => {
+        console.log('[PAY PRINT] starting kitchen');
+
+        if (typeof getKitchenOrderTicketHtml !== 'function') {
+            console.warn('[PAY PRINT] getKitchenOrderTicketHtml is not defined — skipping KOT');
+            resolve();
+            return;
+        }
+
+        const kotHtml = getKitchenOrderTicketHtml(order);
+        if (!kotHtml) {
+            console.warn('[PAY PRINT] KOT HTML is empty — no printable kitchen items (check disabledCategories or catId mapping)');
+            if (typeof showToast === 'function') showToast('Kitchen ticket is empty — nothing to print', 'warning');
+            resolve();
+            return;
+        }
+
+        console.log('[PAY PRINT] kitchen data ready');
+
+        // Render KOT content into the kitchen modal node
+        if (typeof renderKitchenTicket === 'function') {
+            renderKitchenTicket(order);
+        }
+
+        // Ensure receiptModal is hidden so only KOT prints
+        const receiptModal = document.getElementById('receiptModal');
+        if (receiptModal) receiptModal.classList.remove('open');
+
+        // Open the kitchen ticket modal — the @media print CSS will print ONLY this
+        const kitchenModal = document.getElementById('kitchenTicketModal');
+        if (kitchenModal) kitchenModal.classList.add('open');
+
+        console.log('[PAY PRINT] kitchen print invoked');
+
+        const cleanup = () => {
+            if (kitchenModal) kitchenModal.classList.remove('open');
+        };
+
+        const afterHandler = () => {
+            window.removeEventListener('afterprint', afterHandler);
+            cleanup();
+            console.log('[PAY PRINT] kitchen finished');
+            resolve();
+        };
+        window.addEventListener('afterprint', afterHandler);
+
+        setTimeout(() => {
+            window.print();
+
+            // Fallback in case afterprint never fires (Android / RawBT)
+            setTimeout(() => {
+                window.removeEventListener('afterprint', afterHandler);
+                cleanup();
+                console.log('[PAY PRINT] kitchen finished (fallback timeout)');
+                resolve();
+            }, 5000);
+        }, 300);
+    });
+}
+
+// Sequential Post-Payment Printing (KOT -> CUT -> INVOICE -> CUT)
+// Guaranteed order: KOT prints first, physical cut, then Customer Invoice, physical cut.
+let isPrintSequenceRunning = false;
+
+async function runPostPaymentPrintSequence(order) {
+    if (isPrintSequenceRunning) {
+        console.warn('[PAY PRINT] sequence already running — duplicate call ignored');
+        return;
+    }
+    isPrintSequenceRunning = true;
+
+    try {
+        console.log('[PAY PRINT] payment success');
+        console.log('[PAY PRINT] starting kitchen');
+
+        // ── STEP 1: KITCHEN / KOT ──────────────────────────────────────────────
+        // executeKitchenPrint opens kitchenTicketModal, calls window.print(),
+        // waits for afterprint (or 5s fallback), then closes kitchenTicketModal.
+        // receiptModal is kept CLOSED during this step.
+        await executeKitchenPrint(order);
+
+        // ── STEP 2: PHYSICAL CUT GAP ───────────────────────────────────────────
+        // Give the printer spooler time to process the cut command before
+        // sending the next print job.
+        await new Promise(r => setTimeout(r, 1500));
+
+        // ── STEP 3: CUSTOMER INVOICE ───────────────────────────────────────────
+        console.log('[PAY PRINT] starting customer invoice');
+
+        // Open the receipt modal now — the @media print CSS will print ONLY this
+        // because kitchenTicketModal was already closed by executeKitchenPrint.
+        const receiptModal = document.getElementById('receiptModal');
+        if (receiptModal) receiptModal.classList.add('open');
+
+        console.log('[PAY PRINT] invoice print invoked');
+
+        await new Promise(resolve => {
+            const afterHandler = () => {
+                window.removeEventListener('afterprint', afterHandler);
+                resolve();
+            };
+            window.addEventListener('afterprint', afterHandler);
+
+            setTimeout(() => {
+                window.print();
+
+                // Fallback in case afterprint never fires
+                setTimeout(() => {
+                    window.removeEventListener('afterprint', afterHandler);
+                    resolve();
+                }, 5000);
+            }, 300);
+        });
+
+        console.log('[PAY PRINT] invoice finished');
+        console.log('[PAY PRINT] sequence complete');
+
+    } catch (e) {
+        console.error('[PAY PRINT] error during sequential print sequence:', e);
+    } finally {
+        isPrintSequenceRunning = false;
+
+        // Always ensure receiptModal is visible after the sequence so the
+        // cashier can see and manually re-print if needed.
+        const receiptModal = document.getElementById('receiptModal');
+        if (receiptModal) receiptModal.classList.add('open');
+    }
+}

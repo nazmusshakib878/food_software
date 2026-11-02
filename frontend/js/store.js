@@ -1,0 +1,618 @@
+/* =========================================================
+   STORE.JS - LocalStorage State Management & Storage Engine
+   ========================================================= */
+
+// Global Image Error Handler is now in index.html <head>
+
+// Persistent Collections
+var storeSettings = (() => {
+    try {
+        const saved = JSON.parse(localStorage.getItem('nurpos_settings') || 'null');
+        const s = saved ? { ...DEFAULT_STORE, ...saved } : { ...DEFAULT_STORE };
+        s.nameEn = "NUR FOODES";
+        s.companyName = "شركة صح للتجارة";
+        s.companyNameAr = "شركة صح للتجارة";
+        s.vatNumber = "300987654300003";
+        // PINs are managed by the server and must never be stored in browser settings.
+        delete s.adminPin;
+        delete s.staffPin;
+        if (!s.currencyAr) s.currencyAr = DEFAULT_STORE.currencyAr;
+        if (!s.defaultCustomerId) s.defaultCustomerId = "cash";
+        if (!s.defaultOrderTypeId) s.defaultOrderTypeId = "delivery";
+        return s;
+    } catch (e) {
+        return { ...DEFAULT_STORE };
+    }
+})();
+
+var categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+var items = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+var catalogViewMode = localStorage.getItem('nurpos_catalog_mode') || 'grid8';
+
+var orders = [];
+
+var currentUser = { role: 'guest', name: 'Guest', canOpenSidebar: false };
+
+// Data-Driven Configurations
+var customers = (() => {
+    try {
+        return JSON.parse(localStorage.getItem('nurpos_customers') || 'null') || JSON.parse(JSON.stringify(DEFAULT_CUSTOMERS));
+    } catch (e) {
+        return JSON.parse(JSON.stringify(DEFAULT_CUSTOMERS));
+    }
+})();
+
+var orderTypes = (() => {
+    try {
+        return JSON.parse(localStorage.getItem('nurpos_order_types') || 'null') || JSON.parse(JSON.stringify(DEFAULT_ORDER_TYPES));
+    } catch (e) {
+        return JSON.parse(JSON.stringify(DEFAULT_ORDER_TYPES));
+    }
+})();
+
+var printers = (() => {
+    try {
+        return JSON.parse(localStorage.getItem('nurpos_printers') || 'null') || JSON.parse(JSON.stringify(DEFAULT_PRINTERS));
+    } catch (e) {
+        return JSON.parse(JSON.stringify(DEFAULT_PRINTERS));
+    }
+})();
+
+var paymentMethods = (() => {
+    try {
+        return JSON.parse(localStorage.getItem('nurpos_payment_methods') || 'null') || JSON.parse(JSON.stringify(DEFAULT_PAYMENT_METHODS));
+    } catch (e) {
+        return JSON.parse(JSON.stringify(DEFAULT_PAYMENT_METHODS));
+    }
+})();
+
+var applications = (() => {
+    try {
+        return JSON.parse(localStorage.getItem('nurpos_applications') || 'null') || JSON.parse(JSON.stringify(DEFAULT_APPLICATIONS));
+    } catch (e) {
+        return JSON.parse(JSON.stringify(DEFAULT_APPLICATIONS));
+    }
+})();
+
+var inventoryRecords = (() => {
+    try {
+        return JSON.parse(localStorage.getItem('nurpos_inventory') || 'null') || JSON.parse(JSON.stringify(DEFAULT_INVENTORY));
+    } catch (e) {
+        return JSON.parse(JSON.stringify(DEFAULT_INVENTORY));
+    }
+})();
+
+var internalOrders = (() => {
+    try {
+        return JSON.parse(localStorage.getItem('nurpos_internal_orders') || 'null') || JSON.parse(JSON.stringify(DEFAULT_INTERNAL_ORDERS));
+    } catch (e) {
+        return JSON.parse(JSON.stringify(DEFAULT_INTERNAL_ORDERS));
+    }
+})();
+
+var balancingRecords = (() => {
+    try {
+        return JSON.parse(localStorage.getItem('nurpos_balancing') || 'null') || [];
+    } catch (e) {
+        return [];
+    }
+})();
+
+var shifts = (() => {
+    try {
+        let saved = JSON.parse(localStorage.getItem('nurpos_shifts') || 'null');
+        if (Array.isArray(saved) && saved.length > 0) {
+            return saved;
+        }
+        if (typeof DEFAULT_SHIFTS !== 'undefined' && Array.isArray(DEFAULT_SHIFTS)) {
+            return JSON.parse(JSON.stringify(DEFAULT_SHIFTS));
+        }
+        return [];
+    } catch (e) {
+        return (typeof DEFAULT_SHIFTS !== 'undefined') ? JSON.parse(JSON.stringify(DEFAULT_SHIFTS)) : [];
+    }
+})();
+
+var posPreferences = (() => {
+    try {
+        const saved = JSON.parse(localStorage.getItem('nurpos_preferences') || 'null');
+        const prefs = Object.assign({
+            ordersView: 'detailed', // 'briefly' | 'detailed'
+            stayAtCategory: 'stay', // 'stay' | 'exit'
+            autoPrint: true
+        }, saved || {});
+        // Reconcile saved preference so legacy 'exit' cannot reactivate automatic folder exit
+        if (prefs.stayAtCategory === 'exit') {
+            prefs.stayAtCategory = 'stay';
+            try {
+                localStorage.setItem('nurpos_preferences', JSON.stringify(prefs));
+            } catch (e) {}
+        }
+        return prefs;
+    } catch (e) {
+        return { ordersView: 'detailed', stayAtCategory: 'stay', autoPrint: true };
+    }
+})();
+
+// Runtime State Variables (Default to English as requested)
+var currentLang = (() => {
+    try {
+        const pref = localStorage.getItem('nurpos_lang_v3');
+        if (pref === 'ar' || pref === 'en') return pref;
+        return 'en'; // Default English
+    } catch (e) {
+        return 'en';
+    }
+})();
+var activeCategory = null; // null = Category / Folder View
+var savedCatalogScrollTop = 0; // Preserves folder catalog scroll position
+var currentCart = [];
+var selectedCartItemIndex = null; // Used for item modifier panel
+var selectedCartLineId = null; // Stable line identifier for selected order line
+
+// Collision-resistant unique cart line ID generator
+var _cartLineSeq = 0;
+function generateCartLineId() {
+    _cartLineSeq++;
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        try {
+            return crypto.randomUUID();
+        } catch (e) {}
+    }
+    return 'line_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 9) + '_' + _cartLineSeq;
+}
+var currentOrderType = 'delivery';
+var currentOrderTypeId = 'delivery';
+var orderTypeSelectionSource = 'default'; // 'default' | 'automatic' | 'manual'
+var orderTypeDisplayLabel = null;
+var currentTable = 'Table 1';
+var currentCustomerId = 'cash';
+
+// Active Order State Persistence (Scenario E: Preserve active order across page refreshes)
+function saveActiveOrderState() {
+    try {
+        if ((currentCart && currentCart.length > 0) || currentOrderNotes || currentClientPhone || (currentCustomerId && currentCustomerId !== 'cash') || (currentOrderTypeId && currentOrderTypeId !== 'delivery') || (orderTypeSelectionSource && orderTypeSelectionSource !== 'default')) {
+            const state = {
+                cart: currentCart,
+                customerId: currentCustomerId,
+                orderTypeId: currentOrderTypeId,
+                orderType: currentOrderType,
+                selectionSource: orderTypeSelectionSource,
+                displayLabel: orderTypeDisplayLabel,
+                table: currentTable,
+                notes: currentOrderNotes,
+                phone: currentClientPhone,
+                discountType: discountType,
+                discountValue: discountValue,
+                customDiscount: customDiscount
+            };
+            localStorage.setItem('nurpos_active_order', JSON.stringify(state));
+        } else {
+            localStorage.removeItem('nurpos_active_order');
+        }
+    } catch (e) {}
+}
+
+function restoreActiveOrderState() {
+    try {
+        const raw = localStorage.getItem('nurpos_active_order');
+        if (!raw) return false;
+        const state = JSON.parse(raw);
+        if (state && typeof state === 'object') {
+            const isStaff = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'staff');
+            if (Array.isArray(state.cart) && state.cart.length > 0) {
+                currentCart = state.cart;
+            }
+            if (state.customerId && (!isStaff || state.customerId === 'cash')) {
+                currentCustomerId = state.customerId;
+            } else {
+                currentCustomerId = 'cash';
+            }
+            if (state.orderTypeId) {
+                currentOrderTypeId = state.orderTypeId;
+                currentOrderType = state.orderType || state.orderTypeId;
+            }
+            if (state.selectionSource && (!isStaff || currentCustomerId === 'cash')) {
+                orderTypeSelectionSource = state.selectionSource;
+            } else if (state.customerId && state.customerId !== 'cash' && !isStaff) {
+                orderTypeSelectionSource = 'automatic';
+            } else if (state.orderTypeId && state.orderTypeId !== 'delivery') {
+                orderTypeSelectionSource = 'manual';
+            } else {
+                orderTypeSelectionSource = 'default';
+            }
+            if (state.displayLabel !== undefined && !isStaff) {
+                orderTypeDisplayLabel = state.displayLabel;
+            } else {
+                orderTypeDisplayLabel = null;
+            }
+            if (state.table) currentTable = state.table;
+            if (state.notes !== undefined) currentOrderNotes = state.notes;
+            if (state.phone !== undefined) currentClientPhone = state.phone;
+            if (state.discountType) discountType = state.discountType;
+            if (state.discountValue !== undefined) discountValue = state.discountValue;
+            if (state.customDiscount !== undefined) customDiscount = state.customDiscount;
+            return true;
+        }
+    } catch (e) {}
+    return false;
+}
+
+function clearActiveOrderState() {
+    try {
+        localStorage.removeItem('nurpos_active_order');
+    } catch (e) {}
+    orderTypeSelectionSource = 'default';
+    orderTypeDisplayLabel = null;
+}
+
+// Attempt restoring active order if safely preserved; otherwise initial fresh defaults (Cash customer | Delivery) remain active
+// Active order state is restored only after the server authenticates the current session.
+var currentOrderNotes = '';
+var currentClientPhone = '';
+var discountType = 'fixed'; // 'fixed' | 'percent'
+var discountValue = 0;
+var customDiscount = 0;
+var paymentInput = '';
+var selectedPayMethod = 'Cash';
+
+// Reliable Next Order Sequence
+const storedSeq = parseInt(localStorage.getItem('nurpos_order_seq') || '0', 10);
+const maxExistingSeq = orders.reduce((max, o) => Math.max(max, Number(o.seq) || 0), 1000);
+var nextOrderSeq = Math.max(storedSeq, maxExistingSeq) + 1;
+
+var lastCompletedOrder = null;
+
+// Escape HTML for XSS Prevention
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// Format Currency Utility
+function formatCurrency(val) {
+    const curr = (currentLang === 'ar') ? (storeSettings.currencyAr || 'ر.س') : (storeSettings.currency || 'SAR');
+    return currentLang === 'ar' 
+        ? `${Number(val || 0).toFixed(2)} ${curr}`
+        : `${curr} ${Number(val || 0).toFixed(2)}`;
+}
+
+// Centralized Financial Calculation (VAT-Inclusive Product Pricing)
+function calculateCartTotals() {
+    let baseItemsSubtotal = 0;
+    let additionsTotal = 0;
+
+    currentCart.forEach(i => {
+        const itemPrice = Number(i.price) || 0;
+        const qty = Number(i.qty) || 1;
+        baseItemsSubtotal += (itemPrice * qty);
+
+        if (i.addons && Array.isArray(i.addons)) {
+            const addSum = i.addons.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+            additionsTotal += (addSum * qty);
+        }
+    });
+
+    baseItemsSubtotal = Math.round(baseItemsSubtotal * 100) / 100;
+    additionsTotal = Math.round(additionsTotal * 100) / 100;
+    const subtotal = Math.round((baseItemsSubtotal + additionsTotal) * 100) / 100;
+    
+    let validDiscount = 0;
+    if (discountType === 'percent') {
+        const pct = Math.min(100, Math.max(0, Number(discountValue) || 0));
+        validDiscount = Math.round(((subtotal * pct) / 100) * 100) / 100;
+    } else {
+        const rawVal = (discountValue !== undefined && discountValue !== null && discountValue !== '') 
+            ? discountValue 
+            : customDiscount;
+        const val = Math.max(0, Number(rawVal) || 0);
+        validDiscount = Math.min(subtotal, Math.round(val * 100) / 100);
+    }
+    customDiscount = validDiscount;
+
+    // Gross Amount (VAT-inclusive) after applying eligible discounts
+    const grossAfterDiscount = Math.max(0, Math.round((subtotal - validDiscount) * 100) / 100);
+    const taxRate = Math.max(0, Number(storeSettings.taxRate) || 0);
+
+    // VAT-INCLUSIVE FORMULA:
+    // Product prices and paid additions are VAT-inclusive.
+    // Included VAT = Gross Amount × Tax Rate / (100 + Tax Rate)
+    // Customer Payable Total = Gross Amount (Tax is NOT added on top)
+    const tax = taxRate > 0 
+        ? Math.round(((grossAfterDiscount * taxRate) / (100 + taxRate)) * 100) / 100 
+        : 0;
+
+    // Net Amount Before VAT = Gross Amount - Included VAT
+    const netBeforeVat = Math.round((grossAfterDiscount - tax) * 100) / 100;
+    const grandTotal = grossAfterDiscount;
+
+    return { 
+        baseItemsSubtotal, 
+        additionsTotal, 
+        subtotal, 
+        discount: validDiscount, 
+        taxableAmount: netBeforeVat, // Net amount subject to VAT before tax
+        netBeforeVat,
+        grossTotal: grandTotal,
+        taxRate, 
+        tax, 
+        grandTotal 
+    };
+}
+
+// Persist All Collections to LocalStorage safely
+function persistData() {
+    try {
+        localStorage.setItem('nurpos_settings', JSON.stringify(storeSettings));        localStorage.setItem('nurpos_lang', currentLang);
+        localStorage.setItem('nurpos_lang_v3', currentLang);
+        localStorage.setItem('nurpos_order_seq', String(nextOrderSeq));
+        localStorage.setItem('nurpos_customers', JSON.stringify(customers));
+        localStorage.setItem('nurpos_order_types', JSON.stringify(orderTypes));
+        localStorage.setItem('nurpos_printers', JSON.stringify(printers));
+        localStorage.setItem('nurpos_preferences', JSON.stringify(posPreferences));
+        localStorage.setItem('nurpos_inventory', JSON.stringify(inventoryRecords));
+        localStorage.setItem('nurpos_internal_orders', JSON.stringify(internalOrders));
+        localStorage.setItem('nurpos_balancing', JSON.stringify(balancingRecords));
+        localStorage.setItem('nurpos_shifts', JSON.stringify(shifts));
+    } catch (e) {
+        console.error("LocalStorage persistence error:", e);
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? "تحذير: تعذر حفظ البيانات محلياً في المتصفح" : "Warning: Failed to save data locally in browser", "danger");
+        }
+    }
+}
+
+// Reset Menu to Factory Defaults
+function resetMenuToDefaults() {
+    if (typeof refreshAuthoritativePosData === 'function') {
+        refreshAuthoritativePosData().then(() => {
+            if (typeof showToast === 'function') showToast('Catalog refreshed from the server.', 'success');
+        }).catch(() => {
+            if (typeof showToast === 'function') showToast('Catalog refresh failed. Server data was not changed.', 'danger');
+        });
+    }
+}
+// Start a New Order Safely
+function safeStartNewOrder() {
+    if (currentCart.length > 0) {
+        const msg = currentLang === 'ar'
+            ? 'يوجد أصناف في السلة الحالية. هل تريد إلغاء الطلب الحالي وبدء طلب جديد؟'
+            : 'Active items in cart. Do you want to cancel current order and start a new order?';
+        if (!confirm(msg)) return false;
+    }
+    currentCart = [];
+    selectedCartLineId = null;
+    selectedCartItemIndex = null;
+    if (typeof closeItemModifierPanel === 'function') closeItemModifierPanel();
+    currentOrderNotes = '';
+    currentClientPhone = '';
+    customDiscount = 0;
+    discountValue = 0;
+    discountType = 'fixed';
+    const defCust = (typeof storeSettings !== 'undefined' && storeSettings.defaultCustomerId) ? storeSettings.defaultCustomerId : 'cash';
+    const defType = (typeof storeSettings !== 'undefined' && storeSettings.defaultOrderTypeId) ? storeSettings.defaultOrderTypeId : 'delivery';
+    currentCustomerId = defCust;
+    currentOrderTypeId = defType;
+    currentOrderType = defType;
+    orderTypeSelectionSource = 'default';
+    orderTypeDisplayLabel = null;
+    if (typeof clearActiveOrderState === 'function') clearActiveOrderState();
+    if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
+    if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
+    if (typeof renderCart === 'function') renderCart();
+    if (typeof updateOrderPanelMeta === 'function') updateOrderPanelMeta();
+    if (typeof showToast === 'function') {
+        showToast(currentLang === 'ar' ? 'تم فتح طلب جديد' : 'New order started', 'info');
+    }
+    return true;
+}
+
+// Cancel Current Order Safely
+function safeCancelOrder() {
+    if (currentCart.length === 0 && !currentOrderNotes && !currentClientPhone) {
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? 'السلة فارغة بالفعل' : 'Cart is already empty', 'warning');
+        }
+        return false;
+    }
+    const msg = currentLang === 'ar' 
+        ? 'هل أنت متأكد من رغبتك في إلغاء هذا الطلب ومسح السلة بالكامل؟' 
+        : 'Are you sure you want to cancel this order and clear the cart?';
+    if (confirm(msg)) {
+        currentCart = [];
+        selectedCartLineId = null;
+        selectedCartItemIndex = null;
+        if (typeof closeItemModifierPanel === 'function') closeItemModifierPanel();
+        currentOrderNotes = '';
+        currentClientPhone = '';
+        customDiscount = 0;
+        discountValue = 0;
+        discountType = 'fixed';
+        currentCustomerId = 'cash';
+        currentOrderTypeId = 'delivery';
+        currentOrderType = 'delivery';
+        orderTypeSelectionSource = 'default';
+        orderTypeDisplayLabel = null;
+        if (typeof clearActiveOrderState === 'function') clearActiveOrderState();
+        if (typeof renderCustomerSelector === 'function') renderCustomerSelector();
+        if (typeof renderOrderTypeSelector === 'function') renderOrderTypeSelector();
+        if (typeof renderCart === 'function') renderCart();
+        if (typeof updateOrderPanelMeta === 'function') updateOrderPanelMeta();
+        soundTrash();
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? 'تم إلغاء الطلب بنجاح' : 'Order cancelled successfully', 'info');
+        }
+        return true;
+    }
+    return false;
+}
+
+// Update Preference
+function setPosPreference(key, val) {
+    posPreferences[key] = val;
+    try {
+        localStorage.setItem('nurpos_preferences', JSON.stringify(posPreferences));
+    } catch (e) {}
+}
+
+/* =========================================================
+   WEB AUDIO FX ENGINE (Offline, Zero-Asset Audio Oscillators)
+   ========================================================= */
+let audioCtx = null;
+let soundEnabled = localStorage.getItem('nurpos_sound') !== 'false';
+
+function getAudioContext() {
+    if (!audioCtx) {
+        const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtxClass) {
+            audioCtx = new AudioCtxClass();
+        }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    return audioCtx;
+}
+
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('nurpos_sound', soundEnabled ? 'true' : 'false');
+    updateSoundBtnUI();
+    if (soundEnabled) {
+        soundBeep();
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? 'تم تشغيل المؤثرات الصوتية' : 'Sound effects enabled', 'info');
+        }
+    } else {
+        if (typeof showToast === 'function') {
+            showToast(currentLang === 'ar' ? 'تم كتم الصوت' : 'Sound muted', 'info');
+        }
+    }
+}
+
+function updateSoundBtnUI() {
+    const btn = document.getElementById('soundToggleBtn');
+    if (btn) {
+        btn.innerHTML = soundEnabled ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark"></i>';
+        btn.style.opacity = soundEnabled ? '1' : '0.6';
+    }
+}
+
+// Crisp cart add blip
+function soundBeep() {
+    if (!soundEnabled) return;
+    try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.09);
+    } catch (e) {}
+}
+
+// Cash register chime
+function soundSuccess() {
+    if (!soundEnabled) return;
+    try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+        notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const startTime = ctx.currentTime + (idx * 0.07);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startTime);
+            gain.gain.setValueAtTime(0.14, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.28);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + 0.3);
+        });
+    } catch (e) {}
+}
+
+// Delete pop
+function soundTrash() {
+    if (!soundEnabled) return;
+    try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.13);
+    } catch (e) {}
+}
+
+// Warning buzzer
+function soundWarning() {
+    if (!soundEnabled) return;
+    try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        [220, 233].forEach(freq => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.21);
+        });
+    } catch (e) {}
+}
+
+
+function setPosCatalogMode(mode) {
+    catalogViewMode = mode;
+    localStorage.setItem('nurpos_catalog_mode', mode);
+    applyCatalogViewMode();
+}
+
+function applyCatalogViewMode() {
+    const posLayout = document.querySelector('.pos-layout');
+    const btnGrid = document.getElementById('btnCatalogGrid8');
+    const btnSplit = document.getElementById('btnCatalogSplit');
+    const floatBar = document.getElementById('catalogFloatingCart');
+    
+    if (!posLayout) return;
+
+    if (catalogViewMode === 'grid8') {
+        posLayout.classList.add('catalog-mode-grid8');
+        posLayout.classList.remove('catalog-mode-split');
+        btnGrid?.classList.add('active');
+        btnSplit?.classList.remove('active');
+        if (floatBar) floatBar.style.display = 'flex';
+    } else {
+        posLayout.classList.remove('catalog-mode-grid8');
+        posLayout.classList.add('catalog-mode-split');
+        btnSplit?.classList.add('active');
+        btnGrid?.classList.remove('active');
+        if (floatBar) floatBar.style.display = 'none';
+    }
+}

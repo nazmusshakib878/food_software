@@ -7,6 +7,7 @@ use App\Models\PosShift;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,6 +16,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (!app()->environment(['local', 'testing'])) {
+            throw new \RuntimeException('Demo POS accounts and sample data are restricted to local and test environments. Provision production users and tenants explicitly.');
+        }
         // 1. Seed Authorized POS Staff Accounts
         $users = [
             [
@@ -22,7 +26,7 @@ class DatabaseSeeder extends Seeder
                 'name_en' => 'Cashier',
                 'name_ar' => 'كاشير',
                 'email' => 'cashier@nurfoodes.com',
-                'password' => Hash::make('1050'),
+                'password' => Hash::make(Str::random(48)),
                 'staff_id' => 'STF-1050',
                 'role' => 'cashier',
                 'salt' => '9f6c0d8b5a3241e7a68f0b1c4e2d8a5f',
@@ -30,14 +34,14 @@ class DatabaseSeeder extends Seeder
                 'company_id' => 'CMP-001',
                 'branch_id' => 'BR-001',
                 'can_open_sidebar' => true,
-                'permissions' => ['pos_login', 'pos_orders', 'open_sidebar', 'invoice_reports', 'items_report', 'daily_shifts', 'reports', 'shifts'],
+                'permissions' => ['pos_login', 'pos_orders', 'open_sidebar', 'invoice_reports', 'items_report', 'daily_shifts', 'reports', 'shifts', 'branch_shift_manage'],
             ],
             [
                 'name' => 'Staff 1',
                 'name_en' => 'Staff 1',
                 'name_ar' => 'موظف 1',
                 'email' => 'staff1@nurfoodes.com',
-                'password' => Hash::make('1051'),
+                'password' => Hash::make(Str::random(48)),
                 'staff_id' => 'STF-1051',
                 'role' => 'staff',
                 'salt' => '3d8b1c4e2a5f7e9a0b6c2d4e8f1a3b5c',
@@ -45,14 +49,14 @@ class DatabaseSeeder extends Seeder
                 'company_id' => 'CMP-001',
                 'branch_id' => 'BR-001',
                 'can_open_sidebar' => false,
-                'permissions' => ['pos_login', 'pos_orders'],
+                'permissions' => ['pos_login', 'pos_orders', 'staff_shifts', 'branch_shift_manage'],
             ],
             [
                 'name' => 'Staff 2',
                 'name_en' => 'Staff 2',
                 'name_ar' => 'موظف 2',
                 'email' => 'staff2@nurfoodes.com',
-                'password' => Hash::make('1052'),
+                'password' => Hash::make(Str::random(48)),
                 'staff_id' => 'STF-1052',
                 'role' => 'staff',
                 'salt' => '7a5b3c1d9e2f4a6b8c0d1e3f5a7b9c2d',
@@ -60,7 +64,7 @@ class DatabaseSeeder extends Seeder
                 'company_id' => 'CMP-001',
                 'branch_id' => 'BR-001',
                 'can_open_sidebar' => false,
-                'permissions' => ['pos_login', 'pos_orders'],
+                'permissions' => ['pos_login', 'pos_orders', 'staff_shifts', 'branch_shift_manage'],
             ],
         ];
 
@@ -86,7 +90,10 @@ class DatabaseSeeder extends Seeder
             PosCustomer::updateOrCreate(['id' => $cust['id']], $cust);
         }
 
+        $this->call(PosCatalogSeeder::class);
+
         // 3. Seed Initial Active Shift
+        $cashier = User::where('staff_id', 'STF-1050')->firstOrFail();
         PosShift::updateOrCreate(
             ['id' => 'SH-101'],
             [
@@ -94,7 +101,7 @@ class DatabaseSeeder extends Seeder
                 'cashier' => 'Cashier',
                 'cashier_en' => 'Cashier',
                 'cashier_ar' => 'كاشير',
-                'user_id' => 'usr_cashier',
+                'user_id' => (string)$cashier->id,
                 'staff_id' => 'STF-1050',
                 'company_id' => 'CMP-001',
                 'branch_id' => 'BR-001',
