@@ -56,7 +56,7 @@ export default defineConfig(({ mode }) => {
         const destManifest = resolve(frontendRoot, 'dist', 'manifest.json');
         if (fs.existsSync(srcManifest)) fs.copyFileSync(srcManifest, destManifest);
 
-        for (const page of ['dashboard.html', 'new_shift.html', 'splash.html']) {
+        for (const page of ['dashboard.html', 'new_shift.html', 'splash.html', 'owner-setup.html']) {
           const srcPage = resolve(frontendRoot, page);
           if (fs.existsSync(srcPage)) fs.copyFileSync(srcPage, resolve(frontendRoot, 'dist', page));
         }

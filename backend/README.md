@@ -38,4 +38,10 @@ No backup schedule or provider integration is configured in this repository. For
 
 For a restore drill, provision a new isolated database with a matching engine/version, restore the backup there using the protected client configuration, then verify `php artisan migrate:status`, tenant/branch counts, representative order lines/payment rows, and API reads. Keep the restore network-isolated from live systems. No restore test was run in this assessment because no staging database was provided.
 
+## First owner setup
+
+The existing POS owner bootstrap is a one-time HTTPS form at `/owner-setup.html`. It is disabled unless `OWNER_SETUP_TOKEN` is configured with a cryptographically random secret of at least 43 characters and the `users` table is empty. Generate a fresh 32-byte secret in a password manager or cryptographic secret generator and set it only in Render's service environment; never commit it or put it in a URL. The owner submits their own name, email, staff ID, existing company/branch and a new 4-digit PIN. PINs previously disclosed in project messages are rejected. The backend uses the same PBKDF2-SHA256 format as POS login, locks the selected existing company row during the empty-table check, and creates no company or branch. After the first user is created the setup endpoints return unavailable even if the token remains configured; remove `OWNER_SETUP_TOKEN` from Render after confirming owner login.
+
+Do not set the token or use the setup form until the TiDB password has been rotated and the Render database secret updated. The local database dump/restore verification must also be completed first. This code does not create an owner automatically.
+
 Prefer a forward corrective migration for an applied production schema. `php artisan migrate:rollback --step=1` can remove data; use it only after reviewing the latest migration's `down()` method, confirming backup/recovery, and rehearsing against an isolated copy. Never use `migrate:fresh` against business data.

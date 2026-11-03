@@ -2,6 +2,7 @@ const ALLOWED_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 const ROUTES = [
     /^\/api\/health$/,
     /^\/api\/auth\/(login|pin|session|logout)$/,
+    /^\/api\/setup\/(status|owner)$/,
     /^\/api\/(orders|reports|customers|inventory|shifts)$/,
     /^\/api\/branches$/,
     /^\/api\/orders\/[^/]+\/cancel$/,
@@ -56,6 +57,7 @@ module.exports = async function proxyToLaravel(req, res) {
             try { headers.Authorization = `Bearer ${decodeURIComponent(session.slice('nurpos_session='.length))}`; } catch (_) {}
         }
     }
+    if (req.headers['x-owner-setup-token']) headers['X-Owner-Setup-Token'] = req.headers['x-owner-setup-token'];
     if (req.headers['content-type']) headers['Content-Type'] = req.headers['content-type'];
     if (req.headers['x-request-id']) headers['X-Request-ID'] = req.headers['x-request-id'];
 

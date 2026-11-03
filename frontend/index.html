@@ -789,6 +789,7 @@
         <button class="kiosk-login-btn" onclick="kioskSubmitLogin()">
             <span data-i18n="btn_login_kiosk">Log In</span>
         </button>
+        <a id="firstOwnerSetupLink" class="first-owner-setup-link" href="owner-setup.html" hidden>First-time owner setup</a>
     </div>
 </div>
 
@@ -1980,5 +1981,11 @@
 <script src="js/shifts.js?v=3"></script>
 <script src="js/app.js?v=20261103_02"></script>
 <script src="js/kitchen_stock.js?v=2"></script>
+<script>
+    fetch('/api/setup/status', { headers: { Accept: 'application/json' }, cache: 'no-store' })
+        .then(response => response.ok ? response.json() : null)
+        .then(data => { if (data?.available === true) document.getElementById('firstOwnerSetupLink')?.removeAttribute('hidden'); })
+        .catch(() => {});
+</script>
 </body>
 </html>

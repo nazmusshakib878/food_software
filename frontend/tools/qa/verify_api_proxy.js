@@ -36,6 +36,18 @@ function response() {
     if (res.statusCode !== 200 || observed.url !== 'https://laravel.example.test/api/health') throw new Error('Health endpoint was not accepted by the API proxy');
 
     res = response();
+    await proxy({ method: 'GET', url: '/api/setup/status', headers: {} }, res);
+    if (res.statusCode !== 200 || observed.url !== 'https://laravel.example.test/api/setup/status') throw new Error('Owner setup status route was not accepted by the API proxy');
+
+    res = response();
+    await proxy({
+        method: 'POST', url: '/api/setup/owner',
+        headers: { 'content-type': 'application/json', 'x-owner-setup-token': 'test-token-do-not-use' },
+        body: { name: 'Test only' }
+    }, res);
+    if (res.statusCode !== 200 || observed.options.headers['X-Owner-Setup-Token'] !== 'test-token-do-not-use') throw new Error('Owner setup token header was not forwarded');
+
+    res = response();
     await proxy({
         method: 'POST', url: '/api/orders',
         headers: { cookie: 'other=ignored; nurpos_session=opaque-token', 'content-type': 'application/json' },
@@ -46,7 +58,7 @@ function response() {
     if ('Cookie' in observed.options.headers) throw new Error('Browser cookies should not be forwarded to Laravel');
     if (observed.url !== 'https://laravel.example.test/api/orders') throw new Error(`Unexpected target ${observed.url}`);
     if (res.headers['cache-control'] !== 'no-store') throw new Error('Private API response is not marked no-store');
-    console.log('API proxy verification passed: fail-closed configuration, route allowlist, cookie-to-bearer translation, no cookie forwarding, and no-store responses.');
+    console.log('API proxy verification passed: fail-closed configuration, route allowlist including owner setup, cookie-to-bearer translation, no cookie forwarding, and no-store responses.');
 })().catch(error => {
     console.error(error);
     process.exitCode = 1;

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>First Owner Setup · Nur Foodes POS</title>
+  <style>
+    :root{color-scheme:dark;font:16px system-ui,sans-serif;background:#101a1d;color:#f5f7f7}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}.card{width:min(100%,520px);padding:30px;border:1px solid #33484b;border-radius:16px;background:#182528;box-shadow:0 18px 55px #0005}h1{margin:0 0 8px;color:#e8b84a;font-size:1.65rem}p{color:#bfd0d0;line-height:1.5}label{display:block;margin:15px 0 6px;font-size:.9rem}input,select{width:100%;padding:12px;border:1px solid #52666a;border-radius:8px;background:#101a1d;color:#fff;font:inherit}button{width:100%;margin-top:22px;padding:13px;border:0;border-radius:8px;background:#e8b84a;color:#172124;font-weight:700;font:inherit;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.hint{font-size:.83rem}.message{min-height:1.5em;margin-top:14px;color:#f1c6a8}.hidden{display:none}a{color:#e8b84a}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>First Owner Setup</h1>
+    <p id="status">Checking whether initial setup is available…</p>
+    <form id="ownerForm" class="hidden" autocomplete="off">
+      <label for="setupToken">One-time setup token</label>
+      <input id="setupToken" type="password" autocomplete="new-password" required minlength="43">
+      <label for="ownerName">Owner name</label>
+      <input id="ownerName" name="name" maxlength="120" autocomplete="name" required>
+      <label for="ownerEmail">Email</label>
+      <input id="ownerEmail" name="email" type="email" maxlength="255" autocomplete="email" required>
+      <label for="staffId">Staff ID (2–80 letters, numbers, - or _)</label>
+      <input id="staffId" name="staff_id" maxlength="80" pattern="[A-Za-z0-9_-]{2,80}" required>
+      <label for="companyId">Existing company</label>
+      <select id="companyId" name="company_id" required></select>
+      <label for="branchId">Existing branch</label>
+      <select id="branchId" name="branch_id" required></select>
+      <label for="ownerPin">New 4-digit POS PIN</label>
+      <input id="ownerPin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" required>
+      <label for="ownerPinConfirmation">Confirm PIN</label>
+      <input id="ownerPinConfirmation" name="pin_confirmation" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" required>
+      <p class="hint">Choose a new PIN. Previously disclosed sample codes are rejected. The form sends it only over HTTPS and does not save it in this browser.</p>
+      <button id="submitButton" type="submit">Create first owner</button>
+    </form>
+    <p id="message" class="message" role="status" aria-live="polite"></p>
+    <p><a href="/">Return to POS login</a></p>
+  </main>
+  <script src="js/owner-setup.js"></script>
+</body>
+</html>
