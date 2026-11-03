@@ -462,6 +462,26 @@ class PosApiTest extends TestCase
         ])->assertNotFound();
     }
 
+    public function test_admin_can_persist_a_bounded_raster_data_uri_product_image(): void
+    {
+        $cashier = User::where('staff_id', 'STF-1050')->firstOrFail();
+        $cashier->permissions = array_merge($cashier->permissions ?? [], ['catalog_manage']);
+        $cashier->save();
+        $image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+nmj8AAAAASUVORK5CYII=';
+
+        $this->actingAs($cashier, 'sanctum')->postJson('/api/catalog/products', [
+            'productId' => 'image-upload-test', 'categoryId' => 'meals', 'nameEn' => 'Image Test',
+            'nameAr' => 'صورة', 'image' => $image, 'price' => 5, 'taxRate' => 15,
+        ])->assertCreated()->assertJsonPath('product.image', $image);
+
+        $this->assertDatabaseHas('pos_products', ['product_id' => 'image-upload-test', 'image' => $image]);
+
+        $this->actingAs($cashier, 'sanctum')->postJson('/api/catalog/products', [
+            'productId' => 'invalid-image-test', 'categoryId' => 'meals', 'nameEn' => 'Invalid Image',
+            'nameAr' => 'صورة', 'image' => 'data:image/png;base64,SGVsbG8=', 'price' => 5, 'taxRate' => 15,
+        ])->assertUnprocessable();
+    }
+
     public function test_designated_cashier_can_close_another_users_branch_shift(): void
     {
         $cashier = User::where('staff_id', 'STF-1050')->first();

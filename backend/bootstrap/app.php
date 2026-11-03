@@ -13,9 +13,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Nginx is the only HTTP proxy in front of PHP-FPM. Trust only the
-        // immediate peer for forwarded client IP and HTTPS metadata.
-        $middleware->trustProxies('REMOTE_ADDR', Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO);
+        // Keep the OCI/default topology constrained while allowing the Render
+        // load balancer to provide HTTPS and client IP metadata when configured.
+        $middleware->trustProxies(
+            env('TRUSTED_PROXIES', 'REMOTE_ADDR'),
+            Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

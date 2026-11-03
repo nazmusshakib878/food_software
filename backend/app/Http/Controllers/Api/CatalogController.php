@@ -96,7 +96,7 @@ class CatalogController extends Controller
             'nameAr' => ['required', 'string', 'max:150'],
             'subtitleEn' => ['nullable', 'string', 'max:180'],
             'subtitleAr' => ['nullable', 'string', 'max:180'],
-            'image' => ['nullable', 'url:http,https', 'max:2048'],
+            'image' => ['nullable', $this->imageRule()],
             'price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
             'taxRate' => ['required', 'numeric', 'min:0', 'max:100'],
             'available' => ['sometimes', 'boolean'],
@@ -139,7 +139,7 @@ class CatalogController extends Controller
             'code' => ['nullable', 'string', 'max:80'],
             'nameEn' => ['sometimes', 'string', 'max:150'], 'nameAr' => ['sometimes', 'string', 'max:150'],
             'subtitleEn' => ['nullable', 'string', 'max:180'], 'subtitleAr' => ['nullable', 'string', 'max:180'],
-            'image' => ['nullable', 'url:http,https', 'max:2048'],
+            'image' => ['nullable', $this->imageRule()],
             'price' => ['sometimes', 'numeric', 'min:0', 'max:99999999.99'],
             'taxRate' => ['sometimes', 'numeric', 'min:0', 'max:100'],
             'available' => ['sometimes', 'boolean'],
@@ -170,5 +170,38 @@ class CatalogController extends Controller
     private function canManageCatalog($user): bool
     {
         return $user->role === 'admin' || in_array('catalog_manage', $user->permissions ?? [], true);
+    }
+
+    private function imageRule(): \Closure
+    {
+        return static function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '') return;
+
+            if (is_string($value) && strlen($value) <= 2048 && filter_var($value, FILTER_VALIDATE_URL)) {
+                if (in_array(strtolower((string) parse_url($value, PHP_URL_SCHEME)), ['http', 'https'], true)) return;
+            }
+
+            if (!is_string($value) || strlen($value) > 2_800_000 || !preg_match(
+                '/\Adata:image\/(png|jpeg|gif|webp);base64,([A-Za-z0-9+\/=]+)\z/D',
+                $value,
+                $matches,
+            )) {
+                $fail('The image must be an HTTP(S) URL or a supported image up to 2 MB.');
+                return;
+            }
+
+            $contents = base64_decode($matches[2], true);
+            if ($contents === false || strlen($contents) > 2 * 1024 * 1024) {
+                $fail('The uploaded image must not exceed 2 MB.');
+                return;
+            }
+
+            $image = @getimagesizefromstring($contents);
+            $expectedMime = 'image/'.$matches[1];
+            if (!$image || $image['mime'] !== $expectedMime
+                || $image[0] > 4096 || $image[1] > 4096 || ($image[0] * $image[1]) > 16_000_000) {
+                $fail('The uploaded image content does not match its file type.');
+            }
+        };
     }
 }

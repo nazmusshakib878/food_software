@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/health', function () {
     try {
         $connection = DB::connection();
-        if (app()->environment('production') && $connection->getDriverName() === 'sqlite') {
+        if (app()->environment('production') && $connection->getDriverName() !== 'mysql') {
             return response()->json(['status' => 'unavailable'], 503);
         }
 

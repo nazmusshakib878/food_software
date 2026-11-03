@@ -16,7 +16,7 @@ class HealthCheckTest extends TestCase
             ->assertExactJson(['status' => 'ok']);
     }
 
-    public function test_production_health_endpoint_rejects_ephemeral_sqlite(): void
+    public function test_production_health_endpoint_requires_mysql_driver(): void
     {
         $this->app['env'] = 'production';
         config(['app.env' => 'production', 'database.default' => 'sqlite']);
@@ -25,4 +25,5 @@ class HealthCheckTest extends TestCase
             ->assertServiceUnavailable()
             ->assertExactJson(['status' => 'unavailable']);
     }
+
 }

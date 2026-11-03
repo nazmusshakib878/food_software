@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: nur-foodes-pos-api
+    name: nur-foodes-pos-backend
     runtime: docker
     plan: free
     region: singapore
@@ -22,9 +22,23 @@ services:
       - key: LOG_LEVEL
         value: warning
       - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
         sync: false
-      - key: DB_URL
+      - key: DB_PORT
         sync: false
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: MYSQL_ATTR_SSL_CA
+        value: /etc/ssl/certs/ca-certificates.crt
+      - key: MYSQL_ATTR_SSL_VERIFY_SERVER_CERT
+        value: "true"
+      - key: TRUSTED_PROXIES
+        value: "*"
       - key: SANCTUM_STATEFUL_DOMAINS
         value: food-software-sigma.vercel.app
       - key: FRONTEND_ORIGINS
@@ -32,6 +46,8 @@ services:
       - key: SESSION_DRIVER
         value: database
       - key: SESSION_LIFETIME
+        value: "480"
+      - key: SANCTUM_EXPIRATION
         value: "480"
       - key: SESSION_SECURE_COOKIE
         value: "true"

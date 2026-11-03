@@ -364,9 +364,15 @@ function updateItemImagePreview(url, catId = null) {
 function handleItemFileUpload(input) {
     if (!input || !input.files || !input.files[0]) return;
     const file = input.files[0];
-    
-    if (!file.type.startsWith('image/')) {
-        showToast(currentLang === 'ar' ? "يرجى اختيار ملف صورة صالح" : "Please select a valid image file", "danger");
+
+    if (!['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type)) {
+        showToast(currentLang === 'ar' ? "يرجى اختيار صورة PNG أو JPEG أو GIF أو WebP" : "Choose a PNG, JPEG, GIF, or WebP image", "danger");
+        input.value = '';
+        return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+        showToast(currentLang === 'ar' ? "يجب ألا يتجاوز حجم الصورة 2 ميجابايت" : "Image must be 2 MB or smaller", "danger");
+        input.value = '';
         return;
     }
 
