@@ -23,7 +23,7 @@ async function loadSetupStatus() {
     }
 
     try {
-        const response = await fetch('/api/setup/status', {
+        const response = await fetch('/api/setup', {
             headers: { Accept: 'application/json' },
             cache: 'no-store',
         });
@@ -63,7 +63,7 @@ form.addEventListener('submit', async event => {
     delete payload.setupToken;
 
     try {
-        const response = await fetch('/api/setup/owner', {
+        const response = await fetch('/api/setup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

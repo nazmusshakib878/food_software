@@ -2,7 +2,7 @@ const ALLOWED_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 const ROUTES = [
     /^\/api\/health$/,
     /^\/api\/auth\/(login|pin|session|logout)$/,
-    /^\/api\/setup\/(status|owner)$/,
+    /^\/api\/setup$/,
     /^\/api\/(orders|reports|customers|inventory|shifts)$/,
     /^\/api\/branches$/,
     /^\/api\/orders\/[^/]+\/cancel$/,

@@ -36,12 +36,12 @@ function response() {
     if (res.statusCode !== 200 || observed.url !== 'https://laravel.example.test/api/health') throw new Error('Health endpoint was not accepted by the API proxy');
 
     res = response();
-    await proxy({ method: 'GET', url: '/api/setup/status', headers: {} }, res);
-    if (res.statusCode !== 200 || observed.url !== 'https://laravel.example.test/api/setup/status') throw new Error('Owner setup status route was not accepted by the API proxy');
+    await proxy({ method: 'GET', url: '/api/setup', headers: {} }, res);
+    if (res.statusCode !== 200 || observed.url !== 'https://laravel.example.test/api/setup') throw new Error('Owner setup status route was not accepted by the API proxy');
 
     res = response();
     await proxy({
-        method: 'POST', url: '/api/setup/owner',
+        method: 'POST', url: '/api/setup',
         headers: { 'content-type': 'application/json', 'x-owner-setup-token': 'test-token-do-not-use' },
         body: { name: 'Test only' }
     }, res);

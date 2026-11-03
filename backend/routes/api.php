@@ -34,8 +34,8 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/pin', [AuthController::class, 'login']);
 
 // First owner setup is closed unless a strong secret is configured and users is empty.
-Route::get('/setup/status', [OwnerSetupController::class, 'status'])->middleware('throttle:30,1');
-Route::post('/setup/owner', [OwnerSetupController::class, 'create'])->middleware('throttle:10,1');
+Route::get('/setup', [OwnerSetupController::class, 'status'])->middleware('throttle:30,1');
+Route::post('/setup', [OwnerSetupController::class, 'create'])->middleware('throttle:10,1');
 
 // Protected POS Routes (Sanctum)
 Route::middleware('auth:sanctum')->group(function () {

@@ -1982,7 +1982,7 @@
 <script src="js/app.js?v=20261103_02"></script>
 <script src="js/kitchen_stock.js?v=2"></script>
 <script>
-    fetch('/api/setup/status', { headers: { Accept: 'application/json' }, cache: 'no-store' })
+    fetch('/api/setup', { headers: { Accept: 'application/json' }, cache: 'no-store' })
         .then(response => response.ok ? response.json() : null)
         .then(data => { if (data?.available === true) document.getElementById('firstOwnerSetupLink')?.removeAttribute('hidden'); })
         .catch(() => {});
