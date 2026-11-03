@@ -37,6 +37,7 @@ services:
       CACHE_STORE: database
       QUEUE_CONNECTION: database
       SESSION_SECURE_COOKIE: "true"
+      APP_TIMEZONE: Asia/Dhaka
     volumes:
       - laravel_storage:/var/www/html/storage
     networks:

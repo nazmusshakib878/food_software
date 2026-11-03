@@ -39,6 +39,10 @@ chmod 700 deploy/oci deploy/oci/letsencrypt deploy/oci/backups
 docker compose --env-file "$ENV_FILE" -f docker-compose.oci.yml build app
 docker compose --env-file "$ENV_FILE" -f docker-compose.oci.yml up -d db app nginx
 
+# The first start creates the database volume; migrations are additive in this
+# repository. Existing databases keep their records; no seeders are run.
+docker compose --env-file "$ENV_FILE" -f docker-compose.oci.yml exec -T app php artisan migrate --force
+
 if [[ ! -s deploy/oci/letsencrypt/live/nur-food-pos/fullchain.pem ]]; then
   docker compose --env-file "$ENV_FILE" -f docker-compose.oci.yml run --rm certbot \
     certonly --webroot -w /var/www/certbot --cert-name nur-food-pos \
@@ -51,4 +55,4 @@ docker compose --env-file "$ENV_FILE" -f docker-compose.oci.yml restart nginx
 docker compose --env-file "$ENV_FILE" -f docker-compose.oci.yml ps
 curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 3 "$APP_URL/up"
 echo
-echo "TLS is configured. Review migration status and take a database backup before applying migrations."
+echo "TLS is configured. Verify database status and backup/restore monitoring."
