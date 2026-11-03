@@ -757,12 +757,22 @@ async function authenticatePosPin(pin) {
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({ pin })
         });
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch (_) {
+            data = null;
+        }
         if (response.ok && data.success && data.session?.user) return data.session.user;
-        showToast(data.error || 'Sign-in failed.', 'danger');
+        const fallback = response.status === 503
+            ? 'Login service is not configured. Contact the administrator.'
+            : response.status === 502
+                ? 'Login service is offline. Check the backend connection.'
+                : `Sign-in failed (${response.status || 'unknown error'}).`;
+        showToast(data?.error || fallback, 'danger');
         return null;
     } catch (_) {
-        showToast('Authentication service is unavailable.', 'danger');
+        showToast('Cannot reach the login service. Check your internet connection.', 'danger');
         return null;
     }
 }

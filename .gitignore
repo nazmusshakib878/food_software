@@ -65,3 +65,9 @@ frontend/tools/archive/scratch/*
 frontend/.vite/
 frontend/vite.stdout.log
 frontend/vite.stderr.log
+
+# OCI deployment secrets, TLS material, and backups
+deploy/oci/.env
+deploy/oci/backups/
+deploy/oci/letsencrypt/
+deploy/oci/certbot/www/
