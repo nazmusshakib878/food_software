@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -13,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->redirectGuestsTo(
+            fn (Request $request): ?string => $request->is('api/*') ? null : route('login'),
+        );
+
         // Keep the OCI/default topology constrained while allowing the Render
         // load balancer to provide HTTPS and client IP metadata when configured.
         $middleware->trustProxies(
@@ -21,5 +26,18 @@ return Application::configure(basePath: dirname(__DIR__))
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (AuthenticationException $exception, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['message' => $exception->getMessage()], 401);
+            }
+
+            return null;
+        });
+
+        // API clients must receive JSON errors even when the browser sends
+        // Accept: */* and Laravel would otherwise redirect to a web login page.
+        $exceptions->shouldRenderJsonWhen(
+            fn (Request $request, \Throwable $exception): bool =>
+                $request->is('api/*') || $request->expectsJson(),
+        );
     })->create();

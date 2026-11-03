@@ -82,6 +82,23 @@ class PosApiTest extends TestCase
         $this->postJson('/api/auth/login', ['pin' => '9999'])->assertStatus(401);
     }
 
+    public function test_unauthenticated_api_requests_without_json_accept_header_return_json_401(): void
+    {
+        $this->get('/api/auth/session', ['Accept' => '*/*'])
+            ->assertUnauthorized()
+            ->assertJson(['message' => 'Unauthenticated.']);
+
+        foreach (['/api/orders', '/api/shifts', '/api/reports'] as $path) {
+            $this->get($path, ['Accept' => '*/*'])
+                ->assertUnauthorized()
+                ->assertJson(['message' => 'Unauthenticated.']);
+        }
+
+        $this->post('/api/auth/logout', [], ['Accept' => '*/*'])
+            ->assertUnauthorized()
+            ->assertJson(['message' => 'Unauthenticated.']);
+    }
+
     /**
      * Test 4: RBAC on Reports - Cashier allowed (200), Staff blocked (403).
      */

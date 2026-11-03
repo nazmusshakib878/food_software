@@ -32,6 +32,10 @@ function response() {
     if (res.statusCode !== 200 || observed.url !== 'https://laravel.example.test/api/branches') throw new Error('Branch endpoint was not accepted by the API proxy');
 
     res = response();
+    await proxy({ method: 'GET', url: '/api/health', headers: {} }, res);
+    if (res.statusCode !== 200 || observed.url !== 'https://laravel.example.test/api/health') throw new Error('Health endpoint was not accepted by the API proxy');
+
+    res = response();
     await proxy({
         method: 'POST', url: '/api/orders',
         headers: { cookie: 'other=ignored; nurpos_session=opaque-token', 'content-type': 'application/json' },
