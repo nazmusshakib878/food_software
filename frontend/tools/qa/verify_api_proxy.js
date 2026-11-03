@@ -40,6 +40,14 @@ function response() {
     if (res.statusCode !== 200 || observed.url !== 'https://laravel.example.test/api/setup') throw new Error('Owner setup status route was not accepted by the API proxy');
 
     res = response();
+    await proxy({ method: 'GET', url: '/api/index?_route=auth%2Fsession', headers: {} }, res);
+    if (res.statusCode !== 200 || observed.url !== 'https://laravel.example.test/api/auth/session') throw new Error('Single-function rewrite did not dispatch the authentication session route');
+
+    res = response();
+    await proxy({ method: 'GET', url: '/api/index?_route=reports&from=2026-11-01&to=2026-11-04', headers: {} }, res);
+    if (res.statusCode !== 200 || observed.url !== 'https://laravel.example.test/api/reports?from=2026-11-01&to=2026-11-04') throw new Error('Single-function rewrite did not preserve endpoint query parameters');
+
+    res = response();
     await proxy({
         method: 'POST', url: '/api/setup',
         headers: { 'content-type': 'application/json', 'x-owner-setup-token': 'test-token-do-not-use' },

@@ -4,6 +4,7 @@
   "outputDirectory": "frontend/dist",
   "framework": "vite",
   "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/index?_route=:path*" },
     { "source": "/dashboard", "destination": "/dashboard.html" },
     { "source": "/new-shift", "destination": "/new_shift.html" }
   ]

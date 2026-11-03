@@ -42,13 +42,22 @@ module.exports = async function proxyToLaravel(req, res) {
         return res.end(JSON.stringify({ success: false, error: 'Laravel API origin is invalid' }));
     }
 
-    // Vercel rewrites the entire /api/* namespace to this single catch-all
-    // function to stay within Hobby's 12-function deployment limit. Depending
-    // on rewrite routing, the function may receive either /api/... or /... .
     const requestUrl = new URL(req.url || '/', 'https://frontend.invalid');
-    const path = requestUrl.pathname.startsWith('/api/')
-        ? requestUrl.pathname
-        : `/api${requestUrl.pathname === '/' ? '' : requestUrl.pathname}`;
+    let path;
+    if (requestUrl.pathname === '/api/index') {
+        const route = requestUrl.searchParams.get('_route') || '';
+        if (!route || route.startsWith('/') || route.includes('..') || route.includes('\\')) {
+            res.statusCode = 404;
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({ success: false, error: 'API route not found' }));
+        }
+        path = `/api/${route}`;
+        requestUrl.searchParams.delete('_route');
+    } else {
+        path = requestUrl.pathname.startsWith('/api/')
+            ? requestUrl.pathname
+            : `/api${requestUrl.pathname === '/' ? '' : requestUrl.pathname}`;
+    }
     if (!ROUTES.some(route => route.test(path))) {
         res.statusCode = 404;
         res.setHeader('Content-Type', 'application/json');
