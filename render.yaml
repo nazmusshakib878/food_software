@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: nur-foodes-pos-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile.render
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: APP_NAME
+        value: Nur Food POS API
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        generateValue: true
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: warning
+      - key: DB_CONNECTION
+        sync: false
+      - key: DB_URL
+        sync: false
+      - key: SANCTUM_STATEFUL_DOMAINS
+        value: food-software-sigma.vercel.app
+      - key: FRONTEND_ORIGINS
+        value: https://food-software-sigma.vercel.app
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_LIFETIME
+        value: "480"
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
+      - key: SESSION_SAME_SITE
+        value: lax
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: APP_TIMEZONE
+        value: Asia/Dhaka

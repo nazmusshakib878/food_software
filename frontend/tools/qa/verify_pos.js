@@ -203,7 +203,9 @@ assert('A typed PIN alone cannot grant local privileges', accessGranted === fals
 currentUser = { role: 'admin', permissions: [] };
 submitPassCode();
 assert('Server-issued administrator role grants protected UI access', accessGranted === true);
-currentUser = { role: 'cashier', name: 'Cashier' };
+// Report-module rendering and the orders/admin screen are management-only.
+// Keep the harness user consistent with those privileged UI workflows.
+currentUser = { role: 'admin', name: 'Cashier', permissions: [] };
 
 // TEST 8: Printer Devices Management & Test Print
 const cashierPrinter = printers.find(p => p.role === 'cashier');

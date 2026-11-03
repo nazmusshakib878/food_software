@@ -8,7 +8,25 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\ShiftController;
 use App\Models\PosCustomer;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+
+// Readiness probe used by Render. It verifies database connectivity without
+// reading or modifying business data, and never returns connection details.
+Route::get('/health', function () {
+    try {
+        $connection = DB::connection();
+        if (app()->environment('production') && $connection->getDriverName() === 'sqlite') {
+            return response()->json(['status' => 'unavailable'], 503);
+        }
+
+        $connection->getPdo();
+
+        return response()->json(['status' => 'ok']);
+    } catch (\Throwable) {
+        return response()->json(['status' => 'unavailable'], 503);
+    }
+});
 
 // Public Authentication endpoints
 Route::post('/auth/login', [AuthController::class, 'login']);

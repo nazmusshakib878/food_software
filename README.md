@@ -67,7 +67,9 @@ php artisan test
 
 ## Deployment
 
-Vercel builds the frontend using the root `vercel.json` configuration. Configure `NURPOS_LARAVEL_API_ORIGIN` as a server-side Vercel environment variable pointing to the deployed Laravel API. Production origins must use HTTPS. Configure the Laravel environment, database, and allowed frontend origins separately in the backend host.
+The frontend remains on the existing Vercel project. The Laravel API is prepared as a Render Docker web service by [`render.yaml`](render.yaml), using the Render-specific Apache image in `backend/Dockerfile.render`; the OCI Docker image remains separate. The Blueprint intentionally requires `DB_CONNECTION` and `DB_URL` to be supplied after a database provider is selected and tested. It does not assume PostgreSQL compatibility, and it does not run migrations automatically. Review the target database, verify its contents, and confirm a recoverable backup before applying migrations.
+
+The Render free web service sleeps after inactivity and has an ephemeral filesystem. Keep all business data, sessions, cache, and queued jobs in the external database. Render's free PostgreSQL expires after 30 days, so it is not a permanent production choice. The health check rejects production SQLite. A database provider must be selected, separately authorized, and tested before its connection is configured. The Render environment also requires `APP_KEY` (generated once by Render), `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` (derived at startup from Render's hostname), and `SANCTUM_STATEFUL_DOMAINS`; set `FRONTEND_ORIGINS` to the exact Vercel origin. After the API service has a stable HTTPS URL, set the existing Vercel project's server-side `NURPOS_LARAVEL_API_ORIGIN` to that origin and redeploy the same project.
 
 See [production readiness notes](docs/PRODUCTION_READINESS.md), [staging environment example](backend/.env.staging.example), and the reports in [`docs/reports/`](docs/reports/) for deployment details and verification evidence.
 
