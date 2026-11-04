@@ -1,0 +1,66 @@
+name: Provision initial POS accounts
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'dry_run validates only; provision creates eligible accounts'
+        required: true
+        default: dry_run
+        type: choice
+        options: [dry_run, provision]
+      confirmation:
+        description: 'Required for provision: CREATE_INITIAL_POS_ACCOUNTS'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: initial-pos-account-provisioning
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-24.04
+    env:
+      APP_ENV: production
+      APP_DEBUG: 'false'
+      APP_KEY: ${{ secrets.APP_KEY }}
+      DB_CONNECTION: mysql
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_DATABASE: ${{ secrets.DB_DATABASE }}
+      DB_USERNAME: ${{ secrets.DB_USERNAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      MYSQL_ATTR_SSL_CA: /etc/ssl/certs/ca-certificates.crt
+      MYSQL_ATTR_SSL_VERIFY_SERVER_CERT: 'true'
+      NURPOS_INITIAL_CASHIER_PIN: ${{ secrets.NURPOS_INITIAL_CASHIER_PIN }}
+      NURPOS_INITIAL_STAFF_1_PIN: ${{ secrets.NURPOS_INITIAL_STAFF_1_PIN }}
+      NURPOS_INITIAL_STAFF_2_PIN: ${{ secrets.NURPOS_INITIAL_STAFF_2_PIN }}
+      NURPOS_INITIAL_ADMIN_PIN: ${{ secrets.NURPOS_INITIAL_ADMIN_PIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql
+          tools: composer:v2
+      - name: Install backend dependencies
+        working-directory: backend
+        run: composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
+      - name: Validate configuration
+        working-directory: backend
+        run: php artisan about --only=environment
+      - name: Dry run
+        if: inputs.mode == 'dry_run'
+        working-directory: backend
+        run: php artisan pos:provision-initial-accounts --dry-run --no-interaction
+      - name: Provision accounts
+        if: inputs.mode == 'provision' && inputs.confirmation == 'CREATE_INITIAL_POS_ACCOUNTS'
+        working-directory: backend
+        run: php artisan pos:provision-initial-accounts --force --no-interaction
+      - name: Reject unconfirmed provisioning
+        if: inputs.mode == 'provision' && inputs.confirmation != 'CREATE_INITIAL_POS_ACCOUNTS'
+        run: exit 1
