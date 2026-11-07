@@ -182,7 +182,7 @@ function renderReturnsOrdersList() {
         
         if (!matchTab) return false;
 
-        // Search filtering: Order Number, Invoice ID, Creator Label, Customer/User/Cashier name
+        // Search filtering: Order Number, Invoice ID, Creator Label, Customer/User/Cashier name, Payment Type, Notes
         if (searchTerm) {
             const invoiceMatch = order.id && order.id.toLowerCase().includes(searchTerm);
             const orderNumMatch = (order.seq && order.seq.toString().toLowerCase().includes(searchTerm)) ||
@@ -191,10 +191,16 @@ function renderReturnsOrdersList() {
             const creatorMatch = creatorInfo.label.toLowerCase().includes(searchTerm);
             const userMatch = (order.cashierName && order.cashierName.toLowerCase().includes(searchTerm)) ||
                               (order.cashier && order.cashier.toLowerCase().includes(searchTerm)) ||
+                              (order.userName && order.userName.toLowerCase().includes(searchTerm)) ||
+                              (order.staffName && order.staffName.toLowerCase().includes(searchTerm)) ||
                               (order.returnedBy && order.returnedBy.toLowerCase().includes(searchTerm));
             const custMatch = (order.customer && order.customer.toLowerCase().includes(searchTerm)) ||
                               (order.customerName && order.customerName.toLowerCase().includes(searchTerm));
-            if (!invoiceMatch && !orderNumMatch && !creatorMatch && !userMatch && !custMatch) return false;
+            const paymentType = String(order.paymentMethod || order.method || '').toLowerCase();
+            const paymentTypeMatch = paymentType.includes(searchTerm);
+            const notesMatch = order.notes && String(order.notes).toLowerCase().includes(searchTerm);
+
+            if (!invoiceMatch && !orderNumMatch && !creatorMatch && !userMatch && !custMatch && !paymentTypeMatch && !notesMatch) return false;
         }
         return true;
     });
@@ -254,6 +260,12 @@ function renderReturnsOrdersList() {
                         <span class="ret-label">User Name:</span>
                         <span class="ret-value">[${escapeHtml(cashierName)}]</span>
                     </div>
+
+                    ${order.notes ? `
+                    <div class="ret-info-notes">
+                        <span class="ret-label">Notes:</span>
+                        <span class="ret-value">${escapeHtml(order.notes)}</span>
+                    </div>` : ''}
                 </div>
 
                 <!-- 4 Action Buttons in EXACT ORDER: Order Delivered | Return | Kitchen Print | Print -->

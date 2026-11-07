@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PosInventoryMovement;
 use App\Models\PosOrder;
+use App\Models\PosOrderCounter;
 use App\Models\PosOrderItem;
 use App\Models\PosPaymentTransaction;
 use App\Models\PosProduct;
@@ -28,10 +29,6 @@ class OrderController extends Controller
             ->where('company_id', $user->company_id)
             ->where('branch_id', $user->branch_id);
 
-        if ($user->role === 'staff') {
-            $query->where('user_id', (string) $user->id);
-        }
-
         if ($request->filled('status')) $query->where('status', $request->query('status'));
         if ($request->filled('from')) $query->whereDate('created_at', '>=', $request->query('from'));
         if ($request->filled('to')) $query->whereDate('created_at', '<=', $request->query('to'));
@@ -40,17 +37,25 @@ class OrderController extends Controller
             $creator = strtolower((string) $request->query('creator'));
             if ($creator === 'cashier') {
                 $query->where(function ($q) {
-                    $q->where('client_order_id', 'LIKE', 'A.%')
+                    $q->where('order_number', 'LIKE', 'A.%')
+                      ->orWhere('order_number', 'LIKE', 'a.%')
+                      ->orWhere('client_order_id', 'LIKE', 'A.%')
                       ->orWhere('client_order_id', 'LIKE', 'a.%')
                       ->orWhere('id', 'LIKE', 'A.%')
                       ->orWhere('id', 'LIKE', 'a.%')
+                      ->orWhere('raw_payload', 'LIKE', '%"A.%')
+                      ->orWhere('raw_payload', 'LIKE', '%"a.%')
                       ->orWhereHas('user', function ($uq) {
                           $uq->whereIn('role', ['cashier', 'admin']);
                       });
                 });
             } elseif ($creator === 'staff') {
                 $query->where(function ($q) {
-                    $q->where('client_order_id', 'LIKE', 'B.%')
+                    $q->where('order_number', 'LIKE', 'B.%')
+                      ->orWhere('order_number', 'LIKE', 'b.%')
+                      ->orWhere('order_number', 'LIKE', 'D.%')
+                      ->orWhere('order_number', 'LIKE', 'd.%')
+                      ->orWhere('client_order_id', 'LIKE', 'B.%')
                       ->orWhere('client_order_id', 'LIKE', 'b.%')
                       ->orWhere('client_order_id', 'LIKE', 'D.%')
                       ->orWhere('client_order_id', 'LIKE', 'd.%')
@@ -58,6 +63,10 @@ class OrderController extends Controller
                       ->orWhere('id', 'LIKE', 'b.%')
                       ->orWhere('id', 'LIKE', 'D.%')
                       ->orWhere('id', 'LIKE', 'd.%')
+                      ->orWhere('raw_payload', 'LIKE', '%"B.%')
+                      ->orWhere('raw_payload', 'LIKE', '%"b.%')
+                      ->orWhere('raw_payload', 'LIKE', '%"D.%')
+                      ->orWhere('raw_payload', 'LIKE', '%"d.%')
                       ->orWhereHas('user', function ($uq) {
                           $uq->where('role', 'staff');
                       });
@@ -234,22 +243,15 @@ class OrderController extends Controller
             $orderId = 'ORD-'.Str::upper(Str::random(16));
             $seq = (int)(PosOrder::where('company_id', $user->company_id)->where('branch_id', $user->branch_id)->max('seq') ?? 1000) + 1;
 
-            $assignedOrderNumber = $data['orderNumber'] ?? null;
-            if (!$assignedOrderNumber && preg_match('/^[A-Za-z]\.\d+/i', (string)$clientId)) {
-                $assignedOrderNumber = $clientId;
-            }
-            if (!$assignedOrderNumber) {
-                if ($user->role === 'staff') {
-                    $isStaff2 = ($user->staff_id === 'STF-1052' || str_contains($user->name ?? '', '2'));
-                    $prefix = $isStaff2 ? 'D.' : 'B.';
-                } else {
-                    $prefix = 'A.';
-                }
-                $assignedOrderNumber = $prefix . $seq;
-            }
+            $assignedOrderNumber = PosOrderCounter::generateNextOrderNumber(
+                $user->company_id,
+                $user->branch_id,
+                $user->role
+            );
 
             $order = PosOrder::create([
                 'id' => $orderId,
+                'order_number' => $assignedOrderNumber,
                 'client_order_id' => $clientId,
                 'seq' => $seq,
                 'shift_id' => $shiftId,

@@ -340,6 +340,18 @@
     margin-top: 2px;
 }
 
+.ret-info-notes {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    padding-top: 4px;
+    color: #475569;
+    font-size: 12.5px;
+    font-style: italic;
+    word-break: break-word;
+}
+
 /* =========================================================
    4. ORDER CARD BUTTONS — EXACT ORDER
    Order Delivered | Return | Kitchen Print | Print

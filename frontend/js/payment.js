@@ -373,13 +373,7 @@ async function completeOrderAndShowReceipt(staffAllocation = null, method = "Cas
     let finalMethod = staffAllocation ? "Staff Expense" : method;
     const activeShift = (typeof shifts !== 'undefined' && Array.isArray(shifts)) ? (shifts.find(s => s.status === 'active') || shifts[0]) : null;
 
-    let orderCreatorPrefix;
-    if (currentUser.role === 'staff') {
-        const isStaff2 = currentUser.staffId === 'STF-1052' || (currentUser.name && currentUser.name.includes('2'));
-        orderCreatorPrefix = isStaff2 ? 'D.' : 'B.';
-    } else {
-        orderCreatorPrefix = 'A.';
-    }
+    const orderCreatorPrefix = (currentUser.role === 'staff') ? 'B.' : 'A.';
     const defaultOrderNumber = `${orderCreatorPrefix}${nextOrderSeq}`;
 
     const orderRecord = {

@@ -1865,7 +1865,9 @@ orders = [
         date: new Date().toISOString(),
         total: 100.00,
         status: 'new',
-        method: 'Cash',
+        method: 'Mada',
+        cashierName: 'Staff Member',
+        notes: 'Extra napkins requested',
         customer: 'Cash Customer',
         companyId: 'CMP-001',
         branchId: 'BR-001',
@@ -1926,6 +1928,21 @@ assert("Section 25 Test 9: Searching D.196 excludes B.181", !gridHtmlSearch.incl
 clearReturnsSearch();
 const gridHtmlRestored = document.getElementById('returnsOrdersGrid').innerHTML;
 assert("Section 25 Test 9: Clearing search restores all orders without permanent loss", gridHtmlRestored.includes('A.182') && gridHtmlRestored.includes('D.196') && gridHtmlRestored.includes('B.181'));
+assert("Section 25 Test 9: Card displays order notes when present", gridHtmlRestored.includes('Extra napkins requested'));
+
+// Search by payment type
+document.getElementById('returnsSearchInput').value = 'Mada';
+renderReturnsOrdersList();
+const gridHtmlMada = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 25 Test 9A: Search by payment type (Mada) matches B.181", gridHtmlMada.includes('B.181') && !gridHtmlMada.includes('A.182'));
+
+// Search by user name
+document.getElementById('returnsSearchInput').value = 'Staff Member';
+renderReturnsOrdersList();
+const gridHtmlUser = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 25 Test 9B: Search by user name matches B.181", gridHtmlUser.includes('B.181') && !gridHtmlUser.includes('A.182'));
+
+clearReturnsSearch();
 
 // Test 10: Existing order actions preserved
 assert("Section 25 Test 10: markOrderDelivered exists as a function", typeof markOrderDelivered === 'function');

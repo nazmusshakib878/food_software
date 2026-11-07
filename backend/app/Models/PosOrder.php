@@ -19,6 +19,7 @@ class PosOrder extends Model
 
     protected $fillable = [
         'id',
+        'order_number',
         'client_order_id',
         'seq',
         'shift_id',
@@ -75,6 +76,9 @@ class PosOrder extends Model
 
     public function getOrderNumberAttribute(): string
     {
+        if (!empty($this->attributes['order_number'])) {
+            return (string) $this->attributes['order_number'];
+        }
         if (!empty($this->raw_payload['order_number'])) {
             return (string) $this->raw_payload['order_number'];
         }
@@ -125,9 +129,10 @@ class PosOrder extends Model
                 ];
             }
         }
+        $isLegacy = str_starts_with($orderNum, 'ORD-') || preg_match('/^\d+$/', $orderNum);
         return [
             'type' => 'unknown',
-            'label' => 'UNKNOWN',
+            'label' => $isLegacy ? 'LEGACY' : 'UNKNOWN',
             'is_cashier' => false,
             'is_staff' => false,
         ];
