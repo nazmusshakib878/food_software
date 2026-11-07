@@ -246,7 +246,7 @@ class OrderController extends Controller
             $assignedOrderNumber = PosOrderCounter::generateNextOrderNumber(
                 $user->company_id,
                 $user->branch_id,
-                $user->role
+                $user
             );
 
             $order = PosOrder::create([

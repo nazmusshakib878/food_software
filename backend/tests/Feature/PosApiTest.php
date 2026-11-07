@@ -590,6 +590,7 @@ class PosApiTest extends TestCase
         $this->createOtherTenant();
         $cashier = User::where('staff_id', 'STF-1050')->firstOrFail();
         $staff1 = User::where('staff_id', 'STF-1051')->firstOrFail();
+        $staff2 = User::where('staff_id', 'STF-1052')->firstOrFail();
 
         // 1. First Cashier order starts at sequence A.101 when no prior orders exist
         $respCashier1 = $this->actingAs($cashier, 'sanctum')->postJson('/api/orders', [
@@ -615,7 +616,7 @@ class PosApiTest extends TestCase
         $respCashier2->assertJsonPath('order.order_number', 'A.102')
             ->assertJsonPath('order.creator_classification.label', 'CASHIER');
 
-        // 3. Pre-seed existing orders: A.182 (Cashier), B.181 (Staff), and legacy D.165 (Staff)
+        // 3. Pre-seed existing orders: A.182 (Cashier), B.181 (Staff 1), and D.196 (Staff 2)
         PosOrder::create([
             'id' => 'ORD-SEED-A182',
             'order_number' => 'A.182',
@@ -638,22 +639,22 @@ class PosApiTest extends TestCase
             'paid' => 25,
             'raw_payload' => ['order_number' => 'B.181'],
         ]);
-        $legacyOrder = PosOrder::create([
-            'id' => 'ORD-SEED-D165',
-            'order_number' => 'D.165',
-            'client_order_id' => 'D.165',
+        $orderD196 = PosOrder::create([
+            'id' => 'ORD-SEED-D196',
+            'order_number' => 'D.196',
+            'client_order_id' => 'D.196',
             'company_id' => $cashier->company_id,
             'branch_id' => $cashier->branch_id,
-            'user_id' => (string)$staff1->id,
+            'user_id' => (string)$staff2->id,
             'grand_total' => 30,
             'paid' => 30,
-            'raw_payload' => ['order_number' => 'D.165'],
+            'raw_payload' => ['order_number' => 'D.196'],
         ]);
 
-        // Legacy D.165 retains historical STAFF classification
-        $this->assertEquals('STAFF', $legacyOrder->creator_classification['label']);
-        $this->assertTrue($legacyOrder->creator_classification['is_staff']);
-        $this->assertFalse($legacyOrder->creator_classification['is_cashier']);
+        // Both B and D are classified as STAFF
+        $this->assertEquals('STAFF', $orderD196->creator_classification['label']);
+        $this->assertTrue($orderD196->creator_classification['is_staff']);
+        $this->assertFalse($orderD196->creator_classification['is_cashier']);
 
         // 4. If A.182 exists, the next Cashier order must be A.183
         // Even if client attempts to send B.999, server strictly enforces Cashier = A prefix
@@ -669,13 +670,13 @@ class PosApiTest extends TestCase
         $respCashierNext->assertJsonPath('order.order_number', 'A.183')
             ->assertJsonPath('order.creator_classification.label', 'CASHIER');
 
-        // Open staff shift
+        // Open staff shifts for Staff 1 and Staff 2
         $shift1 = $this->actingAs($staff1, 'sanctum')->postJson('/api/shifts', ['openingCash' => 10])->json('shift.id');
+        $shift2 = $this->actingAs($staff2, 'sanctum')->postJson('/api/shifts', ['openingCash' => 10])->json('shift.id');
 
-        // 5. If B.181 exists, the next Staff order must be B.182
-        // Even if client attempts to send A.999, server strictly enforces Staff = B prefix
-        $respStaffNext = $this->actingAs($staff1, 'sanctum')->postJson('/api/orders', [
-            'orderId' => 'ORD-STAFF-NEXT',
+        // 5. Staff 1 (STF-1051) generates B-prefix: if B.181 exists, next is B.182
+        $respStaff1Next = $this->actingAs($staff1, 'sanctum')->postJson('/api/orders', [
+            'orderId' => 'ORD-STAFF1-NEXT',
             'orderNumber' => 'A.999', // client cannot spoof cashier prefix
             'shiftId' => $shift1,
             'customerId' => 'cash',
@@ -684,7 +685,21 @@ class PosApiTest extends TestCase
             'method' => 'Cash',
             'items' => [['id' => 'item_meat_burger', 'qty' => 1]],
         ])->assertCreated();
-        $respStaffNext->assertJsonPath('order.order_number', 'B.182')
+        $respStaff1Next->assertJsonPath('order.order_number', 'B.182')
+            ->assertJsonPath('order.creator_classification.label', 'STAFF');
+
+        // 6. Staff 2 (STF-1052) generates D-prefix: if D.196 exists, next is D.197
+        $respStaff2Next = $this->actingAs($staff2, 'sanctum')->postJson('/api/orders', [
+            'orderId' => 'ORD-STAFF2-NEXT',
+            'orderNumber' => 'B.999', // client cannot overwrite separate D sequence
+            'shiftId' => $shift2,
+            'customerId' => 'cash',
+            'orderTypeId' => 'delivery',
+            'paid' => 13.50,
+            'method' => 'Cash',
+            'items' => [['id' => 'item_meat_burger', 'qty' => 1]],
+        ])->assertCreated();
+        $respStaff2Next->assertJsonPath('order.order_number', 'D.197')
             ->assertJsonPath('order.creator_classification.label', 'STAFF');
 
         // Other tenant creates an order
@@ -698,31 +713,38 @@ class PosApiTest extends TestCase
             'paid' => 20,
         ]);
 
-        // 6. Cashier iPad: Shared order list displays all branch orders (Cashier, Staff, Legacy D)
+        // 7. Cashier iPad: Shared order list displays all branch orders (A.183, B.182, D.197)
         $respCashierOrders = $this->actingAs($cashier, 'sanctum')->getJson('/api/orders')->assertOk();
         $respCashierOrders->assertJsonFragment(['order_number' => 'A.183'])
             ->assertJsonFragment(['order_number' => 'B.182'])
-            ->assertJsonFragment(['order_number' => 'D.165'])
+            ->assertJsonFragment(['order_number' => 'D.197'])
             ->assertJsonMissing(['order_number' => 'A.999']);
 
-        // 7. Staff iPad: Shared order list ALSO displays combined branch orders (not restricted to own user_id)
-        $respStaffOrders = $this->actingAs($staff1, 'sanctum')->getJson('/api/orders')->assertOk();
-        $respStaffOrders->assertJsonFragment(['order_number' => 'A.183'])
+        // 8. Staff 1 iPad: Shared order list ALSO displays combined branch orders
+        $respStaff1Orders = $this->actingAs($staff1, 'sanctum')->getJson('/api/orders')->assertOk();
+        $respStaff1Orders->assertJsonFragment(['order_number' => 'A.183'])
             ->assertJsonFragment(['order_number' => 'B.182'])
-            ->assertJsonFragment(['order_number' => 'D.165'])
+            ->assertJsonFragment(['order_number' => 'D.197'])
             ->assertJsonMissing(['order_number' => 'A.999']);
 
-        // 8. Cashier filters creator=cashier -> sees only A-prefix orders
+        // 9. Staff 2 iPad: Shared order list ALSO displays combined branch orders
+        $respStaff2Orders = $this->actingAs($staff2, 'sanctum')->getJson('/api/orders')->assertOk();
+        $respStaff2Orders->assertJsonFragment(['order_number' => 'A.183'])
+            ->assertJsonFragment(['order_number' => 'B.182'])
+            ->assertJsonFragment(['order_number' => 'D.197'])
+            ->assertJsonMissing(['order_number' => 'A.999']);
+
+        // 10. Cashier filters creator=cashier -> sees only A-prefix orders
         $respCashierFilter = $this->actingAs($cashier, 'sanctum')->getJson('/api/orders?creator=cashier')->assertOk();
         $respCashierFilter->assertJsonFragment(['order_number' => 'A.183'])
             ->assertJsonMissing(['order_number' => 'B.182'])
-            ->assertJsonMissing(['order_number' => 'D.165']);
+            ->assertJsonMissing(['order_number' => 'D.197']);
 
-        // 9. Cashier filters creator=staff -> sees B-prefix and D-prefix orders, excludes A
+        // 11. Cashier filters creator=staff -> sees both B-prefix and D-prefix orders, excludes A
         $respStaffFilter = $this->actingAs($cashier, 'sanctum')->getJson('/api/orders?creator=staff')->assertOk();
         $respStaffFilter->assertJsonMissing(['order_number' => 'A.183'])
             ->assertJsonFragment(['order_number' => 'B.182'])
-            ->assertJsonFragment(['order_number' => 'D.165']);
+            ->assertJsonFragment(['order_number' => 'D.197']);
     }
 }
 

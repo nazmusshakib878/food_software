@@ -1916,8 +1916,26 @@ assert("Section 25 Test 8: Staff Orders filter excludes A.182", !gridHtmlStaff.i
 assert("Section 25 Test 8: Staff Orders filter includes D.196", gridHtmlStaff.includes('D.196'));
 assert("Section 25 Test 8: Staff Orders filter includes B.181", gridHtmlStaff.includes('B.181'));
 
-// Test 9: Search with order number
+// Test 9: Search with order number for all three prefixes (A, B, D)
 setOrderCreatorFilter('all');
+
+// Search A.182
+document.getElementById('returnsSearchInput').value = 'A.182';
+renderReturnsOrdersList();
+const gridHtmlSearchA = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 25 Test 9: Searching A.182 displays A.182", gridHtmlSearchA.includes('A.182'));
+assert("Section 25 Test 9: Searching A.182 excludes B.181", !gridHtmlSearchA.includes('B.181'));
+assert("Section 25 Test 9: Searching A.182 excludes D.196", !gridHtmlSearchA.includes('D.196'));
+
+// Search B.181
+document.getElementById('returnsSearchInput').value = 'B.181';
+renderReturnsOrdersList();
+const gridHtmlSearchB = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 25 Test 9: Searching B.181 displays B.181", gridHtmlSearchB.includes('B.181'));
+assert("Section 25 Test 9: Searching B.181 excludes A.182", !gridHtmlSearchB.includes('A.182'));
+assert("Section 25 Test 9: Searching B.181 excludes D.196", !gridHtmlSearchB.includes('D.196'));
+
+// Search D.196
 document.getElementById('returnsSearchInput').value = 'D.196';
 renderReturnsOrdersList();
 const gridHtmlSearch = document.getElementById('returnsOrdersGrid').innerHTML;

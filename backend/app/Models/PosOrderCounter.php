@@ -21,15 +21,49 @@ class PosOrderCounter extends Model
     ];
 
     /**
-     * Authoritatively generate the next sequential order number for the given tenant & role.
+     * Resolve the appropriate prefix for a given user:
+     * - Cashier / Admin -> 'A'
+     * - Staff 1 (STF-1051) -> 'B'
+     * - Staff 2 (STF-1052) -> 'D'
+     */
+    public static function resolvePrefixForUser($user): string
+    {
+        if (is_object($user)) {
+            $role = strtolower(trim((string)($user->role ?? '')));
+            if ($role === 'staff') {
+                $staffId = (string)($user->staff_id ?? '');
+                $name = (string)($user->name ?? '');
+                $isStaff2 = ($staffId === 'STF-1052' || str_contains($name, '2') || str_contains($staffId, '2'));
+                return $isStaff2 ? 'D' : 'B';
+            }
+            return 'A';
+        }
+        if (is_array($user)) {
+            $role = strtolower(trim((string)($user['role'] ?? '')));
+            if ($role === 'staff') {
+                $staffId = (string)($user['staff_id'] ?? $user['staffId'] ?? '');
+                $name = (string)($user['name'] ?? '');
+                $isStaff2 = ($staffId === 'STF-1052' || str_contains($name, '2') || str_contains($staffId, '2'));
+                return $isStaff2 ? 'D' : 'B';
+            }
+            return 'A';
+        }
+        $role = strtolower(trim((string)$user));
+        return ($role === 'staff') ? 'B' : 'A';
+    }
+
+    /**
+     * Authoritatively generate the next sequential order number for the given tenant & user.
      * Cashier -> prefix 'A' (e.g. A.101, A.102, A.183)
-     * Staff   -> prefix 'B' (e.g. B.101, B.102, B.182)
+     * Staff 1 -> prefix 'B' (e.g. B.101, B.102, B.182)
+     * Staff 2 -> prefix 'D' (e.g. D.101, D.102, D.197)
      *
+     * Sequences for A, B, and D are kept completely separate and never merged.
      * Uses row locking (lockForUpdate) inside a database transaction to prevent race conditions.
      */
-    public static function generateNextOrderNumber(string $companyId, string $branchId, string $role): string
+    public static function generateNextOrderNumber(string $companyId, string $branchId, $user): string
     {
-        $prefix = (strtolower(trim($role)) === 'staff') ? 'B' : 'A';
+        $prefix = self::resolvePrefixForUser($user);
 
         $counter = self::where('company_id', $companyId)
             ->where('branch_id', $branchId)
@@ -102,3 +136,4 @@ class PosOrderCounter extends Model
         return $maxSeq;
     }
 }
+
