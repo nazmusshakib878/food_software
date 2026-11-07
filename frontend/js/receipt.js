@@ -56,7 +56,7 @@ function renderReceipt(order) {
     if (vatEl) vatEl.innerText = `VAT: ${vatNum}`;
     
     // Clean order number without leading #
-    const rawOrderNum = order.id || `ORD-${order.seq || '1013'}`;
+    const rawOrderNum = order.orderNumber || order.order_number || order.client_order_id || order.id || `ORD-${order.seq || '1013'}`;
     const orderNumEl = document.getElementById('recOrderNum');
     if (orderNumEl) orderNumEl.innerText = String(rawOrderNum).replace(/^#/, '');
 
@@ -288,8 +288,8 @@ function getKitchenOrderTicketHtml(targetOrder) {
     const order = targetOrder || lastCompletedOrder || (typeof orders !== 'undefined' ? orders[0] : null);
     if (!order) return '';
 
-    const rawOrderNum = order.id || `ORD-${order.seq || '1013'}`;
-    const orderId = rawOrderNum.replace(/^#/, '');
+    const rawOrderNum = order.orderNumber || order.order_number || order.client_order_id || order.id || `ORD-${order.seq || '1013'}`;
+    const orderId = String(rawOrderNum).replace(/^#/, '');
 
     let typeDisplay;
     if (order.type === 'dine_in' || order.type === 'local' || order.orderTypeId === 'local') {

@@ -633,7 +633,7 @@ async function refreshAuthoritativePosData() {
         let fallbackOrderNum = o.id;
         if (seqStr) {
             if (o.user?.staff_id === 'STF-1052') {
-                fallbackOrderNum = `D.${seqStr}`;
+                fallbackOrderNum = `C.${seqStr}`;
             } else if (o.user?.role === 'staff' || o.user?.staff_id === 'STF-1051') {
                 fallbackOrderNum = `B.${seqStr}`;
             } else {
@@ -777,7 +777,7 @@ async function refreshOrdersSilently() {
                 let fallbackOrderNum = o.id;
                 if (seqStr) {
                     if (o.user?.staff_id === 'STF-1052') {
-                        fallbackOrderNum = `D.${seqStr}`;
+                        fallbackOrderNum = `C.${seqStr}`;
                     } else if (o.user?.role === 'staff' || o.user?.staff_id === 'STF-1051') {
                         fallbackOrderNum = `B.${seqStr}`;
                     } else {

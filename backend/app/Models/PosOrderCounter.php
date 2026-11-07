@@ -24,7 +24,7 @@ class PosOrderCounter extends Model
      * Resolve the appropriate prefix for a given user:
      * - Cashier / Admin -> 'A'
      * - Staff 1 (STF-1051) -> 'B'
-     * - Staff 2 (STF-1052) -> 'D'
+     * - Staff 2 (STF-1052) -> 'C'
      */
     public static function resolvePrefixForUser($user): string
     {
@@ -34,7 +34,7 @@ class PosOrderCounter extends Model
                 $staffId = (string)($user->staff_id ?? '');
                 $name = (string)($user->name ?? '');
                 $isStaff2 = ($staffId === 'STF-1052' || str_contains($name, '2') || str_contains($staffId, '2'));
-                return $isStaff2 ? 'D' : 'B';
+                return $isStaff2 ? 'C' : 'B';
             }
             return 'A';
         }
@@ -44,7 +44,7 @@ class PosOrderCounter extends Model
                 $staffId = (string)($user['staff_id'] ?? $user['staffId'] ?? '');
                 $name = (string)($user['name'] ?? '');
                 $isStaff2 = ($staffId === 'STF-1052' || str_contains($name, '2') || str_contains($staffId, '2'));
-                return $isStaff2 ? 'D' : 'B';
+                return $isStaff2 ? 'C' : 'B';
             }
             return 'A';
         }
@@ -56,9 +56,10 @@ class PosOrderCounter extends Model
      * Authoritatively generate the next sequential order number for the given tenant & user.
      * Cashier -> prefix 'A' (e.g. A.101, A.102, A.183)
      * Staff 1 -> prefix 'B' (e.g. B.101, B.102, B.182)
-     * Staff 2 -> prefix 'D' (e.g. D.101, D.102, D.197)
+     * Staff 2 -> prefix 'C' (e.g. C.101, C.102, C.103)
      *
-     * Sequences for A, B, and D are kept completely separate and never merged.
+     * Sequences for A, B, and C are kept completely separate and never merged.
+     * Historical D orders remain accessible and classified as legacy staff orders.
      * Uses row locking (lockForUpdate) inside a database transaction to prevent race conditions.
      */
     public static function generateNextOrderNumber(string $companyId, string $branchId, $user): string

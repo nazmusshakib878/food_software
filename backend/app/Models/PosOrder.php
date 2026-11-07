@@ -96,7 +96,7 @@ class PosOrder extends Model
             $role = $user ? $user->role : null;
             if ($role === 'staff') {
                 $isStaff2 = ($user && ($user->staff_id === 'STF-1052' || str_contains($user->name ?? '', '2')));
-                $prefix = $isStaff2 ? 'D.' : 'B.';
+                $prefix = $isStaff2 ? 'C.' : 'B.';
             } else {
                 $prefix = 'A.';
             }
@@ -119,12 +119,13 @@ class PosOrder extends Model
                     'letter' => 'A',
                 ];
             }
-            if ($letter === 'B' || $letter === 'D') {
+            if ($letter === 'B' || $letter === 'C' || $letter === 'D') {
                 return [
                     'type' => 'staff',
                     'label' => 'STAFF',
                     'is_cashier' => false,
                     'is_staff' => true,
+                    'is_legacy' => ($letter === 'D'),
                     'letter' => $letter,
                 ];
             }

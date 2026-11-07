@@ -688,10 +688,10 @@ class PosApiTest extends TestCase
         $respStaff1Next->assertJsonPath('order.order_number', 'B.182')
             ->assertJsonPath('order.creator_classification.label', 'STAFF');
 
-        // 6. Staff 2 (STF-1052) generates D-prefix: if D.196 exists, next is D.197
+        // 6. Staff 2 (STF-1052) generates C-prefix: starts at C.101 (never generates D for new orders)
         $respStaff2Next = $this->actingAs($staff2, 'sanctum')->postJson('/api/orders', [
             'orderId' => 'ORD-STAFF2-NEXT',
-            'orderNumber' => 'B.999', // client cannot overwrite separate D sequence
+            'orderNumber' => 'B.999', // client cannot overwrite separate C sequence
             'shiftId' => $shift2,
             'customerId' => 'cash',
             'orderTypeId' => 'delivery',
@@ -699,7 +699,7 @@ class PosApiTest extends TestCase
             'method' => 'Cash',
             'items' => [['id' => 'item_meat_burger', 'qty' => 1]],
         ])->assertCreated();
-        $respStaff2Next->assertJsonPath('order.order_number', 'D.197')
+        $respStaff2Next->assertJsonPath('order.order_number', 'C.101')
             ->assertJsonPath('order.creator_classification.label', 'STAFF');
 
         // Other tenant creates an order
@@ -713,38 +713,43 @@ class PosApiTest extends TestCase
             'paid' => 20,
         ]);
 
-        // 7. Cashier iPad: Shared order list displays all branch orders (A.183, B.182, D.197)
+        // 7. Cashier iPad: Shared order list displays all branch orders (A.183, B.182, C.101, and historical D.196)
         $respCashierOrders = $this->actingAs($cashier, 'sanctum')->getJson('/api/orders')->assertOk();
         $respCashierOrders->assertJsonFragment(['order_number' => 'A.183'])
             ->assertJsonFragment(['order_number' => 'B.182'])
-            ->assertJsonFragment(['order_number' => 'D.197'])
+            ->assertJsonFragment(['order_number' => 'C.101'])
+            ->assertJsonFragment(['order_number' => 'D.196'])
             ->assertJsonMissing(['order_number' => 'A.999']);
 
         // 8. Staff 1 iPad: Shared order list ALSO displays combined branch orders
         $respStaff1Orders = $this->actingAs($staff1, 'sanctum')->getJson('/api/orders')->assertOk();
         $respStaff1Orders->assertJsonFragment(['order_number' => 'A.183'])
             ->assertJsonFragment(['order_number' => 'B.182'])
-            ->assertJsonFragment(['order_number' => 'D.197'])
+            ->assertJsonFragment(['order_number' => 'C.101'])
+            ->assertJsonFragment(['order_number' => 'D.196'])
             ->assertJsonMissing(['order_number' => 'A.999']);
 
         // 9. Staff 2 iPad: Shared order list ALSO displays combined branch orders
         $respStaff2Orders = $this->actingAs($staff2, 'sanctum')->getJson('/api/orders')->assertOk();
         $respStaff2Orders->assertJsonFragment(['order_number' => 'A.183'])
             ->assertJsonFragment(['order_number' => 'B.182'])
-            ->assertJsonFragment(['order_number' => 'D.197'])
+            ->assertJsonFragment(['order_number' => 'C.101'])
+            ->assertJsonFragment(['order_number' => 'D.196'])
             ->assertJsonMissing(['order_number' => 'A.999']);
 
         // 10. Cashier filters creator=cashier -> sees only A-prefix orders
         $respCashierFilter = $this->actingAs($cashier, 'sanctum')->getJson('/api/orders?creator=cashier')->assertOk();
         $respCashierFilter->assertJsonFragment(['order_number' => 'A.183'])
             ->assertJsonMissing(['order_number' => 'B.182'])
-            ->assertJsonMissing(['order_number' => 'D.197']);
+            ->assertJsonMissing(['order_number' => 'C.101'])
+            ->assertJsonMissing(['order_number' => 'D.196']);
 
-        // 11. Cashier filters creator=staff -> sees both B-prefix and D-prefix orders, excludes A
+        // 11. Cashier filters creator=staff -> sees B-prefix, C-prefix, and historical D-prefix orders, excludes A
         $respStaffFilter = $this->actingAs($cashier, 'sanctum')->getJson('/api/orders?creator=staff')->assertOk();
         $respStaffFilter->assertJsonMissing(['order_number' => 'A.183'])
             ->assertJsonFragment(['order_number' => 'B.182'])
-            ->assertJsonFragment(['order_number' => 'D.197']);
+            ->assertJsonFragment(['order_number' => 'C.101'])
+            ->assertJsonFragment(['order_number' => 'D.196']);
     }
 }
 

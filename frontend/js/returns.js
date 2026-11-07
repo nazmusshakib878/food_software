@@ -17,8 +17,8 @@ if (typeof window !== 'undefined') {
     window.setOrdersLoadingState = setOrdersLoadingState;
 }
 
-// Order Creator Classification Rules (Section 2)
-// A.xxx = CASHIER | B.xxx, D.xxx = STAFF (case-insensitive) | others = UNKNOWN/LEGACY
+// Order Creator Classification Rules (Section 2 & Codex Master Prompt)
+// A.xxx = CASHIER | B.xxx, C.xxx = STAFF | D.xxx = Legacy STAFF (case-insensitive) | others = UNKNOWN/LEGACY
 function getOrderCreatorClassification(orderNumber) {
     if (orderNumber === undefined || orderNumber === null) {
         return { type: 'unknown', label: 'UNKNOWN', isCashier: false, isStaff: false, letter: null };
@@ -33,8 +33,11 @@ function getOrderCreatorClassification(orderNumber) {
         if (letter === 'A') {
             return { type: 'cashier', label: 'CASHIER', isCashier: true, isStaff: false, letter: 'A' };
         }
-        if (letter === 'B' || letter === 'D') {
+        if (letter === 'B' || letter === 'C') {
             return { type: 'staff', label: 'STAFF', isCashier: false, isStaff: true, letter: letter };
+        }
+        if (letter === 'D') {
+            return { type: 'staff', label: 'STAFF', isCashier: false, isStaff: true, isLegacy: true, letter: 'D' };
         }
         return { type: 'unknown', label: 'UNKNOWN', isCashier: false, isStaff: false, letter: letter };
     }

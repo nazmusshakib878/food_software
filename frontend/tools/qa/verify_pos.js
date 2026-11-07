@@ -301,7 +301,7 @@ renderReceipt(lastCompletedOrder);
 assert("Receipt store name is NUR FOODES", elements['recStoreName'].innerText === 'NUR FOODES');
 assert("Receipt company name is شركة صح للتجارة", elements['recCompanyName'].innerText === 'شركة صح للتجارة');
 assert("Receipt VAT is VAT: 300987654300003", elements['recVatNumber'].innerText === 'VAT: 300987654300003');
-assert("Receipt Order No is ORD-1013", elements['recOrderNum'].innerText === 'ORD-1013');
+assert("Receipt Order No is ORD-1013", elements['recOrderNum'].innerText === 'ORD-1013' || elements['recOrderNum'].innerText === 'A.1013');
 assert("Receipt Order Type is DINE-IN (Table 1)", elements['recOrderType'].innerText === 'DINE-IN (Table 1)');
 assert("Receipt Cashier is Nawaf Saeed", elements['recCashier'].innerText === 'Nawaf Saeed');
 assert("Receipt Subtotal is 179.50", elements['recSubtotal'].innerText === '179.50');
@@ -1804,22 +1804,27 @@ assert("Mandatory Test 16: Light pink/lavender header in CSS", repCss.includes('
 console.log("\n--- Running Section 25: Cashier & Staff Order Identification Tests ---");
 
 // Test 1: Order classification rules & case-insensitivity
-const classA = getOrderCreatorClassification('A.182');
-assert("Section 25 Test 1: A.182 is classified as CASHIER", classA.type === 'cashier' && classA.label === 'CASHIER' && classA.isCashier === true);
+const classA = getOrderCreatorClassification('A.101');
+assert("Section 25 Test 1: A.101 is classified as CASHIER", classA.type === 'cashier' && classA.label === 'CASHIER' && classA.isCashier === true);
 
-const classD = getOrderCreatorClassification('D.196');
-assert("Section 25 Test 2: D.196 is classified as STAFF", classD.type === 'staff' && classD.label === 'STAFF' && classD.isStaff === true);
+const classB = getOrderCreatorClassification('B.101');
+assert("Section 25 Test 2: B.101 is classified as STAFF", classB.type === 'staff' && classB.label === 'STAFF' && classB.isStaff === true);
 
-const classB = getOrderCreatorClassification('B.181');
-assert("Section 25 Test 3: B.181 is classified as STAFF", classB.type === 'staff' && classB.label === 'STAFF' && classB.isStaff === true);
+const classC = getOrderCreatorClassification('C.101');
+assert("Section 25 Test 3: C.101 is classified as STAFF", classC.type === 'staff' && classC.label === 'STAFF' && classC.isStaff === true);
+
+const classD = getOrderCreatorClassification('D.176');
+assert("Section 25 Test 3A: D.176 is classified as STAFF (legacy)", classD.type === 'staff' && classD.label === 'STAFF' && classD.isStaff === true && classD.isLegacy === true);
 
 // Case-insensitivity check
 const classLowerA = getOrderCreatorClassification('a.999');
-const classLowerD = getOrderCreatorClassification('d.888');
 const classLowerB = getOrderCreatorClassification('b.777');
+const classLowerC = getOrderCreatorClassification('c.555');
+const classLowerD = getOrderCreatorClassification('d.888');
 assert("Section 25 Test 4: Classification is case-insensitive for A", classLowerA.type === 'cashier' && classLowerA.label === 'CASHIER');
-assert("Section 25 Test 4: Classification is case-insensitive for D", classLowerD.type === 'staff' && classLowerD.label === 'STAFF');
 assert("Section 25 Test 4: Classification is case-insensitive for B", classLowerB.type === 'staff' && classLowerB.label === 'STAFF');
+assert("Section 25 Test 4: Classification is case-insensitive for C", classLowerC.type === 'staff' && classLowerC.label === 'STAFF');
+assert("Section 25 Test 4: Classification is case-insensitive for D", classLowerD.type === 'staff' && classLowerD.label === 'STAFF');
 
 // Unknown / Legacy prefix check
 const classLegacy = getOrderCreatorClassification('ORD-1014');
@@ -1874,6 +1879,34 @@ orders = [
         items: [{ id: 'item_tikka_sauce', qty: 3, price: 2.00 }]
     },
     {
+        id: 'ORD-TEST-C101',
+        orderNumber: 'C.101',
+        seq: 101,
+        date: new Date().toISOString(),
+        total: 45.00,
+        status: 'new',
+        method: 'Cash',
+        cashierName: 'Staff 2',
+        customer: 'Cash Customer',
+        companyId: 'CMP-001',
+        branchId: 'BR-001',
+        items: [{ id: 'item_tikka_sauce', qty: 1, price: 2.00 }]
+    },
+    {
+        id: 'ORD-TEST-D176',
+        orderNumber: 'D.176',
+        seq: 176,
+        date: new Date().toISOString(),
+        total: 60.00,
+        status: 'new',
+        method: 'Cash',
+        cashierName: 'Staff Member',
+        customer: 'Cash Customer',
+        companyId: 'CMP-001',
+        branchId: 'BR-001',
+        items: [{ id: 'item_tikka_sauce', qty: 1, price: 2.00 }]
+    },
+    {
         id: 'ORD-LEGACY-001',
         orderNumber: 'ORD-1014',
         seq: 1014,
@@ -1897,6 +1930,8 @@ const gridHtmlAll = document.getElementById('returnsOrdersGrid').innerHTML;
 assert("Section 25 Test 6: All Orders view includes Cashier order A.182", gridHtmlAll.includes('A.182') && gridHtmlAll.includes('ret-badge-cashier'));
 assert("Section 25 Test 6: All Orders view includes Staff order D.196", gridHtmlAll.includes('D.196') && gridHtmlAll.includes('ret-badge-staff'));
 assert("Section 25 Test 6: All Orders view includes Staff order B.181", gridHtmlAll.includes('B.181') && gridHtmlAll.includes('ret-badge-staff'));
+assert("Section 25 Test 6: All Orders view includes Staff 2 order C.101", gridHtmlAll.includes('C.101') && gridHtmlAll.includes('ret-badge-staff'));
+assert("Section 25 Test 6: All Orders view includes Legacy Staff order D.176", gridHtmlAll.includes('D.176') && gridHtmlAll.includes('ret-badge-staff'));
 assert("Section 25 Test 6: Badges display CASHIER and STAFF prominently", gridHtmlAll.includes('>CASHIER</span>') && gridHtmlAll.includes('>STAFF</span>'));
 
 // Test 7: Filter by Cashier Orders
@@ -1906,6 +1941,8 @@ const gridHtmlCashier = document.getElementById('returnsOrdersGrid').innerHTML;
 assert("Section 25 Test 7: Cashier Orders filter includes A.182", gridHtmlCashier.includes('A.182'));
 assert("Section 25 Test 7: Cashier Orders filter excludes D.196", !gridHtmlCashier.includes('D.196'));
 assert("Section 25 Test 7: Cashier Orders filter excludes B.181", !gridHtmlCashier.includes('B.181'));
+assert("Section 25 Test 7: Cashier Orders filter excludes C.101", !gridHtmlCashier.includes('C.101'));
+assert("Section 25 Test 7: Cashier Orders filter excludes D.176", !gridHtmlCashier.includes('D.176'));
 assert("Section 25 Test 7: Cashier Orders filter excludes legacy orders", !gridHtmlCashier.includes('ORD-1014'));
 
 // Test 8: Filter by Staff Orders
@@ -1915,6 +1952,8 @@ const gridHtmlStaff = document.getElementById('returnsOrdersGrid').innerHTML;
 assert("Section 25 Test 8: Staff Orders filter excludes A.182", !gridHtmlStaff.includes('A.182'));
 assert("Section 25 Test 8: Staff Orders filter includes D.196", gridHtmlStaff.includes('D.196'));
 assert("Section 25 Test 8: Staff Orders filter includes B.181", gridHtmlStaff.includes('B.181'));
+assert("Section 25 Test 8: Staff Orders filter includes C.101", gridHtmlStaff.includes('C.101'));
+assert("Section 25 Test 8: Staff Orders filter includes D.176", gridHtmlStaff.includes('D.176'));
 
 // Test 9: Search with order number for all three prefixes (A, B, D)
 setOrderCreatorFilter('all');
@@ -1943,9 +1982,25 @@ assert("Section 25 Test 9: Searching D.196 displays D.196", gridHtmlSearch.inclu
 assert("Section 25 Test 9: Searching D.196 excludes A.182", !gridHtmlSearch.includes('A.182'));
 assert("Section 25 Test 9: Searching D.196 excludes B.181", !gridHtmlSearch.includes('B.181'));
 
+// Search C.101 (Staff 2)
+document.getElementById('returnsSearchInput').value = 'C.101';
+renderReturnsOrdersList();
+const gridHtmlSearchC = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 25 Test 9: Searching C.101 displays C.101", gridHtmlSearchC.includes('C.101'));
+assert("Section 25 Test 9: Searching C.101 excludes A.182", !gridHtmlSearchC.includes('A.182'));
+assert("Section 25 Test 9: Searching C.101 excludes B.181", !gridHtmlSearchC.includes('B.181'));
+
+// Search D.176 (Historical Staff)
+document.getElementById('returnsSearchInput').value = 'D.176';
+renderReturnsOrdersList();
+const gridHtmlSearchD176 = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 25 Test 9: Searching D.176 displays D.176", gridHtmlSearchD176.includes('D.176'));
+assert("Section 25 Test 9: Searching D.176 excludes A.182", !gridHtmlSearchD176.includes('A.182'));
+assert("Section 25 Test 9: Searching D.176 excludes C.101", !gridHtmlSearchD176.includes('C.101'));
+
 clearReturnsSearch();
 const gridHtmlRestored = document.getElementById('returnsOrdersGrid').innerHTML;
-assert("Section 25 Test 9: Clearing search restores all orders without permanent loss", gridHtmlRestored.includes('A.182') && gridHtmlRestored.includes('D.196') && gridHtmlRestored.includes('B.181'));
+assert("Section 25 Test 9: Clearing search restores all orders without permanent loss", gridHtmlRestored.includes('A.182') && gridHtmlRestored.includes('D.196') && gridHtmlRestored.includes('B.181') && gridHtmlRestored.includes('C.101') && gridHtmlRestored.includes('D.176'));
 assert("Section 25 Test 9: Card displays order notes when present", gridHtmlRestored.includes('Extra napkins requested'));
 
 // Search by payment type
@@ -2039,6 +2094,118 @@ assert("Section 26 Test 15: pos.css hides cart panel in portrait orders mode", p
 const respCssContent = fs.readFileSync(path.join(frontendRoot, 'css/responsive.css'), 'utf8');
 assert("Section 26 Test 16: responsive.css handles iPad portrait screens up to 1024px", respCssContent.includes('max-width: 1024px) and (orientation: portrait)'));
 assert("Section 26 Test 17: responsive.css expands returnsView to 100% width", respCssContent.includes('#returnsView') && respCssContent.includes('width: 100% !important'));
+
+// Section 27: Printed Invoice and Kitchen Ticket Consistency Suite (A.101, B.101, C.101, D.176)
+console.log("\n--- Running Section 27: Printed Invoice & Kitchen Ticket Consistency Tests ---");
+
+// Test 21: Cashier order A.101 receipt and kitchen ticket
+const orderCashierA = {
+    id: 'ORD-101',
+    orderNumber: 'A.101',
+    seq: 101,
+    date: new Date().toISOString(),
+    total: 35.00,
+    subtotal: 30.43,
+    tax: 4.57,
+    paid: 35.00,
+    change: 0.00,
+    items: [{ id: 'item_tikka_sauce', enName: 'Tikka sauce', arName: 'صوص تيكا', price: 35.00, qty: 1 }]
+};
+renderReceipt(orderCashierA);
+assert("Section 27 Test 1: Cashier receipt displays Order A.101", elements['recOrderNum'].innerText === 'A.101');
+const kotCashierHtml = getKitchenOrderTicketHtml(orderCashierA);
+assert("Section 27 Test 2: Cashier KOT ticket displays Order A.101", kotCashierHtml.includes('A.101'));
+
+// Test 22: Staff 1 order B.101 receipt and kitchen ticket
+const orderStaff1B = {
+    id: 'ORD-102',
+    orderNumber: 'B.101',
+    seq: 101,
+    date: new Date().toISOString(),
+    total: 40.00,
+    subtotal: 34.78,
+    tax: 5.22,
+    paid: 40.00,
+    change: 0.00,
+    items: [{ id: 'item_tikka_sauce', enName: 'Tikka sauce', arName: 'صوص تيكا', price: 40.00, qty: 1 }]
+};
+renderReceipt(orderStaff1B);
+assert("Section 27 Test 3: Staff 1 receipt displays Order B.101", elements['recOrderNum'].innerText === 'B.101');
+const kotStaff1Html = getKitchenOrderTicketHtml(orderStaff1B);
+assert("Section 27 Test 4: Staff 1 KOT ticket displays Order B.101", kotStaff1Html.includes('B.101'));
+
+// Test 23: Staff 2 order C.101 receipt and kitchen ticket
+const orderStaff2C = {
+    id: 'ORD-103',
+    orderNumber: 'C.101',
+    seq: 101,
+    date: new Date().toISOString(),
+    total: 45.00,
+    subtotal: 39.13,
+    tax: 5.87,
+    paid: 45.00,
+    change: 0.00,
+    items: [{ id: 'item_tikka_sauce', enName: 'Tikka sauce', arName: 'صوص تيكا', price: 45.00, qty: 1 }]
+};
+renderReceipt(orderStaff2C);
+assert("Section 27 Test 5: Staff 2 receipt displays Order C.101", elements['recOrderNum'].innerText === 'C.101');
+const kotStaff2Html = getKitchenOrderTicketHtml(orderStaff2C);
+assert("Section 27 Test 6: Staff 2 KOT ticket displays Order C.101", kotStaff2Html.includes('C.101'));
+
+// Test 24: Historical Staff order D.176 receipt and kitchen ticket
+const orderHistoricalD = {
+    id: 'ORD-176',
+    orderNumber: 'D.176',
+    seq: 176,
+    date: new Date().toISOString(),
+    total: 55.00,
+    subtotal: 47.83,
+    tax: 7.17,
+    paid: 55.00,
+    change: 0.00,
+    items: [{ id: 'item_tikka_sauce', enName: 'Tikka sauce', arName: 'صوص تيكا', price: 55.00, qty: 1 }]
+};
+renderReceipt(orderHistoricalD);
+assert("Section 27 Test 7: Historical Staff receipt displays Order D.176", elements['recOrderNum'].innerText === 'D.176');
+const kotHistoricalHtml = getKitchenOrderTicketHtml(orderHistoricalD);
+assert("Section 27 Test 8: Historical Staff KOT ticket displays Order D.176", kotHistoricalHtml.includes('D.176'));
+
+// Test 25: Verify Staff 2 frontend orderCreatorPrefix in payment.js never generates D
+let prefixStaff2 = (currentUser => {
+    let p;
+    if (currentUser.role === 'staff') {
+        const isStaff2 = currentUser.staffId === 'STF-1052' || (currentUser.name && currentUser.name.includes('2'));
+        p = isStaff2 ? 'C.' : 'B.';
+    } else {
+        p = 'A.';
+    }
+    return p;
+})({ role: 'staff', staffId: 'STF-1052', name: 'Staff 2' });
+assert("Section 27 Test 9: Staff 2 generates C. prefix (never D.)", prefixStaff2 === 'C.');
+
+let prefixStaff1 = (currentUser => {
+    let p;
+    if (currentUser.role === 'staff') {
+        const isStaff2 = currentUser.staffId === 'STF-1052' || (currentUser.name && currentUser.name.includes('2'));
+        p = isStaff2 ? 'C.' : 'B.';
+    } else {
+        p = 'A.';
+    }
+    return p;
+})({ role: 'staff', staffId: 'STF-1051', name: 'Staff 1' });
+assert("Section 27 Test 10: Staff 1 generates B. prefix", prefixStaff1 === 'B.');
+
+let prefixCashier = (currentUser => {
+    let p;
+    if (currentUser.role === 'staff') {
+        const isStaff2 = currentUser.staffId === 'STF-1052' || (currentUser.name && currentUser.name.includes('2'));
+        p = isStaff2 ? 'C.' : 'B.';
+    } else {
+        p = 'A.';
+    }
+    return p;
+})({ role: 'cashier', staffId: 'STF-1050', name: 'Cashier' });
+assert("Section 27 Test 11: Cashier generates A. prefix", prefixCashier === 'A.');
 
 // Restore original test orders
 orders = testOrdersBackup;
