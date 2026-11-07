@@ -1798,6 +1798,158 @@ assert("Mandatory Test 16: .default-settings-modal-card responsive width in CSS"
 assert("Mandatory Test 16: Teal Ok and Back buttons styled with .btn-teal-settings", repCss.includes('.btn-teal-settings') && repCss.includes('background: #17a2b8 !important'));
 assert("Mandatory Test 16: Light pink/lavender header in CSS", repCss.includes('.default-settings-modal-header') && repCss.includes('background: #f8f0f8 !important'));
 
+// =========================================================
+// SECTION 25: CASHIER & STAFF ORDER IDENTIFICATION SUITE
+// =========================================================
+console.log("\n--- Running Section 25: Cashier & Staff Order Identification Tests ---");
+
+// Test 1: Order classification rules & case-insensitivity
+const classA = getOrderCreatorClassification('A.182');
+assert("Section 25 Test 1: A.182 is classified as CASHIER", classA.type === 'cashier' && classA.label === 'CASHIER' && classA.isCashier === true);
+
+const classD = getOrderCreatorClassification('D.196');
+assert("Section 25 Test 2: D.196 is classified as STAFF", classD.type === 'staff' && classD.label === 'STAFF' && classD.isStaff === true);
+
+const classB = getOrderCreatorClassification('B.181');
+assert("Section 25 Test 3: B.181 is classified as STAFF", classB.type === 'staff' && classB.label === 'STAFF' && classB.isStaff === true);
+
+// Case-insensitivity check
+const classLowerA = getOrderCreatorClassification('a.999');
+const classLowerD = getOrderCreatorClassification('d.888');
+const classLowerB = getOrderCreatorClassification('b.777');
+assert("Section 25 Test 4: Classification is case-insensitive for A", classLowerA.type === 'cashier' && classLowerA.label === 'CASHIER');
+assert("Section 25 Test 4: Classification is case-insensitive for D", classLowerD.type === 'staff' && classLowerD.label === 'STAFF');
+assert("Section 25 Test 4: Classification is case-insensitive for B", classLowerB.type === 'staff' && classLowerB.label === 'STAFF');
+
+// Unknown / Legacy prefix check
+const classLegacy = getOrderCreatorClassification('ORD-1014');
+const classNumeric = getOrderCreatorClassification('1014');
+const classUnknown = getOrderCreatorClassification('X.500');
+assert("Section 25 Test 5: Legacy ORD- prefix is classified as LEGACY", classLegacy.type === 'unknown' && classLegacy.label === 'LEGACY');
+assert("Section 25 Test 5: Pure numeric order is classified as LEGACY", classNumeric.type === 'unknown' && classNumeric.label === 'LEGACY');
+assert("Section 25 Test 5: Unknown letter prefix X. is classified as UNKNOWN", classUnknown.type === 'unknown' && classUnknown.label === 'UNKNOWN');
+
+// Test 6: Cashier opens Orders and sees all orders
+const testOrdersBackup = [...orders];
+orders = [
+    {
+        id: 'ORD-TEST-A182',
+        orderNumber: 'A.182',
+        seq: 182,
+        date: new Date().toISOString(),
+        total: 50.00,
+        status: 'new',
+        method: 'Cash',
+        customer: 'Cash Customer',
+        companyId: 'CMP-001',
+        branchId: 'BR-001',
+        items: [{ id: 'item_tikka_sauce', qty: 1, price: 2.00 }]
+    },
+    {
+        id: 'ORD-TEST-D196',
+        orderNumber: 'D.196',
+        seq: 196,
+        date: new Date().toISOString(),
+        total: 75.00,
+        status: 'new',
+        method: 'Cash',
+        customer: 'Cash Customer',
+        companyId: 'CMP-001',
+        branchId: 'BR-001',
+        items: [{ id: 'item_tikka_sauce', qty: 2, price: 2.00 }]
+    },
+    {
+        id: 'ORD-TEST-B181',
+        orderNumber: 'B.181',
+        seq: 181,
+        date: new Date().toISOString(),
+        total: 100.00,
+        status: 'new',
+        method: 'Cash',
+        customer: 'Cash Customer',
+        companyId: 'CMP-001',
+        branchId: 'BR-001',
+        items: [{ id: 'item_tikka_sauce', qty: 3, price: 2.00 }]
+    },
+    {
+        id: 'ORD-LEGACY-001',
+        orderNumber: 'ORD-1014',
+        seq: 1014,
+        date: new Date().toISOString(),
+        total: 30.00,
+        status: 'new',
+        method: 'Cash',
+        customer: 'Cash Customer',
+        companyId: 'CMP-001',
+        branchId: 'BR-001',
+        items: [{ id: 'item_tikka_sauce', qty: 1, price: 2.00 }]
+    }
+];
+
+currentReturnTab = 'all';
+setOrderCreatorFilter('all');
+document.getElementById('returnsSearchInput').value = '';
+renderReturnsOrdersList();
+
+const gridHtmlAll = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 25 Test 6: All Orders view includes Cashier order A.182", gridHtmlAll.includes('A.182') && gridHtmlAll.includes('ret-badge-cashier'));
+assert("Section 25 Test 6: All Orders view includes Staff order D.196", gridHtmlAll.includes('D.196') && gridHtmlAll.includes('ret-badge-staff'));
+assert("Section 25 Test 6: All Orders view includes Staff order B.181", gridHtmlAll.includes('B.181') && gridHtmlAll.includes('ret-badge-staff'));
+assert("Section 25 Test 6: Badges display CASHIER and STAFF prominently", gridHtmlAll.includes('>CASHIER</span>') && gridHtmlAll.includes('>STAFF</span>'));
+
+// Test 7: Filter by Cashier Orders
+setOrderCreatorFilter('cashier');
+renderReturnsOrdersList();
+const gridHtmlCashier = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 25 Test 7: Cashier Orders filter includes A.182", gridHtmlCashier.includes('A.182'));
+assert("Section 25 Test 7: Cashier Orders filter excludes D.196", !gridHtmlCashier.includes('D.196'));
+assert("Section 25 Test 7: Cashier Orders filter excludes B.181", !gridHtmlCashier.includes('B.181'));
+assert("Section 25 Test 7: Cashier Orders filter excludes legacy orders", !gridHtmlCashier.includes('ORD-1014'));
+
+// Test 8: Filter by Staff Orders
+setOrderCreatorFilter('staff');
+renderReturnsOrdersList();
+const gridHtmlStaff = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 25 Test 8: Staff Orders filter excludes A.182", !gridHtmlStaff.includes('A.182'));
+assert("Section 25 Test 8: Staff Orders filter includes D.196", gridHtmlStaff.includes('D.196'));
+assert("Section 25 Test 8: Staff Orders filter includes B.181", gridHtmlStaff.includes('B.181'));
+
+// Test 9: Search with order number
+setOrderCreatorFilter('all');
+document.getElementById('returnsSearchInput').value = 'D.196';
+renderReturnsOrdersList();
+const gridHtmlSearch = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 25 Test 9: Searching D.196 displays D.196", gridHtmlSearch.includes('D.196'));
+assert("Section 25 Test 9: Searching D.196 excludes A.182", !gridHtmlSearch.includes('A.182'));
+assert("Section 25 Test 9: Searching D.196 excludes B.181", !gridHtmlSearch.includes('B.181'));
+
+clearReturnsSearch();
+const gridHtmlRestored = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 25 Test 9: Clearing search restores all orders without permanent loss", gridHtmlRestored.includes('A.182') && gridHtmlRestored.includes('D.196') && gridHtmlRestored.includes('B.181'));
+
+// Test 10: Existing order actions preserved
+assert("Section 25 Test 10: markOrderDelivered exists as a function", typeof markOrderDelivered === 'function');
+assert("Section 25 Test 10: startReturnProcess exists as a function", typeof startReturnProcess === 'function');
+assert("Section 25 Test 10: kitchenPrintOrder exists as a function", typeof kitchenPrintOrder === 'function');
+assert("Section 25 Test 10: printReceipt exists as a function", typeof printReceipt === 'function');
+
+// Test 11: Mark order delivered updates order status to served
+markOrderDelivered('ORD-TEST-A182');
+const updatedDeliveredOrder = orders.find(o => o.id === 'ORD-TEST-A182');
+assert("Section 25 Test 11: Order status updated to served on deliver action", updatedDeliveredOrder && updatedDeliveredOrder.status === 'served');
+
+// Test 12: CSS verification for returns.css
+const retCss = fs.readFileSync(path.join(frontendRoot, 'css/returns.css'), 'utf8');
+assert("Section 25 Test 12: returns.css contains .orders-controls-bar", retCss.includes('.orders-controls-bar'));
+assert("Section 25 Test 12: returns.css contains .orders-creator-filter-wrap", retCss.includes('.orders-creator-filter-wrap'));
+assert("Section 25 Test 12: returns.css contains .ret-creator-badge", retCss.includes('.ret-creator-badge'));
+assert("Section 25 Test 12: returns.css contains .ret-badge-cashier", retCss.includes('.ret-badge-cashier'));
+assert("Section 25 Test 12: returns.css contains .ret-badge-staff", retCss.includes('.ret-badge-staff'));
+assert("Section 25 Test 12: returns.css contains iPad responsive styles (max-width: 1024px)", retCss.includes('@media (max-width: 1024px)'));
+
+// Restore original test orders
+orders = testOrdersBackup;
+
 console.log(`\n=== Verification Finished: ${passed} Passed, ${failed} Failed ===`);
 if (failed > 0) process.exit(1);
 else process.exit(0);

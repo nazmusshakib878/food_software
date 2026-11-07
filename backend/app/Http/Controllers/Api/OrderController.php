@@ -24,15 +24,46 @@ class OrderController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = PosOrder::with('items')
+        $query = PosOrder::with(['items', 'user'])
             ->where('company_id', $user->company_id)
             ->where('branch_id', $user->branch_id);
 
-        if ($user->role === 'staff') $query->where('user_id', (string) $user->id);
+        if ($user->role === 'staff') {
+            $query->where('user_id', (string) $user->id);
+        }
 
         if ($request->filled('status')) $query->where('status', $request->query('status'));
         if ($request->filled('from')) $query->whereDate('created_at', '>=', $request->query('from'));
         if ($request->filled('to')) $query->whereDate('created_at', '<=', $request->query('to'));
+
+        if ($request->filled('creator')) {
+            $creator = strtolower((string) $request->query('creator'));
+            if ($creator === 'cashier') {
+                $query->where(function ($q) {
+                    $q->where('client_order_id', 'LIKE', 'A.%')
+                      ->orWhere('client_order_id', 'LIKE', 'a.%')
+                      ->orWhere('id', 'LIKE', 'A.%')
+                      ->orWhere('id', 'LIKE', 'a.%')
+                      ->orWhereHas('user', function ($uq) {
+                          $uq->whereIn('role', ['cashier', 'admin']);
+                      });
+                });
+            } elseif ($creator === 'staff') {
+                $query->where(function ($q) {
+                    $q->where('client_order_id', 'LIKE', 'B.%')
+                      ->orWhere('client_order_id', 'LIKE', 'b.%')
+                      ->orWhere('client_order_id', 'LIKE', 'D.%')
+                      ->orWhere('client_order_id', 'LIKE', 'd.%')
+                      ->orWhere('id', 'LIKE', 'B.%')
+                      ->orWhere('id', 'LIKE', 'b.%')
+                      ->orWhere('id', 'LIKE', 'D.%')
+                      ->orWhere('id', 'LIKE', 'd.%')
+                      ->orWhereHas('user', function ($uq) {
+                          $uq->where('role', 'staff');
+                      });
+                });
+            }
+        }
 
         return response()->json(['success' => true, 'orders' => $query->latest()->limit(100)->get()]);
     }
@@ -46,6 +77,7 @@ class OrderController extends Controller
         }
         $data = $request->validate([
             'orderId' => ['required', 'string', 'max:100'],
+            'orderNumber' => ['nullable', 'string', 'max:100'],
             'customerId' => ['required', 'string', 'max:80'],
             'orderTypeId' => ['required', 'string', 'max:40', 'in:delivery,local,receive,cars,delivery_d'],
             'customer' => ['nullable', 'string', 'max:160'],
@@ -100,7 +132,7 @@ class OrderController extends Controller
             ->where('branch_id', $user->branch_id)
             ->where('client_order_id', $data['orderId']);
         if ($user->role === 'staff') $tenantOrders->where('user_id', (string) $user->id);
-        $tenantOrder = (clone $tenantOrders)->with('items')->first();
+        $tenantOrder = (clone $tenantOrders)->with(['items', 'user'])->first();
         if ($tenantOrder) return response()->json(['success' => true, 'duplicate' => true, 'order' => $tenantOrder], 200);
         if ($user->role === 'staff' && PosOrder::where('company_id', $user->company_id)
             ->where('branch_id', $user->branch_id)
@@ -201,6 +233,21 @@ class OrderController extends Controller
             $clientId = $data['orderId'];
             $orderId = 'ORD-'.Str::upper(Str::random(16));
             $seq = (int)(PosOrder::where('company_id', $user->company_id)->where('branch_id', $user->branch_id)->max('seq') ?? 1000) + 1;
+
+            $assignedOrderNumber = $data['orderNumber'] ?? null;
+            if (!$assignedOrderNumber && preg_match('/^[A-Za-z]\.\d+/i', (string)$clientId)) {
+                $assignedOrderNumber = $clientId;
+            }
+            if (!$assignedOrderNumber) {
+                if ($user->role === 'staff') {
+                    $isStaff2 = ($user->staff_id === 'STF-1052' || str_contains($user->name ?? '', '2'));
+                    $prefix = $isStaff2 ? 'D.' : 'B.';
+                } else {
+                    $prefix = 'A.';
+                }
+                $assignedOrderNumber = $prefix . $seq;
+            }
+
             $order = PosOrder::create([
                 'id' => $orderId,
                 'client_order_id' => $clientId,
@@ -229,6 +276,7 @@ class OrderController extends Controller
                 'payment_breakdown' => $paymentBreakdown,
                 'notes' => $data['notes'] ?? null,
                 'phone' => $data['phone'] ?? null,
+                'raw_payload' => ['order_number' => $assignedOrderNumber],
             ]);
 
             $transactionParts = [];
@@ -276,7 +324,7 @@ class OrderController extends Controller
                 ]);
             }
 
-            return $order->load('items');
+            return $order->load(['items', 'user']);
         }, 3);
 
         return response()->json(['success' => true, 'order' => $order], 201);
@@ -313,7 +361,7 @@ class OrderController extends Controller
                     'note' => $data['reason'],
                 ]);
             }
-            return $order->load('items');
+            return $order->load(['items', 'user']);
         }, 3);
 
         return response()->json(['success' => true, 'order' => $order]);
@@ -333,7 +381,7 @@ class OrderController extends Controller
                 throw ValidationException::withMessages(['status' => ['Cancelled orders cannot change status.']]);
             }
             $order->update(['status' => $data['status']]);
-            return $order->load('items');
+            return $order->load(['items', 'user']);
         }, 3);
         return response()->json(['success' => true, 'order' => $order]);
     }

@@ -84,6 +84,7 @@ function switchView(viewName) {
         document.querySelector('.bottom-nav-btn[onclick="bottomNavOrders()"]')?.classList.add('active');
 
         if (typeof goReturnsScreen1 === 'function') goReturnsScreen1();
+        if (typeof refreshOrdersSilently === 'function') refreshOrdersSilently();
     } else if (viewName === 'kds') {
         posLayout?.classList.remove('orders-mode');
         document.getElementById('kdsView')?.classList.add('active');
@@ -625,7 +626,7 @@ async function refreshAuthoritativePosData() {
         taxRate: Number(p.tax_rate), available: Boolean(p.available), stock: p.track_stock ? Number(p.stock_on_hand) : null
     }));
     orders = (orderData.orders || []).map(o => ({
-        id: o.id, seq: o.seq, shiftId: o.shift_id, date: o.created_at, dateFormatted: o.created_at,
+        id: o.id, orderNumber: o.order_number || o.orderNumber || o.client_order_id || (o.seq ? (o.user?.role === 'staff' ? `B.${o.seq}` : `A.${o.seq}`) : o.id), seq: o.seq, shiftId: o.shift_id, date: o.created_at, dateFormatted: o.created_at,
         type: o.order_type_id, orderTypeId: o.order_type_id, orderType: o.order_type_name,
         deliveryDisplay: o.delivery_display, table: o.table, customer: o.customer_name || o.customer_id,
         customerId: o.customer_id, notes: o.notes, phone: o.phone, status: o.status,
@@ -692,9 +693,77 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof updateKdsStockAlert === 'function') updateKdsStockAlert();
     restoreBackendSession();
     window.setInterval(() => {
-        if (currentUser && currentUser.role !== 'guest' && typeof refreshShiftStatuses === 'function') refreshShiftStatuses();
-    }, 30000);
+        if (currentUser && currentUser.role !== 'guest') {
+            if (typeof refreshShiftStatuses === 'function') refreshShiftStatuses();
+            if (typeof currentView !== 'undefined' && currentView === 'returns' && typeof refreshOrdersSilently === 'function') {
+                refreshOrdersSilently();
+            }
+        }
+    }, 10000);
 });
+
+async function refreshOrdersSilently() {
+    try {
+        const response = await fetch('/api/orders', {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' }
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data && data.success && Array.isArray(data.orders)) {
+            orders = data.orders.map(o => ({
+                id: o.id,
+                orderNumber: o.order_number || o.orderNumber || o.client_order_id || (o.seq ? (o.user?.role === 'staff' ? `B.${o.seq}` : `A.${o.seq}`) : o.id),
+                seq: o.seq,
+                shiftId: o.shift_id,
+                date: o.created_at,
+                dateFormatted: o.created_at,
+                type: o.order_type_id,
+                orderTypeId: o.order_type_id,
+                orderType: o.order_type_name,
+                deliveryDisplay: o.delivery_display,
+                table: o.table,
+                customer: o.customer_name || o.customer_id,
+                customerId: o.customer_id,
+                notes: o.notes,
+                phone: o.phone,
+                status: o.status,
+                cashier: o.user?.name || (o.user_id === currentUser.id ? currentUser.name : (o.user?.role === 'staff' ? 'Staff' : 'Cashier')),
+                userId: o.user_id,
+                staffId: o.staff_id || o.user?.staff_id,
+                userRole: o.user?.role,
+                companyId: o.company_id,
+                branchId: o.branch_id,
+                subtotal: Number(o.subtotal),
+                tax: Number(o.tax),
+                discount: Number(o.discount),
+                total: Number(o.grand_total),
+                grandTotal: Number(o.grand_total),
+                paid: Number(o.paid),
+                change: Number(o.change),
+                method: o.method,
+                paymentStatus: o.payment_status,
+                items: (o.items || []).map(i => ({
+                    id: i.item_id,
+                    enName: i.en_name,
+                    arName: i.ar_name,
+                    price: Number(i.price),
+                    qty: Number(i.qty),
+                    note: i.note || '',
+                    addons: i.addons || [],
+                    modifiers: i.modifiers || []
+                }))
+            }));
+            if (typeof renderReturnsOrdersList === 'function' && typeof currentView !== 'undefined' && currentView === 'returns') {
+                renderReturnsOrdersList();
+            }
+        }
+    } catch (_) {}
+}
+
+if (typeof window !== 'undefined') {
+    window.refreshOrdersSilently = refreshOrdersSilently;
+}
 
 // Dismiss Modals on Backdrop Click or Escape Key
 document.addEventListener('click', (e) => {

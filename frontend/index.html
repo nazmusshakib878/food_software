@@ -335,12 +335,28 @@
                                 <button type="button" class="order-tab" onclick="setReturnOrderTab('done', this)" data-i18n="tab_done">Done</button>
                             </div>
 
-                            <!-- Orders Search Bar -->
-                            <div class="orders-search-bar-wrap">
-                                <div class="search-input-wrap">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                    <input type="text" id="returnsSearchInput" placeholder="Search Invoice ID, Order Number, User Name..." oninput="filterReturnsOrders()">
-                                    <i class="fa-solid fa-xmark clear-search-icon" onclick="clearReturnsSearch()" title="Clear Search"></i>
+                            <!-- Orders Controls Row: Search + Creator Filter -->
+                            <div class="orders-controls-bar">
+                                <div class="orders-search-bar-wrap">
+                                    <div class="search-input-wrap">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                        <input type="text" id="returnsSearchInput" placeholder="Search Invoice ID, Order Number, User Name..." oninput="filterReturnsOrders()">
+                                        <i class="fa-solid fa-xmark clear-search-icon" onclick="clearReturnsSearch()" title="Clear Search"></i>
+                                    </div>
+                                </div>
+                                <div class="orders-creator-filter-wrap" id="ordersCreatorFilterWrap">
+                                    <button type="button" class="creator-filter-tab active" data-creator="all" onclick="setOrderCreatorFilter('all', this)">
+                                        <i class="fa-solid fa-layer-group"></i>
+                                        <span data-i18n="filter_all_orders">All Orders</span>
+                                    </button>
+                                    <button type="button" class="creator-filter-tab" data-creator="cashier" onclick="setOrderCreatorFilter('cashier', this)">
+                                        <i class="fa-solid fa-cash-register"></i>
+                                        <span data-i18n="filter_cashier_orders">Cashier Orders</span>
+                                    </button>
+                                    <button type="button" class="creator-filter-tab" data-creator="staff" onclick="setOrderCreatorFilter('staff', this)">
+                                        <i class="fa-solid fa-user-tag"></i>
+                                        <span data-i18n="filter_staff_orders">Staff Orders</span>
+                                    </button>
                                 </div>
                             </div>
 

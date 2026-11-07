@@ -5,6 +5,42 @@
 let currentReturnOrder = null;
 let returnItemsState = [];
 let currentReturnTab = 'uncompleted';
+let currentOrderCreatorFilter = 'all'; // 'all' | 'cashier' | 'staff'
+
+// Order Creator Classification Rules (Section 2)
+// A.xxx = CASHIER | B.xxx, D.xxx = STAFF (case-insensitive) | others = UNKNOWN/LEGACY
+function getOrderCreatorClassification(orderNumber) {
+    if (orderNumber === undefined || orderNumber === null) {
+        return { type: 'unknown', label: 'UNKNOWN', isCashier: false, isStaff: false, letter: null };
+    }
+    const clean = String(orderNumber).trim();
+    if (!clean) {
+        return { type: 'unknown', label: 'UNKNOWN', isCashier: false, isStaff: false, letter: null };
+    }
+    const match = clean.match(/^([A-Za-z])\./);
+    if (match) {
+        const letter = match[1].toUpperCase();
+        if (letter === 'A') {
+            return { type: 'cashier', label: 'CASHIER', isCashier: true, isStaff: false, letter: 'A' };
+        }
+        if (letter === 'B' || letter === 'D') {
+            return { type: 'staff', label: 'STAFF', isCashier: false, isStaff: true, letter: letter };
+        }
+        return { type: 'unknown', label: 'UNKNOWN', isCashier: false, isStaff: false, letter: letter };
+    }
+    const isLegacy = clean.startsWith('ORD-') || /^\d+$/.test(clean) || clean.startsWith('#');
+    return {
+        type: 'unknown',
+        label: isLegacy ? 'LEGACY' : 'UNKNOWN',
+        isCashier: false,
+        isStaff: false,
+        letter: null
+    };
+}
+
+if (typeof window !== 'undefined') {
+    window.getOrderCreatorClassification = getOrderCreatorClassification;
+}
 
 // Navigation & Modal Controls
 function goReturnsScreen1() {
@@ -78,6 +114,24 @@ function clearReturnsSearch() {
     filterReturnsOrders();
 }
 
+function setOrderCreatorFilter(filterType, el) {
+    currentOrderCreatorFilter = (filterType || 'all').toLowerCase();
+    document.querySelectorAll('.orders-creator-filter-wrap .creator-filter-tab').forEach(b => {
+        b.classList.remove('active');
+    });
+    if (el) {
+        el.classList.add('active');
+    } else {
+        const btn = document.querySelector(`.orders-creator-filter-wrap .creator-filter-tab[data-creator="${currentOrderCreatorFilter}"]`);
+        if (btn) btn.classList.add('active');
+    }
+    filterReturnsOrders();
+}
+
+if (typeof window !== 'undefined') {
+    window.setOrderCreatorFilter = setOrderCreatorFilter;
+}
+
 function filterReturnsOrders() {
     renderReturnsOrdersList();
 }
@@ -95,6 +149,17 @@ function renderReturnsOrdersList() {
     const searchTerm = (document.getElementById('returnsSearchInput')?.value || '').toLowerCase().trim();
     
     const filteredOrders = orders.filter(order => {
+        const orderNum = String(order.orderNumber || (order.seq ? String(order.seq) : '') || order.id || '');
+        const creatorInfo = getOrderCreatorClassification(orderNum);
+
+        // Creator filter: all | cashier | staff
+        if (currentOrderCreatorFilter === 'cashier' && !creatorInfo.isCashier) {
+            return false;
+        }
+        if (currentOrderCreatorFilter === 'staff' && !creatorInfo.isStaff) {
+            return false;
+        }
+
         const isDelivered = (order.status === 'served');
         const isCancelled = (order.status === 'cancelled' || order.status === 'returned' || order.isReturned === true);
         
@@ -117,17 +182,19 @@ function renderReturnsOrdersList() {
         
         if (!matchTab) return false;
 
-        // Search filtering: Order Number, Invoice ID, Customer/User/Cashier name
+        // Search filtering: Order Number, Invoice ID, Creator Label, Customer/User/Cashier name
         if (searchTerm) {
             const invoiceMatch = order.id && order.id.toLowerCase().includes(searchTerm);
             const orderNumMatch = (order.seq && order.seq.toString().toLowerCase().includes(searchTerm)) ||
-                                  (order.orderNumber && order.orderNumber.toString().toLowerCase().includes(searchTerm));
+                                  (order.orderNumber && order.orderNumber.toString().toLowerCase().includes(searchTerm)) ||
+                                  orderNum.toLowerCase().includes(searchTerm);
+            const creatorMatch = creatorInfo.label.toLowerCase().includes(searchTerm);
             const userMatch = (order.cashierName && order.cashierName.toLowerCase().includes(searchTerm)) ||
                               (order.cashier && order.cashier.toLowerCase().includes(searchTerm)) ||
                               (order.returnedBy && order.returnedBy.toLowerCase().includes(searchTerm));
             const custMatch = (order.customer && order.customer.toLowerCase().includes(searchTerm)) ||
                               (order.customerName && order.customerName.toLowerCase().includes(searchTerm));
-            if (!invoiceMatch && !orderNumMatch && !userMatch && !custMatch) return false;
+            if (!invoiceMatch && !orderNumMatch && !creatorMatch && !userMatch && !custMatch) return false;
         }
         return true;
     });
@@ -143,14 +210,15 @@ function renderReturnsOrdersList() {
             paymentTypes = order.splitPayments.map(p => p.method).join(' / ');
         }
         const totalFormatted = Number(order.total || order.grandTotal || 0).toFixed(2);
-        const orderNum = order.orderNumber || order.seq || order.id.substring(0, 5);
+        const orderNum = order.orderNumber || (order.seq ? String(order.seq) : '') || order.id.substring(0, 5);
+        const creatorInfo = getOrderCreatorClassification(orderNum);
         const cashierName = order.cashierName || order.cashier || (typeof currentUser !== 'undefined' ? currentUser.name : 'Cashier');
         const invoiceId = order.id;
         const dateStr = formatRetDateOnly(order.date);
         const timeStr = formatRetTimeOnly(order.date);
 
         return `
-            <div class="ret-order-card">
+            <div class="ret-order-card" data-order-creator="${creatorInfo.type}" data-order-number="${escapeHtml(orderNum)}">
                 <div class="ret-order-info-grid">
                     <div class="ret-info-item">
                         <span class="ret-label">Date:</span>
@@ -158,7 +226,10 @@ function renderReturnsOrdersList() {
                     </div>
                     <div class="ret-info-item text-right">
                         <span class="ret-label">Order Number:</span>
-                        <span class="ret-value">${orderNum}</span>
+                        <span class="ret-value font-bold ret-order-num-wrap">
+                            <span class="ret-order-num-text">${escapeHtml(orderNum)}</span>
+                            <span class="ret-creator-badge ret-badge-${creatorInfo.type}">${creatorInfo.label}</span>
+                        </span>
                     </div>
 
                     <div class="ret-info-item">

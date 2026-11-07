@@ -637,6 +637,13 @@ const i18n = {
         bottom_nav_orders: "الطلبات",
         bottom_nav_tables: "الطاولات",
         bottom_nav_main: "الرئيسية",
+        filter_all_orders: "جميع الطلبات",
+        filter_cashier_orders: "طلبات الكاشير",
+        filter_staff_orders: "طلبات الموظفين",
+        badge_cashier: "CASHIER",
+        badge_staff: "STAFF",
+        badge_legacy: "LEGACY",
+        badge_unknown: "UNKNOWN",
 
         // Staff Meal Expense
         staff_meal_title: "مصاريف وجبات الموظفين",
@@ -998,6 +1005,13 @@ const i18n = {
         bottom_nav_orders: "Orders",
         bottom_nav_tables: "Tables",
         bottom_nav_main: "Main Screen",
+        filter_all_orders: "All Orders",
+        filter_cashier_orders: "Cashier Orders",
+        filter_staff_orders: "Staff Orders",
+        badge_cashier: "CASHIER",
+        badge_staff: "STAFF",
+        badge_legacy: "LEGACY",
+        badge_unknown: "UNKNOWN",
 
         // Staff Meal Expense
         staff_meal_title: "Staff Meal Expense",

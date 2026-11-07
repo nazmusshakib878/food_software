@@ -584,5 +584,93 @@ class PosApiTest extends TestCase
         }
         $this->assertDatabaseHas('pos_shifts', ['id' => 'SH-OTHER-BRANCH', 'status' => 'active']);
     }
+
+    public function test_cashier_and_staff_order_identification_and_visibility(): void
+    {
+        $this->createOtherTenant();
+        $cashier = User::where('staff_id', 'STF-1050')->firstOrFail();
+        $staff1 = User::where('staff_id', 'STF-1051')->firstOrFail();
+        $staff2 = User::where('staff_id', 'STF-1052')->firstOrFail();
+
+        // 1. Cashier creates order A.182
+        $respCashier = $this->actingAs($cashier, 'sanctum')->postJson('/api/orders', [
+            'orderId' => 'A.182',
+            'orderNumber' => 'A.182',
+            'customerId' => 'cash',
+            'orderTypeId' => 'delivery',
+            'paid' => 13.50,
+            'method' => 'Cash',
+            'items' => [['id' => 'item_meat_burger', 'qty' => 1]],
+        ])->assertCreated();
+        $respCashier->assertJsonPath('order.order_number', 'A.182')
+            ->assertJsonPath('order.creator_classification.label', 'CASHIER');
+
+        // Open staff shifts
+        $shift1 = $this->actingAs($staff1, 'sanctum')->postJson('/api/shifts', ['openingCash' => 10])->json('shift.id');
+        $shift2 = $this->actingAs($staff2, 'sanctum')->postJson('/api/shifts', ['openingCash' => 10])->json('shift.id');
+
+        // 2. Staff 1 creates order B.181
+        $respStaff1 = $this->actingAs($staff1, 'sanctum')->postJson('/api/orders', [
+            'orderId' => 'B.181',
+            'orderNumber' => 'B.181',
+            'shiftId' => $shift1,
+            'customerId' => 'cash',
+            'orderTypeId' => 'delivery',
+            'paid' => 13.50,
+            'method' => 'Cash',
+            'items' => [['id' => 'item_meat_burger', 'qty' => 1]],
+        ])->assertCreated();
+        $respStaff1->assertJsonPath('order.order_number', 'B.181')
+            ->assertJsonPath('order.creator_classification.label', 'STAFF');
+
+        // 3. Staff 2 creates order D.196
+        $respStaff2 = $this->actingAs($staff2, 'sanctum')->postJson('/api/orders', [
+            'orderId' => 'D.196',
+            'orderNumber' => 'D.196',
+            'shiftId' => $shift2,
+            'customerId' => 'cash',
+            'orderTypeId' => 'delivery',
+            'paid' => 13.50,
+            'method' => 'Cash',
+            'items' => [['id' => 'item_meat_burger', 'qty' => 1]],
+        ])->assertCreated();
+        $respStaff2->assertJsonPath('order.order_number', 'D.196')
+            ->assertJsonPath('order.creator_classification.label', 'STAFF');
+
+        // Other tenant creates an order
+        \App\Models\PosOrder::create([
+            'id' => 'ORD-OTHER-BRANCH',
+            'client_order_id' => 'A.999',
+            'company_id' => 'CMP-OTHER',
+            'branch_id' => 'BR-OTHER',
+            'grand_total' => 20,
+            'paid' => 20,
+        ]);
+
+        // 4. Cashier opens Orders -> sees all three orders (A.182, B.181, D.196), but NOT other tenant
+        $respOrders = $this->actingAs($cashier, 'sanctum')->getJson('/api/orders')->assertOk();
+        $respOrders->assertJsonFragment(['client_order_id' => 'A.182'])
+            ->assertJsonFragment(['client_order_id' => 'B.181'])
+            ->assertJsonFragment(['client_order_id' => 'D.196'])
+            ->assertJsonMissing(['client_order_id' => 'A.999']);
+
+        // 5. Cashier filters creator=cashier -> sees only A.182
+        $respCashierFilter = $this->actingAs($cashier, 'sanctum')->getJson('/api/orders?creator=cashier')->assertOk();
+        $respCashierFilter->assertJsonFragment(['client_order_id' => 'A.182'])
+            ->assertJsonMissing(['client_order_id' => 'B.181'])
+            ->assertJsonMissing(['client_order_id' => 'D.196']);
+
+        // 6. Cashier filters creator=staff -> sees B.181 and D.196, excludes A.182
+        $respStaffFilter = $this->actingAs($cashier, 'sanctum')->getJson('/api/orders?creator=staff')->assertOk();
+        $respStaffFilter->assertJsonMissing(['client_order_id' => 'A.182'])
+            ->assertJsonFragment(['client_order_id' => 'B.181'])
+            ->assertJsonFragment(['client_order_id' => 'D.196']);
+
+        // 7. Staff 1 only sees their own order (B.181), NOT A.182 or D.196
+        $respStaffOrders = $this->actingAs($staff1, 'sanctum')->getJson('/api/orders')->assertOk();
+        $respStaffOrders->assertJsonFragment(['client_order_id' => 'B.181'])
+            ->assertJsonMissing(['client_order_id' => 'A.182'])
+            ->assertJsonMissing(['client_order_id' => 'D.196']);
+    }
 }
 

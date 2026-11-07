@@ -373,8 +373,18 @@ async function completeOrderAndShowReceipt(staffAllocation = null, method = "Cas
     let finalMethod = staffAllocation ? "Staff Expense" : method;
     const activeShift = (typeof shifts !== 'undefined' && Array.isArray(shifts)) ? (shifts.find(s => s.status === 'active') || shifts[0]) : null;
 
+    let orderCreatorPrefix;
+    if (currentUser.role === 'staff') {
+        const isStaff2 = currentUser.staffId === 'STF-1052' || (currentUser.name && currentUser.name.includes('2'));
+        orderCreatorPrefix = isStaff2 ? 'D.' : 'B.';
+    } else {
+        orderCreatorPrefix = 'A.';
+    }
+    const defaultOrderNumber = `${orderCreatorPrefix}${nextOrderSeq}`;
+
     const orderRecord = {
         id: `ORD-${nextOrderSeq}`,
+        orderNumber: defaultOrderNumber,
         seq: nextOrderSeq,
         shiftId: activeShift ? activeShift.id : 'SH-101',
         date: new Date().toISOString(),
@@ -433,6 +443,7 @@ async function completeOrderAndShowReceipt(staffAllocation = null, method = "Cas
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({
                 orderId: orderRecord.clientOrderId,
+                orderNumber: orderRecord.orderNumber,
                 customerId: orderRecord.customerId,
                 customer: orderRecord.customer,
                 orderTypeId: orderRecord.orderTypeId,
@@ -457,6 +468,7 @@ async function completeOrderAndShowReceipt(staffAllocation = null, method = "Cas
         }
         orderRecord.id = result.order.id;
         orderRecord.seq = result.order.seq;
+        orderRecord.orderNumber = result.order.order_number || result.order.client_order_id || orderRecord.orderNumber;
         orderRecord.total = Number(result.order.grand_total);
         orderRecord.grandTotal = orderRecord.total;
         orderRecord.subtotal = Number(result.order.subtotal);

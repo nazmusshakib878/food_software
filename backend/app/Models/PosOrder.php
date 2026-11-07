@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PosOrder extends Model
@@ -10,6 +11,11 @@ class PosOrder extends Model
     protected $table = 'pos_orders';
     public $incrementing = false;
     protected $keyType = 'string';
+
+    protected $appends = [
+        'order_number',
+        'creator_classification',
+    ];
 
     protected $fillable = [
         'id',
@@ -60,6 +66,71 @@ class PosOrder extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PosOrderItem::class, 'order_id', 'id');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function getOrderNumberAttribute(): string
+    {
+        if (!empty($this->raw_payload['order_number'])) {
+            return (string) $this->raw_payload['order_number'];
+        }
+        if (!empty($this->raw_payload['orderNumber'])) {
+            return (string) $this->raw_payload['orderNumber'];
+        }
+        if (!empty($this->client_order_id) && preg_match('/^[A-Za-z]\.\d+/i', (string) $this->client_order_id)) {
+            return (string) $this->client_order_id;
+        }
+        if (!empty($this->id) && preg_match('/^[A-Za-z]\.\d+/i', (string) $this->id)) {
+            return (string) $this->id;
+        }
+        if (!empty($this->seq)) {
+            $user = $this->relationLoaded('user') ? $this->user : null;
+            $role = $user ? $user->role : null;
+            if ($role === 'staff') {
+                $isStaff2 = ($user && ($user->staff_id === 'STF-1052' || str_contains($user->name ?? '', '2')));
+                $prefix = $isStaff2 ? 'D.' : 'B.';
+            } else {
+                $prefix = 'A.';
+            }
+            return $prefix . $this->seq;
+        }
+        return (string) ($this->client_order_id ?: $this->id);
+    }
+
+    public function getCreatorClassificationAttribute(): array
+    {
+        $orderNum = $this->order_number;
+        if (preg_match('/^([A-Za-z])\./', $orderNum, $matches)) {
+            $letter = strtoupper($matches[1]);
+            if ($letter === 'A') {
+                return [
+                    'type' => 'cashier',
+                    'label' => 'CASHIER',
+                    'is_cashier' => true,
+                    'is_staff' => false,
+                    'letter' => 'A',
+                ];
+            }
+            if ($letter === 'B' || $letter === 'D') {
+                return [
+                    'type' => 'staff',
+                    'label' => 'STAFF',
+                    'is_cashier' => false,
+                    'is_staff' => true,
+                    'letter' => $letter,
+                ];
+            }
+        }
+        return [
+            'type' => 'unknown',
+            'label' => 'UNKNOWN',
+            'is_cashier' => false,
+            'is_staff' => false,
+        ];
     }
 }
 

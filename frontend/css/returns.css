@@ -92,6 +92,74 @@
    2. ORDERS SEARCH BAR
    Long search field directly below tabs with search icon & clear X button
    ========================================================= */
+/* Orders Controls Bar: Search & Creator Filter */
+.orders-controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 10px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.orders-controls-bar .orders-search-bar-wrap {
+    padding: 0;
+    border-bottom: none;
+    flex: 1;
+    min-width: 220px;
+}
+
+.orders-creator-filter-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 24px;
+    border: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.creator-filter-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: #475569;
+    transition: all 0.16s ease;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.creator-filter-tab i {
+    font-size: 12px;
+}
+
+.creator-filter-tab:hover {
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.creator-filter-tab.active {
+    background: var(--teal, #0d9488);
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 1px 4px rgba(13, 148, 136, 0.3);
+}
+
+.creator-filter-tab.active i {
+    color: #ffffff;
+}
+
 .orders-search-bar-wrap {
     padding: 12px 20px;
     background: #ffffff;
@@ -209,6 +277,57 @@
 .ret-value.font-bold {
     font-weight: 800;
     color: #0f172a;
+}
+
+/* Prominent Order Number & Creator Badges (Section 4) */
+.ret-order-num-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.ret-order-num-text {
+    font-weight: 800;
+    font-size: 15px;
+    color: #0f172a;
+    letter-spacing: 0.3px;
+}
+
+.ret-creator-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    line-height: 1;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Distinct Cashier Badge: Deep Vibrant Blue */
+.ret-creator-badge.ret-badge-cashier {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1.5px solid #7dd3fc;
+}
+
+/* Distinct Staff Badge: Warm Amber Gold */
+.ret-creator-badge.ret-badge-staff {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1.5px solid #fcd34d;
+}
+
+/* Unknown / Legacy Badge */
+.ret-creator-badge.ret-badge-unknown {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
 }
 
 .ret-info-user {
@@ -684,6 +803,30 @@
     .cancel-pad-btn {
         height: 54px;
         font-size: 20px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .orders-controls-bar {
+        padding: 10px 16px;
+        gap: 10px;
+    }
+    .orders-creator-filter-wrap {
+        width: 100%;
+        display: flex;
+        justify-content: stretch;
+    }
+    .creator-filter-tab {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+    .ret-order-card {
+        padding: 14px;
+    }
+    .ret-order-info-grid {
+        gap: 8px 12px;
     }
 }
 
