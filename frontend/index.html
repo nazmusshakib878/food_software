@@ -887,9 +887,11 @@
 <div class="modal-overlay" id="paymentModal">
     <div class="modal-card checkout-screen">
         <div class="checkout-header">
-            <button class="checkout-back-btn" onclick="closePaymentModal()">Back</button>
+            <button class="checkout-back-btn" onclick="closePaymentModal()" data-i18n="btn_back">Back</button>
             <div class="checkout-remaining">
-                <span id="payModalRemaining">0.00</span> <span>:Remaining</span>
+                <span class="checkout-rem-label" data-i18n="remaining_lbl">Remaining:</span>
+                <span id="payModalRemaining" class="checkout-rem-val">0.00</span>
+                <span class="checkout-rem-curr">SAR</span>
             </div>
         </div>
         
@@ -927,13 +929,16 @@
                 <!-- Cash -->
                 <div class="pay-accordion" id="acc_cash">
                     <div class="pay-accordion-header" onclick="toggleAccordion('cash')">
-                        <span class="pay-accordion-title">Cash</span>
+                        <span class="pay-accordion-title">Cash (نقدي)</span>
                         <i class="fa-solid fa-money-bill-1-wave"></i>
                     </div>
                     <div class="pay-accordion-body">
                         <div class="pay-input-row">
-                            <input type="text" id="input_cash" readonly onclick="handleInputTap('cash')" ondblclick="fillRemaining('cash')" placeholder="0.00">
-                            <span>: Cash</span>
+                            <span class="pay-input-label">Cash</span>
+                            <div class="pay-input-box-wrap">
+                                <input type="text" id="input_cash" readonly onclick="handleInputTap('cash')" ondblclick="fillRemaining('cash')" placeholder="0.00">
+                                <span class="pay-input-currency">SAR</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -941,18 +946,24 @@
                 <!-- Bank 236 -->
                 <div class="pay-accordion" id="acc_bank236">
                     <div class="pay-accordion-header" onclick="toggleAccordion('bank236')">
-                        <span class="pay-accordion-title">Bank 236</span>
+                        <span class="pay-accordion-title">Bank 236 (بنك ٢٣٦)</span>
                         <i class="fa-solid fa-building-columns"></i>
                     </div>
                     <div class="pay-accordion-body">
                         <div class="pay-input-split">
                             <div class="pay-input-row">
-                                <input type="text" id="input_bank236_visa" readonly onclick="handleInputTap('bank236_visa')" ondblclick="fillRemaining('bank236_visa')" placeholder="0.00">
-                                <span>: VISA236</span>
+                                <span class="pay-input-label">VISA 236</span>
+                                <div class="pay-input-box-wrap">
+                                    <input type="text" id="input_bank236_visa" readonly onclick="handleInputTap('bank236_visa')" ondblclick="fillRemaining('bank236_visa')" placeholder="0.00">
+                                    <span class="pay-input-currency">SAR</span>
+                                </div>
                             </div>
                             <div class="pay-input-row">
-                                <input type="text" id="input_bank236_mada" readonly onclick="handleInputTap('bank236_mada')" ondblclick="fillRemaining('bank236_mada')" placeholder="0.00">
-                                <span>: Mada236</span>
+                                <span class="pay-input-label">Mada 236</span>
+                                <div class="pay-input-box-wrap">
+                                    <input type="text" id="input_bank236_mada" readonly onclick="handleInputTap('bank236_mada')" ondblclick="fillRemaining('bank236_mada')" placeholder="0.00">
+                                    <span class="pay-input-currency">SAR</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -961,18 +972,24 @@
                 <!-- Bank 237 -->
                 <div class="pay-accordion" id="acc_bank237">
                     <div class="pay-accordion-header" onclick="toggleAccordion('bank237')">
-                        <span class="pay-accordion-title">Bank 237</span>
+                        <span class="pay-accordion-title">Bank 237 (بنك ٢٣٧)</span>
                         <i class="fa-solid fa-building-columns"></i>
                     </div>
                     <div class="pay-accordion-body">
                         <div class="pay-input-split">
                             <div class="pay-input-row">
-                                <input type="text" id="input_bank237_visa" readonly onclick="handleInputTap('bank237_visa')" ondblclick="fillRemaining('bank237_visa')" placeholder="0.00">
-                                <span>: VISA237</span>
+                                <span class="pay-input-label">VISA 237</span>
+                                <div class="pay-input-box-wrap">
+                                    <input type="text" id="input_bank237_visa" readonly onclick="handleInputTap('bank237_visa')" ondblclick="fillRemaining('bank237_visa')" placeholder="0.00">
+                                    <span class="pay-input-currency">SAR</span>
+                                </div>
                             </div>
                             <div class="pay-input-row">
-                                <input type="text" id="input_bank237_mada" readonly onclick="handleInputTap('bank237_mada')" ondblclick="fillRemaining('bank237_mada')" placeholder="0.00">
-                                <span>: Mada237</span>
+                                <span class="pay-input-label">Mada 237</span>
+                                <div class="pay-input-box-wrap">
+                                    <input type="text" id="input_bank237_mada" readonly onclick="handleInputTap('bank237_mada')" ondblclick="fillRemaining('bank237_mada')" placeholder="0.00">
+                                    <span class="pay-input-currency">SAR</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -981,18 +998,24 @@
                 <!-- Bank 238 -->
                 <div class="pay-accordion" id="acc_bank238">
                     <div class="pay-accordion-header" onclick="toggleAccordion('bank238')">
-                        <span class="pay-accordion-title">Bank 238</span>
+                        <span class="pay-accordion-title">Bank 238 (بنك ٢٣٨)</span>
                         <i class="fa-solid fa-building-columns"></i>
                     </div>
                     <div class="pay-accordion-body">
                         <div class="pay-input-split">
                             <div class="pay-input-row">
-                                <input type="text" id="input_bank238_visa" readonly onclick="handleInputTap('bank238_visa')" ondblclick="fillRemaining('bank238_visa')" placeholder="0.00">
-                                <span>: VISA238</span>
+                                <span class="pay-input-label">VISA 238</span>
+                                <div class="pay-input-box-wrap">
+                                    <input type="text" id="input_bank238_visa" readonly onclick="handleInputTap('bank238_visa')" ondblclick="fillRemaining('bank238_visa')" placeholder="0.00">
+                                    <span class="pay-input-currency">SAR</span>
+                                </div>
                             </div>
                             <div class="pay-input-row">
-                                <input type="text" id="input_bank238_mada" readonly onclick="handleInputTap('bank238_mada')" ondblclick="fillRemaining('bank238_mada')" placeholder="0.00">
-                                <span>: Mada238</span>
+                                <span class="pay-input-label">Mada 238</span>
+                                <div class="pay-input-box-wrap">
+                                    <input type="text" id="input_bank238_mada" readonly onclick="handleInputTap('bank238_mada')" ondblclick="fillRemaining('bank238_mada')" placeholder="0.00">
+                                    <span class="pay-input-currency">SAR</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1001,18 +1024,24 @@
                 <!-- Bank 239 -->
                 <div class="pay-accordion" id="acc_bank239">
                     <div class="pay-accordion-header" onclick="toggleAccordion('bank239')">
-                        <span class="pay-accordion-title">Bank 239</span>
+                        <span class="pay-accordion-title">Bank 239 (بنك ٢٣٩)</span>
                         <i class="fa-solid fa-building-columns"></i>
                     </div>
                     <div class="pay-accordion-body">
                         <div class="pay-input-split">
                             <div class="pay-input-row">
-                                <input type="text" id="input_bank239_visa" readonly onclick="handleInputTap('bank239_visa')" ondblclick="fillRemaining('bank239_visa')" placeholder="0.00">
-                                <span>: VISA239</span>
+                                <span class="pay-input-label">VISA 239</span>
+                                <div class="pay-input-box-wrap">
+                                    <input type="text" id="input_bank239_visa" readonly onclick="handleInputTap('bank239_visa')" ondblclick="fillRemaining('bank239_visa')" placeholder="0.00">
+                                    <span class="pay-input-currency">SAR</span>
+                                </div>
                             </div>
                             <div class="pay-input-row">
-                                <input type="text" id="input_bank239_mada" readonly onclick="handleInputTap('bank239_mada')" ondblclick="fillRemaining('bank239_mada')" placeholder="0.00">
-                                <span>: Mada239</span>
+                                <span class="pay-input-label">Mada 239</span>
+                                <div class="pay-input-box-wrap">
+                                    <input type="text" id="input_bank239_mada" readonly onclick="handleInputTap('bank239_mada')" ondblclick="fillRemaining('bank239_mada')" placeholder="0.00">
+                                    <span class="pay-input-currency">SAR</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1021,13 +1050,16 @@
                 <!-- Ajel -->
                 <div class="pay-accordion" id="acc_credit">
                     <div class="pay-accordion-header" onclick="toggleAccordion('credit')">
-                        <span class="pay-accordion-title">أجل</span>
+                        <span class="pay-accordion-title">Credit / Ajel (أجل)</span>
                         <i class="fa-solid fa-clock-rotate-left"></i>
                     </div>
                     <div class="pay-accordion-body">
                         <div class="pay-input-row">
-                            <input type="text" id="input_credit" readonly onclick="handleInputTap('credit')" ondblclick="fillRemaining('credit')" placeholder="0.00">
-                            <span>: أجل</span>
+                            <span class="pay-input-label">Ajel (أجل)</span>
+                            <div class="pay-input-box-wrap">
+                                <input type="text" id="input_credit" readonly onclick="handleInputTap('credit')" ondblclick="fillRemaining('credit')" placeholder="0.00">
+                                <span class="pay-input-currency">SAR</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1036,7 +1068,7 @@
         </div>
         
         <div class="checkout-footer">
-            <button class="checkout-pay-btn" onclick="processCheckoutPay()">Pay  $</button>
+            <button class="checkout-pay-btn" onclick="processCheckoutPay()"><i class="fa-solid fa-check"></i> <span data-i18n="pay_action">Pay & Issue Invoice</span></button>
         </div>
     </div>
 </div>
