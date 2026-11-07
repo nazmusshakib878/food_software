@@ -12,50 +12,115 @@
     overflow: hidden;
 }
 
-/* Orders Mode: 38-40% Left (Cart), 60-62% Right (Orders History) */
-.pos-layout.orders-mode,
-.pos-layout.orders-mode.catalog-mode-grid8,
-.pos-layout.orders-mode.catalog-mode-split,
-#posMainLayout.orders-mode {
-    display: grid !important;
-    grid-template-columns: minmax(320px, 39%) minmax(0, 1fr) !important;
-    direction: ltr !important;
-    flex-direction: row !important;
-    gap: 12px !important;
-    padding: 12px !important;
-    height: 100% !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    overflow: hidden !important;
+/* Orders Mode:
+   - Landscape Tablets & Desktops: 38-40% Left (Cart), 60-62% Right (Orders History)
+   - Portrait Tablets (iPad) & Mobile: Full-width Orders History, Cart in collapsible drawer
+*/
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+    .pos-layout.orders-mode,
+    .pos-layout.orders-mode.catalog-mode-grid8,
+    .pos-layout.orders-mode.catalog-mode-split,
+    #posMainLayout.orders-mode {
+        display: grid !important;
+        grid-template-columns: minmax(320px, 39%) minmax(0, 1fr) !important;
+        direction: ltr !important;
+        flex-direction: row !important;
+        gap: 12px !important;
+        padding: 12px !important;
+        height: 100% !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .pos-layout.orders-mode .pos-order-panel,
+    .pos-layout.orders-mode.catalog-mode-grid8 .pos-order-panel,
+    #posMainLayout.orders-mode #posOrderPanel {
+        display: flex !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex: none !important;
+        height: 100% !important;
+        position: static !important;
+        box-sizing: border-box !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .pos-layout.orders-mode .pos-right-pane,
+    #posMainLayout.orders-mode #posRightPane {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex: none !important;
+        height: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        position: relative !important;
+    }
 }
 
-.pos-layout.orders-mode .pos-order-panel,
-.pos-layout.orders-mode.catalog-mode-grid8 .pos-order-panel,
-#posMainLayout.orders-mode #posOrderPanel {
-    display: flex !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    flex: none !important;
-    height: 100% !important;
-    position: static !important;
-    box-sizing: border-box !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
+@media (orientation: portrait), (max-width: 899px) {
+    .pos-layout.orders-mode,
+    #posMainLayout.orders-mode {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        height: 100% !important;
+        padding: 8px !important;
+        gap: 0 !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
 
-.pos-layout.orders-mode .pos-right-pane,
-#posMainLayout.orders-mode #posRightPane {
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    flex: none !important;
-    height: 100% !important;
-    box-sizing: border-box !important;
-    overflow: hidden !important;
-    position: relative !important;
+    .pos-layout.orders-mode .pos-order-panel,
+    #posMainLayout.orders-mode #posOrderPanel {
+        display: none !important;
+        position: fixed !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        z-index: 150 !important;
+        border-radius: 0 !important;
+        box-sizing: border-box !important;
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    .pos-layout.orders-mode .pos-order-panel.mobile-open,
+    #posMainLayout.orders-mode #posOrderPanel.mobile-open {
+        display: flex !important;
+    }
+
+    .pos-layout.orders-mode .pos-right-pane,
+    #posMainLayout.orders-mode #posRightPane {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+        height: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        position: relative !important;
+    }
+
+    .pos-layout.orders-mode #returnsView,
+    #posMainLayout.orders-mode #returnsView,
+    .pos-layout.orders-mode .orders-screen-wrapper,
+    #posMainLayout.orders-mode .orders-screen-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 1 auto !important;
+        height: 100% !important;
+    }
 }
 
 .pos-layout.orders-mode #catalogFloatingCart {

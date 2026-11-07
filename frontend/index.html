@@ -206,7 +206,7 @@
                 </aside>
 
                 <!-- Mobile Cart Floater (Visible only on mobile via CSS) -->
-                <div class="mobile-cart-floater" onclick="openMobileCart()">
+                <div class="mobile-cart-floater" id="mobileCartFloater" onclick="openMobileCart()">
                     <div class="left-info">
                         <span class="badge-count" id="floatCartBadge">0</span>
                         <span class="total-price" id="floatCartTotalText">SAR 0.00</span>
@@ -326,8 +326,8 @@
                         <div class="orders-screen-wrapper" id="returnsScreen1">
                             <!-- Top Filter Tabs -->
                             <div class="orders-top-tabs" id="ordersTopTabs">
-                                <button type="button" class="order-tab active" onclick="setReturnOrderTab('uncompleted', this)" data-i18n="tab_uncompleted">Uncompleted</button>
-                                <button type="button" class="order-tab" onclick="setReturnOrderTab('all', this)" data-i18n="tab_all">All</button>
+                                <button type="button" class="order-tab" onclick="setReturnOrderTab('uncompleted', this)" data-i18n="tab_uncompleted">Uncompleted</button>
+                                <button type="button" class="order-tab active" onclick="setReturnOrderTab('all', this)" data-i18n="tab_all">All</button>
                                 <button type="button" class="order-tab" onclick="setReturnOrderTab('offline', this)" data-i18n="tab_offline">Offline</button>
                                 <button type="button" class="order-tab" onclick="setReturnOrderTab('outgoing', this)" data-i18n="tab_outgoing">Outgoing</button>
                                 <button type="button" class="order-tab" onclick="setReturnOrderTab('returned', this)" data-i18n="tab_returned">Returned</button>

@@ -1982,6 +1982,64 @@ assert("Section 25 Test 12: returns.css contains .ret-badge-cashier", retCss.inc
 assert("Section 25 Test 12: returns.css contains .ret-badge-staff", retCss.includes('.ret-badge-staff'));
 assert("Section 25 Test 12: returns.css contains iPad responsive styles (max-width: 1024px)", retCss.includes('@media (max-width: 1024px)'));
 
+// Section 26: Default All Orders Settings, Empty States, and Responsive iPad UI
+console.log("\n--- Running Section 26: Default All Settings, Empty States & iPad Layout Tests ---");
+
+// Test 13: Default status tab is 'all' and default creator filter is 'all'
+goReturnsScreen1();
+assert("Section 26 Test 1: currentReturnTab defaults to 'all'", currentReturnTab === 'all');
+assert("Section 26 Test 2: currentOrderCreatorFilter defaults to 'all'", currentOrderCreatorFilter === 'all');
+
+// Test 14: HTML index.html contains active class on 'all' tab
+const indexHtmlOrders = fs.readFileSync(path.join(frontendRoot, 'index.html'), 'utf8');
+assert("Section 26 Test 3: index.html has active tab on 'all'", indexHtmlOrders.includes("setReturnOrderTab('all', this)\"") && indexHtmlOrders.includes("class=\"order-tab active\" onclick=\"setReturnOrderTab('all', this)\""));
+
+// Test 15: resetAllOrderFilters function
+currentReturnTab = 'uncompleted';
+currentOrderCreatorFilter = 'cashier';
+document.getElementById('returnsSearchInput').value = 'something_nonexistent';
+assert("Section 26 Test 4: resetAllOrderFilters exists", typeof resetAllOrderFilters === 'function');
+resetAllOrderFilters();
+assert("Section 26 Test 5: resetAllOrderFilters sets tab to 'all'", currentReturnTab === 'all');
+assert("Section 26 Test 6: resetAllOrderFilters sets creator to 'all'", currentOrderCreatorFilter === 'all');
+assert("Section 26 Test 7: resetAllOrderFilters clears search input", document.getElementById('returnsSearchInput').value === '');
+
+// Test 16: Filter-empty state with Show All Orders button
+document.getElementById('returnsSearchInput').value = 'XYZ_NO_MATCH_999';
+renderReturnsOrdersList();
+const filterEmptyHtml = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 26 Test 8: Filter empty state renders .orders-state-box.filter-empty-state", filterEmptyHtml.includes('filter-empty-state'));
+assert("Section 26 Test 9: Filter empty state has reset action button", filterEmptyHtml.includes('resetAllOrderFilters()'));
+clearReturnsSearch();
+
+// Test 17: Branch empty state when orders = []
+const tempOrders = orders;
+orders = [];
+renderReturnsOrdersList();
+const branchEmptyHtml = document.getElementById('returnsOrdersGrid').innerHTML;
+assert("Section 26 Test 10: Branch empty state renders .orders-state-box.empty-state", branchEmptyHtml.includes('empty-state'));
+assert("Section 26 Test 11: Branch empty state provides action to create new order", branchEmptyHtml.includes("switchView('pos')"));
+
+// Test 18: Loading state
+if (typeof setOrdersLoadingState === 'function') {
+    setOrdersLoadingState(true);
+    const loadingHtml = document.getElementById('returnsOrdersGrid').innerHTML;
+    assert("Section 26 Test 12: Loading state renders .orders-state-box.loading-state", loadingHtml.includes('loading-state'));
+    setOrdersLoadingState(false);
+}
+orders = tempOrders;
+
+// Test 19: pos.css responsive rules for iPad portrait vs landscape
+const posCssContent = fs.readFileSync(path.join(frontendRoot, 'css/pos.css'), 'utf8');
+assert("Section 26 Test 13: pos.css limits 2-column grid to landscape tablet/desktop", posCssContent.includes('@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px)'));
+assert("Section 26 Test 14: pos.css defines portrait full-width layout for orders mode", posCssContent.includes('@media (orientation: portrait), (max-width: 899px)'));
+assert("Section 26 Test 15: pos.css hides cart panel in portrait orders mode", posCssContent.includes('#posMainLayout.orders-mode #posOrderPanel') && posCssContent.includes('display: none !important'));
+
+// Test 20: responsive.css rules for portrait tablets
+const respCssContent = fs.readFileSync(path.join(frontendRoot, 'css/responsive.css'), 'utf8');
+assert("Section 26 Test 16: responsive.css handles iPad portrait screens up to 1024px", respCssContent.includes('max-width: 1024px) and (orientation: portrait)'));
+assert("Section 26 Test 17: responsive.css expands returnsView to 100% width", respCssContent.includes('#returnsView') && respCssContent.includes('width: 100% !important'));
+
 // Restore original test orders
 orders = testOrdersBackup;
 

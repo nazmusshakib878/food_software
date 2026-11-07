@@ -2,7 +2,10 @@
    APP.JS - Main App Bootstrap, Auth, Language & Router
    ========================================================= */
 
+let currentView = 'pos';
+
 function switchView(viewName) {
+    currentView = viewName;
     if (viewName === 'admin' && currentUser && !['admin', 'manager'].includes(currentUser.role)) {
         showToast('Access Denied: Admin role required', 'danger');
         switchView('pos');
@@ -625,17 +628,69 @@ async function refreshAuthoritativePosData() {
         subtitleEn: p.subtitle_en, subtitleAr: p.subtitle_ar, image: p.image, price: Number(p.price),
         taxRate: Number(p.tax_rate), available: Boolean(p.available), stock: p.track_stock ? Number(p.stock_on_hand) : null
     }));
-    orders = (orderData.orders || []).map(o => ({
-        id: o.id, orderNumber: o.order_number || o.orderNumber || o.client_order_id || (o.seq ? (o.user?.role === 'staff' ? `B.${o.seq}` : `A.${o.seq}`) : o.id), seq: o.seq, shiftId: o.shift_id, date: o.created_at, dateFormatted: o.created_at,
-        type: o.order_type_id, orderTypeId: o.order_type_id, orderType: o.order_type_name,
-        deliveryDisplay: o.delivery_display, table: o.table, customer: o.customer_name || o.customer_id,
-        customerId: o.customer_id, notes: o.notes, phone: o.phone, status: o.status,
-        cashier: o.user?.name || currentUser.name, userId: o.user_id, companyId: o.company_id, branchId: o.branch_id,
-        subtotal: Number(o.subtotal), tax: Number(o.tax), discount: Number(o.discount), total: Number(o.grand_total),
-        grandTotal: Number(o.grand_total), paid: Number(o.paid), change: Number(o.change), method: o.method,
-        paymentStatus: o.payment_status,
-        items: (o.items || []).map(i => ({ id: i.item_id, enName: i.en_name, arName: i.ar_name, price: Number(i.price), qty: Number(i.qty), note: i.note || '', addons: i.addons || [], modifiers: i.modifiers || [] }))
-    }));
+    orders = (orderData.orders || []).map(o => {
+        const seqStr = o.seq ? String(o.seq) : '';
+        let fallbackOrderNum = o.id;
+        if (seqStr) {
+            if (o.user?.staff_id === 'STF-1052') {
+                fallbackOrderNum = `D.${seqStr}`;
+            } else if (o.user?.role === 'staff' || o.user?.staff_id === 'STF-1051') {
+                fallbackOrderNum = `B.${seqStr}`;
+            } else {
+                fallbackOrderNum = `A.${seqStr}`;
+            }
+        }
+        const assignedNum = o.order_number || o.orderNumber || o.client_order_id || fallbackOrderNum;
+        const creator = (typeof getOrderCreatorClassification === 'function') ? getOrderCreatorClassification(assignedNum) : { isStaff: false };
+        const resolvedUser = o.user?.name || (o.user_id === currentUser?.id ? currentUser?.name : (creator.isStaff ? 'Staff' : 'Cashier'));
+
+        return {
+            id: o.id,
+            orderNumber: assignedNum,
+            seq: o.seq,
+            shiftId: o.shift_id,
+            date: o.created_at,
+            dateFormatted: o.created_at,
+            type: o.order_type_id,
+            orderTypeId: o.order_type_id,
+            orderType: o.order_type_name,
+            deliveryDisplay: o.delivery_display,
+            table: o.table,
+            customer: o.customer_name || o.customer_id,
+            customerId: o.customer_id,
+            notes: o.notes,
+            phone: o.phone,
+            status: o.status,
+            cashier: resolvedUser,
+            cashierName: resolvedUser,
+            userName: resolvedUser,
+            staffName: resolvedUser,
+            userId: o.user_id,
+            staffId: o.staff_id || o.user?.staff_id,
+            userRole: o.user?.role,
+            companyId: o.company_id,
+            branchId: o.branch_id,
+            subtotal: Number(o.subtotal || 0),
+            tax: Number(o.tax || 0),
+            discount: Number(o.discount || 0),
+            total: Number(o.grand_total || 0),
+            grandTotal: Number(o.grand_total || 0),
+            paid: Number(o.paid || 0),
+            change: Number(o.change || 0),
+            method: o.method,
+            paymentStatus: o.payment_status,
+            items: (o.items || []).map(i => ({
+                id: i.item_id,
+                enName: i.en_name,
+                arName: i.ar_name,
+                price: Number(i.price || 0),
+                qty: Number(i.qty || 1),
+                note: i.note || '',
+                addons: i.addons || [],
+                modifiers: i.modifiers || []
+            }))
+        };
+    });
     shifts = (shiftData.shifts || []).map(s => ({
         id: s.id, cashier: s.cashier, cashierEn: s.cashier_en, cashierAr: s.cashier_ar,
         userId: s.user_id, staffId: s.staff_id, companyId: s.company_id, branchId: s.branch_id,
@@ -704,61 +759,95 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function refreshOrdersSilently() {
     try {
+        if (typeof setOrdersLoadingState === 'function' && (!orders || orders.length === 0)) {
+            setOrdersLoadingState(true);
+        }
         const response = await fetch('/api/orders', {
             credentials: 'same-origin',
             headers: { Accept: 'application/json' }
         });
-        if (!response.ok) return;
+        if (!response.ok) {
+            if (typeof setOrdersLoadingState === 'function') setOrdersLoadingState(false);
+            return;
+        }
         const data = await response.json();
         if (data && data.success && Array.isArray(data.orders)) {
-            orders = data.orders.map(o => ({
-                id: o.id,
-                orderNumber: o.order_number || o.orderNumber || o.client_order_id || (o.seq ? (o.user?.role === 'staff' ? `B.${o.seq}` : `A.${o.seq}`) : o.id),
-                seq: o.seq,
-                shiftId: o.shift_id,
-                date: o.created_at,
-                dateFormatted: o.created_at,
-                type: o.order_type_id,
-                orderTypeId: o.order_type_id,
-                orderType: o.order_type_name,
-                deliveryDisplay: o.delivery_display,
-                table: o.table,
-                customer: o.customer_name || o.customer_id,
-                customerId: o.customer_id,
-                notes: o.notes,
-                phone: o.phone,
-                status: o.status,
-                cashier: o.user?.name || (o.user_id === currentUser.id ? currentUser.name : (o.user?.role === 'staff' ? 'Staff' : 'Cashier')),
-                userId: o.user_id,
-                staffId: o.staff_id || o.user?.staff_id,
-                userRole: o.user?.role,
-                companyId: o.company_id,
-                branchId: o.branch_id,
-                subtotal: Number(o.subtotal),
-                tax: Number(o.tax),
-                discount: Number(o.discount),
-                total: Number(o.grand_total),
-                grandTotal: Number(o.grand_total),
-                paid: Number(o.paid),
-                change: Number(o.change),
-                method: o.method,
-                paymentStatus: o.payment_status,
-                items: (o.items || []).map(i => ({
-                    id: i.item_id,
-                    enName: i.en_name,
-                    arName: i.ar_name,
-                    price: Number(i.price),
-                    qty: Number(i.qty),
-                    note: i.note || '',
-                    addons: i.addons || [],
-                    modifiers: i.modifiers || []
-                }))
-            }));
-            if (typeof renderReturnsOrdersList === 'function' && typeof currentView !== 'undefined' && currentView === 'returns') {
+            orders = data.orders.map(o => {
+                const seqStr = o.seq ? String(o.seq) : '';
+                let fallbackOrderNum = o.id;
+                if (seqStr) {
+                    if (o.user?.staff_id === 'STF-1052') {
+                        fallbackOrderNum = `D.${seqStr}`;
+                    } else if (o.user?.role === 'staff' || o.user?.staff_id === 'STF-1051') {
+                        fallbackOrderNum = `B.${seqStr}`;
+                    } else {
+                        fallbackOrderNum = `A.${seqStr}`;
+                    }
+                }
+                const assignedNum = o.order_number || o.orderNumber || o.client_order_id || fallbackOrderNum;
+                const creator = (typeof getOrderCreatorClassification === 'function') ? getOrderCreatorClassification(assignedNum) : { isStaff: false };
+                const resolvedUser = o.user?.name || (o.user_id === currentUser?.id ? currentUser?.name : (creator.isStaff ? 'Staff' : 'Cashier'));
+
+                return {
+                    id: o.id,
+                    orderNumber: assignedNum,
+                    seq: o.seq,
+                    shiftId: o.shift_id,
+                    date: o.created_at,
+                    dateFormatted: o.created_at,
+                    type: o.order_type_id,
+                    orderTypeId: o.order_type_id,
+                    orderType: o.order_type_name,
+                    deliveryDisplay: o.delivery_display,
+                    table: o.table,
+                    customer: o.customer_name || o.customer_id,
+                    customerId: o.customer_id,
+                    notes: o.notes,
+                    phone: o.phone,
+                    status: o.status,
+                    cashier: resolvedUser,
+                    cashierName: resolvedUser,
+                    userName: resolvedUser,
+                    staffName: resolvedUser,
+                    userId: o.user_id,
+                    staffId: o.staff_id || o.user?.staff_id,
+                    userRole: o.user?.role,
+                    companyId: o.company_id,
+                    branchId: o.branch_id,
+                    subtotal: Number(o.subtotal || 0),
+                    tax: Number(o.tax || 0),
+                    discount: Number(o.discount || 0),
+                    total: Number(o.grand_total || 0),
+                    grandTotal: Number(o.grand_total || 0),
+                    paid: Number(o.paid || 0),
+                    change: Number(o.change || 0),
+                    method: o.method,
+                    paymentStatus: o.payment_status,
+                    items: (o.items || []).map(i => ({
+                        id: i.item_id,
+                        enName: i.en_name,
+                        arName: i.ar_name,
+                        price: Number(i.price || 0),
+                        qty: Number(i.qty || 1),
+                        note: i.note || '',
+                        addons: i.addons || [],
+                        modifiers: i.modifiers || []
+                    }))
+                };
+            });
+            if (typeof setOrdersLoadingState === 'function') {
+                setOrdersLoadingState(false);
+            }
+            const isReturnsActive = (document.getElementById('returnsView')?.classList.contains('active')) || currentView === 'returns';
+            if (typeof renderReturnsOrdersList === 'function' && isReturnsActive) {
                 renderReturnsOrdersList();
             }
+        } else {
+            if (typeof setOrdersLoadingState === 'function') setOrdersLoadingState(false);
         }
-    } catch (_) {}
+    } catch (_) {
+        if (typeof setOrdersLoadingState === 'function') setOrdersLoadingState(false);
+    }
 }
 
 if (typeof window !== 'undefined') {

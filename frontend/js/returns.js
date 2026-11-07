@@ -4,8 +4,18 @@
 
 let currentReturnOrder = null;
 let returnItemsState = [];
-let currentReturnTab = 'uncompleted';
+let currentReturnTab = 'all';
 let currentOrderCreatorFilter = 'all'; // 'all' | 'cashier' | 'staff'
+let isOrdersLoading = false;
+
+function setOrdersLoadingState(loading) {
+    isOrdersLoading = !!loading;
+    renderReturnsOrdersList();
+}
+
+if (typeof window !== 'undefined') {
+    window.setOrdersLoadingState = setOrdersLoadingState;
+}
 
 // Order Creator Classification Rules (Section 2)
 // A.xxx = CASHIER | B.xxx, D.xxx = STAFF (case-insensitive) | others = UNKNOWN/LEGACY
@@ -43,8 +53,20 @@ if (typeof window !== 'undefined') {
 }
 
 // Navigation & Modal Controls
-function goReturnsScreen1() {
+function goReturnsScreen1(preserveFilters = false) {
     closeCancelInvoiceModal();
+    if (!preserveFilters) {
+        currentReturnTab = 'all';
+        currentOrderCreatorFilter = 'all';
+        document.querySelectorAll('.orders-top-tabs .order-tab').forEach(b => {
+            const isAll = b.getAttribute('onclick')?.includes("'all'") || b.dataset.tab === 'all';
+            b.classList.toggle('active', !!isAll);
+        });
+        document.querySelectorAll('.orders-creator-filter-wrap .creator-filter-tab').forEach(b => {
+            const isAll = b.getAttribute('data-creator') === 'all';
+            b.classList.toggle('active', !!isAll);
+        });
+    }
     renderReturnsOrdersList();
 }
 
@@ -141,8 +163,29 @@ function renderReturnsOrdersList() {
     const grid = document.getElementById('returnsOrdersGrid');
     if (!grid) return;
 
+    if (isOrdersLoading) {
+        grid.innerHTML = `
+            <div class="orders-state-box loading-state">
+                <i class="fa-solid fa-spinner fa-spin orders-state-icon"></i>
+                <h4 class="orders-state-title">${typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'جارٍ تحميل الطلبات...' : 'Loading Orders...'}</h4>
+                <p class="orders-state-sub">${typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'يتم جلب أحدث طلبات الفرع من الخادم...' : 'Fetching latest branch orders from server...'}</p>
+            </div>
+        `;
+        return;
+    }
+
     if (!orders || orders.length === 0) {
-        grid.innerHTML = `<div style="text-align: center; color: var(--muted); grid-column: 1/-1; padding: 40px; font-size: 15px;">No orders found.</div>`;
+        grid.innerHTML = `
+            <div class="orders-state-box empty-state">
+                <i class="fa-solid fa-receipt orders-state-icon"></i>
+                <h4 class="orders-state-title">${typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'لا توجد طلبات مسجلة' : 'No Orders Recorded Yet'}</h4>
+                <p class="orders-state-sub">${typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'لم يتم تسجيل أي طلبات لهذا الفرع بعد. أنشئ طلباً جديداً ليظهر هنا.' : 'There are no orders recorded for this branch yet. Create a new sale to see it appear here.'}</p>
+                <button type="button" class="btn-orders-state-action" onclick="switchView('pos')">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>${typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'إنشاء طلب جديد' : 'Create New Order'}</span>
+                </button>
+            </div>
+        `;
         return;
     }
 
@@ -206,7 +249,17 @@ function renderReturnsOrdersList() {
     });
 
     if (filteredOrders.length === 0) {
-        grid.innerHTML = `<div style="text-align: center; color: var(--muted); grid-column: 1/-1; padding: 40px; font-size: 15px;">No orders match the filter.</div>`;
+        grid.innerHTML = `
+            <div class="orders-state-box filter-empty-state">
+                <i class="fa-solid fa-filter-circle-xmark orders-state-icon"></i>
+                <h4 class="orders-state-title">${typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'لا توجد طلبات تطابق الفلتر' : 'No Orders Match Selected Filters'}</h4>
+                <p class="orders-state-sub">${typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'جرّب اختيار تبويب آخر أو إعادة ضبط الفلاتر لعرض كافة الطلبات.' : 'Try selecting another status tab or creator filter, or reset all filters to view all orders.'}</p>
+                <button type="button" class="btn-orders-state-action" onclick="resetAllOrderFilters()">
+                    <i class="fa-solid fa-arrow-rotate-left"></i>
+                    <span>${typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'عرض كافة الطلبات' : 'Show All Orders'}</span>
+                </button>
+            </div>
+        `;
         return;
     }
 
@@ -736,4 +789,29 @@ function printCancelInvoiceReceipt(order) {
             setTimeout(() => printFrame.contentWindow.print(), 250);
         }
     }
+}
+
+// Reset all orders filters helper
+function resetAllOrderFilters() {
+    currentReturnTab = 'all';
+    currentOrderCreatorFilter = 'all';
+    const input = document.getElementById('returnsSearchInput');
+    if (input) input.value = '';
+
+    document.querySelectorAll('.orders-top-tabs .order-tab').forEach(b => {
+        const isAll = b.getAttribute('onclick')?.includes("'all'") || b.dataset.tab === 'all';
+        b.classList.toggle('active', !!isAll);
+    });
+    document.querySelectorAll('.orders-creator-filter-wrap .creator-filter-tab').forEach(b => {
+        const isAll = b.getAttribute('data-creator') === 'all';
+        b.classList.toggle('active', !!isAll);
+    });
+
+    renderReturnsOrdersList();
+}
+
+if (typeof window !== 'undefined') {
+    window.resetAllOrderFilters = resetAllOrderFilters;
+    window.goReturnsScreen1 = goReturnsScreen1;
+    window.renderReturnsOrdersList = renderReturnsOrdersList;
 }

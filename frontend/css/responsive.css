@@ -437,8 +437,8 @@
     }
 }
 
-/* Fallback for general portrait screens <= 900px */
-@media (max-width: 900px) and (orientation: portrait) {
+/* Fallback for general portrait screens <= 1024px (including iPad & mobile portrait) */
+@media (max-width: 1024px) and (orientation: portrait), (orientation: portrait) {
     .pos-layout {
         flex-direction: column;
         padding: 8px;
@@ -468,15 +468,18 @@
         display: flex !important;
     }
 
-    .pos-layout.orders-mode {
+    .pos-layout.orders-mode,
+    #posMainLayout.orders-mode {
         display: flex !important;
         flex-direction: column !important;
         grid-template-columns: none !important;
         padding: 0 !important;
         gap: 0 !important;
+        width: 100% !important;
     }
 
-    .pos-layout.orders-mode .pos-order-panel {
+    .pos-layout.orders-mode .pos-order-panel,
+    #posMainLayout.orders-mode #posOrderPanel {
         display: none !important;
         position: fixed !important;
         top: 0 !important;
@@ -484,18 +487,31 @@
         left: 0 !important;
         right: 0 !important;
         width: 100% !important;
+        max-width: 100% !important;
         height: 100% !important;
         z-index: 150 !important;
     }
 
-    .pos-layout.orders-mode .pos-order-panel.mobile-open {
+    .pos-layout.orders-mode .pos-order-panel.mobile-open,
+    #posMainLayout.orders-mode #posOrderPanel.mobile-open {
         display: flex !important;
     }
 
-    .pos-layout.orders-mode .pos-right-pane {
+    .pos-layout.orders-mode .pos-right-pane,
+    #posMainLayout.orders-mode #posRightPane {
         width: 100% !important;
         max-width: 100% !important;
-        flex: 1 !important;
+        flex: 1 1 auto !important;
+        height: 100% !important;
+    }
+
+    .pos-layout.orders-mode #returnsView,
+    #posMainLayout.orders-mode #returnsView,
+    .pos-layout.orders-mode .orders-screen-wrapper,
+    #posMainLayout.orders-mode .orders-screen-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 1 auto !important;
         height: 100% !important;
     }
 
