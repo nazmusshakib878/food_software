@@ -2553,5 +2553,174 @@
     }
 }
 
+/* =========================================================
+   COMPREHENSIVE OLED DARK MODE FOR REPORTS & SIDE DRAWER
+   ========================================================= */
+html[data-theme="dark"] .pos-top-actions-bar {
+    background: var(--surface, #111827);
+    border-bottom-color: var(--border, #334155);
+}
+
+html[data-theme="dark"] .side-drawer {
+    background: var(--surface, #111827);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+html[data-theme="dark"] [dir="rtl"] .side-drawer {
+    border-left-color: var(--border, #334155);
+}
+
+html[data-theme="dark"] [dir="ltr"] .side-drawer {
+    border-right-color: var(--border, #334155);
+}
+
+html[data-theme="dark"] .drawer-menu-item {
+    color: var(--text, #f1f5f9);
+}
+
+html[data-theme="dark"] .drawer-menu-item:hover {
+    background: var(--surface-2, #1f2937);
+    color: var(--teal-light, #2dd4bf);
+}
+
+html[data-theme="dark"] .drawer-menu-item.active {
+    background: rgba(20, 184, 166, 0.18);
+    color: var(--teal-light, #2dd4bf);
+    border-color: rgba(20, 184, 166, 0.4);
+}
+
+html[data-theme="dark"] .drawer-menu-item.active i {
+    color: var(--teal-light, #2dd4bf);
+}
+
+html[data-theme="dark"] .drawer-sub-item {
+    color: var(--text-secondary, #cbd5e1);
+}
+
+html[data-theme="dark"] .drawer-sub-item:hover {
+    color: #ffffff;
+    background: var(--surface-2, #1f2937);
+}
+
+html[data-theme="dark"] .drawer-sub-item.active {
+    color: var(--teal-light, #2dd4bf);
+    background: var(--surface-2, #1f2937);
+}
+
+html[data-theme="dark"] .drawer-sub-item[data-report-id="items_report"].active {
+    color: var(--teal-light, #2dd4bf) !important;
+    background: rgba(20, 184, 166, 0.22) !important;
+    border-inline-start-color: var(--teal, #0d9488) !important;
+}
+
+html[data-theme="dark"] .drawer-section-title {
+    color: var(--muted, #94a3b8);
+}
+
+/* Reports Container & Screens */
+html[data-theme="dark"] .reports-screen-container,
+html[data-theme="dark"] .report-content-area,
+html[data-theme="dark"] .items-report-screen,
+html[data-theme="dark"] .invoice-report-screen,
+html[data-theme="dark"] .daily-shifts-screen {
+    background: var(--bg, #0b1220);
+    color: var(--text, #f1f5f9);
+}
+
+html[data-theme="dark"] .items-report-top,
+html[data-theme="dark"] .invoice-report-top,
+html[data-theme="dark"] .daily-shifts-report-top {
+    background: var(--surface, #111827);
+    border-bottom-color: var(--border, #334155);
+}
+
+html[data-theme="dark"] .items-category-section,
+html[data-theme="dark"] .report-card,
+html[data-theme="dark"] .balancing-card,
+html[data-theme="dark"] .audit-card {
+    background: var(--surface, #111827);
+    border-color: var(--border, #334155);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .items-category-header {
+    background: var(--surface-2, #1f2937);
+    color: var(--text, #f1f5f9);
+    border-bottom-color: var(--border, #334155);
+}
+
+html[data-theme="dark"] .items-report-table thead th,
+html[data-theme="dark"] .invoice-report-table thead th,
+html[data-theme="dark"] .daily-shifts-table thead th {
+    background: var(--surface-2, #1f2937);
+    color: var(--text, #f1f5f9);
+    border-bottom-color: var(--border, #334155);
+}
+
+html[data-theme="dark"] .items-report-table tbody td,
+html[data-theme="dark"] .invoice-report-table tbody td,
+html[data-theme="dark"] .daily-shifts-table tbody td {
+    color: var(--text, #f1f5f9);
+    border-bottom-color: var(--border, #334155);
+}
+
+html[data-theme="dark"] .items-report-table tbody tr:nth-child(even),
+html[data-theme="dark"] .invoice-report-table tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+html[data-theme="dark"] .items-report-table tbody tr:hover,
+html[data-theme="dark"] .invoice-report-table tbody tr:hover {
+    background: var(--surface-3, #293548);
+}
+
+html[data-theme="dark"] .items-overall-summary-wrap,
+html[data-theme="dark"] .invoice-overall-summary-wrap,
+html[data-theme="dark"] .items-category-summary-wrap {
+    background: var(--surface-2, #1f2937);
+    border-color: var(--border, #334155);
+}
+
+html[data-theme="dark"] .items-overall-summary-table th,
+html[data-theme="dark"] .items-category-summary-table th,
+html[data-theme="dark"] .invoice-overall-summary-table th {
+    background: var(--surface-3, #293548);
+    color: var(--text, #f1f5f9);
+}
+
+html[data-theme="dark"] .items-overall-summary-table td,
+html[data-theme="dark"] .items-category-summary-table td,
+html[data-theme="dark"] .invoice-overall-summary-table td {
+    color: var(--text, #f1f5f9);
+    border-color: var(--border, #334155);
+}
+
+/* Gear Default Settings Modals */
+html[data-theme="dark"] .default-settings-modal-card {
+    background: var(--surface, #111827) !important;
+    border-color: var(--border, #334155) !important;
+    color: var(--text, #f1f5f9) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7) !important;
+}
+
+html[data-theme="dark"] .default-settings-modal-header {
+    background: var(--surface-2, #1f2937) !important;
+    border-bottom-color: var(--border, #334155) !important;
+}
+
+html[data-theme="dark"] .default-settings-modal-header h3 {
+    color: var(--text, #f1f5f9) !important;
+}
+
+html[data-theme="dark"] .default-settings-label {
+    color: var(--text-secondary, #cbd5e1) !important;
+}
+
+html[data-theme="dark"] .default-settings-select {
+    background: var(--surface-2, #1f2937) !important;
+    border-color: var(--border, #334155) !important;
+    color: var(--text, #f1f5f9) !important;
+}
+
 
 

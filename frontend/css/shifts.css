@@ -674,3 +674,167 @@ html[dir="rtl"] .shift-invoices-table th {
         padding: 0 4px;
     }
 }
+
+/* =========================================================
+   OLED PRO DARK MODE FOR SHIFTS VIEW & MODALS
+   ========================================================= */
+html[data-theme="dark"] .shifts-screen-container {
+    background-color: #0b1220;
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .shifts-header .shifts-back-btn {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .shifts-header .shifts-back-btn:hover {
+    color: #f1f5f9;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .shifts-title {
+    color: #2dd4bf;
+}
+
+html[data-theme="dark"] .shifts-card {
+    background-color: #111827;
+    border-color: #334155;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="dark"] .shift-row {
+    border-bottom-color: #1f2937;
+}
+
+html[data-theme="dark"] .shift-row:hover {
+    background-color: #1f2937;
+}
+
+html[data-theme="dark"] .shift-pill-btn {
+    background-color: #1f2937;
+    border-color: #475569;
+    color: #f1f5f9;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .shift-pill-btn:hover {
+    background-color: #334155;
+    border-color: #64748b;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .shift-cashier-name {
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .shift-date-time {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .shifts-footer,
+html[data-theme="dark"] .shifts-bottom-bar {
+    background-color: #0b1220;
+}
+
+html[data-theme="dark"] .shifts-empty-state,
+html[data-theme="dark"] .shift-invoices-loading {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .shift-summary-card {
+    background-color: #111827;
+    border-color: #334155;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .shift-summary-card .card-lbl {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .shift-summary-card .card-val {
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .shift-summary-card.highlight {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+}
+
+html[data-theme="dark"] .shift-invoices-table-card {
+    background-color: #111827;
+    border-color: #334155;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .shift-invoices-table th {
+    background-color: #1e293b;
+    color: #94a3b8;
+    border-bottom-color: #334155;
+}
+
+html[data-theme="dark"] .shift-invoices-table td {
+    color: #f1f5f9;
+    border-bottom-color: #1f2937;
+}
+
+html[data-theme="dark"] .shift-invoices-table tr:hover td {
+    background-color: #1f2937;
+}
+
+html[data-theme="dark"] .shift-modal-card {
+    background-color: #111827;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+}
+
+html[data-theme="dark"] .shift-modal-title {
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .shift-modal-msg {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .shift-modal-btn-cancel {
+    background-color: #1f2937;
+    color: #f1f5f9;
+    border-color: #475569;
+}
+
+html[data-theme="dark"] .shift-modal-btn-cancel:hover {
+    background-color: #334155;
+    border-color: #64748b;
+}
+
+html[data-theme="dark"] .shift-report-screen {
+    background: #0b1220;
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .shift-report-screen h1 {
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .shift-report-heading {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .shift-report-brand {
+    color: #2dd4bf;
+}
+
+html[data-theme="dark"] .shift-report-details > div {
+    border-bottom-color: #334155;
+}
+
+html[data-theme="dark"] .shift-report-details dt {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .shift-report-details dd {
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .shift-close-loader {
+    background: rgba(11, 18, 32, 0.75);
+}
+

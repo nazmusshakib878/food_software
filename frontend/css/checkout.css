@@ -522,4 +522,57 @@ html[data-theme="dark"] .checkout-footer {
     }
 }
 
+/* Dark Mode Support for Staff Meal Expense Screen */
+html[data-theme="dark"] .staff-meal-modal-card {
+    background: var(--surface, #111827) !important;
+    color: var(--text, #f1f5f9) !important;
+    border: 1px solid var(--border, #334155) !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7) !important;
+}
+
+html[data-theme="dark"] .staff-meal-remaining-box {
+    background: var(--surface-2, #1f2937) !important;
+    border-color: var(--teal, #0d9488) !important;
+    color: var(--teal-light, #2dd4bf) !important;
+}
+
+html[data-theme="dark"] .staff-meal-remaining-box .remaining-lbl {
+    color: var(--teal-light, #2dd4bf) !important;
+}
+
+html[data-theme="dark"] .staff-meal-remaining-box .remaining-val {
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .staff-meal-section {
+    background: rgba(20, 184, 166, 0.1) !important;
+    border-color: rgba(20, 184, 166, 0.25) !important;
+}
+
+html[data-theme="dark"] .staff-meal-wajbat-badge {
+    background: rgba(20, 184, 166, 0.25) !important;
+    color: var(--teal-light, #2dd4bf) !important;
+}
+
+html[data-theme="dark"] .staff-meal-field-card {
+    background: var(--surface-2, #1f2937) !important;
+    border-color: var(--border, #334155) !important;
+}
+
+html[data-theme="dark"] .staff-meal-field-card label {
+    color: var(--text-secondary, #cbd5e1) !important;
+}
+
+html[data-theme="dark"] .staff-meal-input {
+    background: var(--surface-3, #293548) !important;
+    border-color: var(--border, #334155) !important;
+    color: var(--text, #f1f5f9) !important;
+}
+
+html[data-theme="dark"] .staff-meal-input:focus {
+    background: var(--surface-2, #1f2937) !important;
+    border-color: var(--teal, #0d9488) !important;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.25) !important;
+}
+
 

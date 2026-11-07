@@ -905,6 +905,177 @@ html[data-theme="dark"] #quantityModal .qty-btn:active {
     background: var(--surface-3) !important;
 }
 
+/* =========================================================
+   OLED PRO DARK MODE - KIOSK LOGIN & CONNECTION MODAL
+   ========================================================= */
+html[data-theme="dark"] .kiosk-login-card {
+    background: #111827;
+    border: 1px solid #334155;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+}
+
+html[data-theme="dark"] .kiosk-logo-nur {
+    color: #60a5fa;
+}
+
+html[data-theme="dark"] .kiosk-pin-dot {
+    background: #1f2937;
+    border-color: #475569;
+}
+
+html[data-theme="dark"] .kiosk-pin-dot.filled {
+    background: #14b8a6;
+    border-color: #14b8a6;
+}
+
+html[data-theme="dark"] .kiosk-numpad-btn {
+    background: #1f2937;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .kiosk-numpad-btn:hover {
+    background: #334155;
+    border-color: #475569;
+}
+
+html[data-theme="dark"] .kiosk-numpad-btn:active {
+    background: #475569;
+}
+
+html[data-theme="dark"] .kiosk-numpad-action {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .kiosk-demo-badge {
+    background: rgba(20, 184, 166, 0.15);
+    border-color: #14b8a6;
+    color: #2dd4bf;
+}
+
+html[data-theme="dark"] .kiosk-demo-badge:hover {
+    background: rgba(20, 184, 166, 0.25);
+}
+
+html[data-theme="dark"] .kiosk-demo-badge strong {
+    background: #1f2937;
+    color: #2dd4bf;
+}
+
+html[data-theme="dark"] .kiosk-demo-pill {
+    background: #1f2937;
+    border-color: #334155;
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .kiosk-demo-pill:hover {
+    background: #334155;
+    border-color: #475569;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .connection-modal-card {
+    background: #111827;
+    border: 1px solid #334155;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+}
+
+html[data-theme="dark"] .connection-modal-header {
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+}
+
+html[data-theme="dark"] .connection-modal-title {
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .connection-modal-close {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .connection-modal-close:hover {
+    background: #334155;
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .connection-instruction {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .connection-label {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .connection-input,
+html[data-theme="dark"] .connection-select {
+    background: #1f2937;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .connection-input:focus,
+html[data-theme="dark"] .connection-select:focus {
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.25);
+}
+
+html[data-theme="dark"] .connection-action-btn {
+    background: #1f2937;
+    border-color: #334155;
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .connection-action-btn:hover {
+    background: #334155;
+    border-color: #475569;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .connection-check-btn,
+html[data-theme="dark"] .connection-add-btn {
+    background: rgba(20, 184, 166, 0.15);
+    border-color: rgba(20, 184, 166, 0.35);
+    color: #2dd4bf;
+}
+
+html[data-theme="dark"] .connection-check-btn:hover,
+html[data-theme="dark"] .connection-add-btn:hover {
+    background: rgba(20, 184, 166, 0.25);
+    border-color: #14b8a6;
+    color: #5eead4;
+}
+
+html[data-theme="dark"] .connection-chips-wrapper {
+    background: #1f2937;
+    border-color: #334155;
+}
+
+html[data-theme="dark"] .connection-chips-heading {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .connection-branch-chip {
+    background: #111827;
+    border-color: #14b8a6;
+    color: #2dd4bf;
+}
+
+html[data-theme="dark"] .connection-modal-footer {
+    background: #1e293b;
+    border-top: 1px solid #334155;
+}
+
+html[data-theme="dark"] .connection-cancel-btn {
+    background: #1f2937;
+    border-color: #14b8a6;
+    color: #2dd4bf;
+}
+
+html[data-theme="dark"] .connection-cancel-btn:hover {
+    background: rgba(20, 184, 166, 0.15);
+}
+
+
 
 /* =========================================================
    ITEM MODIFIERS & CUSTOMIZER STYLES

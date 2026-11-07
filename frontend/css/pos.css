@@ -2139,3 +2139,229 @@ html[dir="rtl"] .cart-note-text {
     text-align: start;
 }
 
+/* =========================================================
+   COMPREHENSIVE OLED DARK MODE FOR MAIN POS & CATALOG
+   ========================================================= */
+html[data-theme="dark"] .pos-main,
+html[data-theme="dark"] .pos-catalog-area,
+html[data-theme="dark"] .pos-layout {
+    background: var(--bg, #0b1220);
+    color: var(--text, #f1f5f9);
+}
+
+/* Folder View & Header */
+html[data-theme="dark"] .pos-folder-header-bar {
+    background: var(--surface, #111827);
+    border-color: var(--border, #334155);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .pos-folder-name {
+    color: var(--text, #f1f5f9);
+}
+
+html[data-theme="dark"] .pos-folder-count {
+    color: var(--muted, #94a3b8);
+}
+
+html[data-theme="dark"] .pos-category-folder-card {
+    background: var(--surface, #111827);
+    border-color: var(--border, #334155);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .pos-category-folder-card:hover {
+    border-color: var(--teal, #0d9488);
+    box-shadow: 0 10px 24px rgba(20, 184, 166, 0.25);
+}
+
+html[data-theme="dark"] .folder-card-body {
+    background: var(--surface, #111827);
+}
+
+html[data-theme="dark"] .folder-title-row .folder-name {
+    color: var(--text, #f1f5f9);
+}
+
+html[data-theme="dark"] .folder-icon-circle {
+    background: rgba(20, 184, 166, 0.15);
+    border-color: rgba(20, 184, 166, 0.35);
+    color: var(--teal-light, #2dd4bf);
+}
+
+html[data-theme="dark"] .folder-count-badge {
+    background: var(--surface-2, #1f2937);
+    color: var(--text-secondary, #cbd5e1);
+    border: 1px solid var(--border, #334155);
+}
+
+/* Catalog 8-Column Header Bar */
+html[data-theme="dark"] .pos-catalog-header-bar {
+    background: var(--surface, #111827);
+    border-color: var(--border, #334155);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .catalog-mode-switcher {
+    background: var(--surface-2, #1f2937);
+    border: 1px solid var(--border, #334155);
+}
+
+html[data-theme="dark"] .catalog-mode-btn {
+    color: var(--text-secondary, #cbd5e1);
+}
+
+html[data-theme="dark"] .catalog-mode-btn:hover {
+    color: #ffffff;
+    background: var(--surface-3, #293548);
+}
+
+html[data-theme="dark"] .catalog-mode-btn.active {
+    background: var(--teal, #0d9488);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.4);
+}
+
+html[data-theme="dark"] .catalog-quick-actions .btn-sm {
+    background: var(--surface-2, #1f2937);
+    border-color: var(--border, #334155);
+    color: var(--text, #f1f5f9);
+}
+
+html[data-theme="dark"] .catalog-quick-actions .btn-sm:hover {
+    background: var(--surface-3, #293548);
+    border-color: var(--teal, #0d9488);
+}
+
+/* Product Cards */
+html[data-theme="dark"] .product-card {
+    background: var(--surface, #111827);
+    border-color: var(--border, #334155);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .product-card:hover {
+    border-color: var(--teal, #0d9488);
+    box-shadow: 0 10px 24px rgba(20, 184, 166, 0.22);
+}
+
+html[data-theme="dark"] .product-card-media {
+    background: var(--surface-2, #1f2937);
+}
+
+html[data-theme="dark"] .product-card-body {
+    background: var(--surface, #111827);
+    color: var(--text, #f1f5f9);
+}
+
+html[data-theme="dark"] .product-card-body .title-en,
+html[data-theme="dark"] .product-card-body .title-ar,
+html[data-theme="dark"] .product-card-body .product-title {
+    color: var(--text, #f1f5f9);
+}
+
+/* Category Filter Chips / Ribbon */
+html[data-theme="dark"] .cat-chip {
+    background: var(--surface-2, #1f2937);
+    border-color: var(--border, #334155);
+    color: var(--text-secondary, #cbd5e1);
+}
+
+html[data-theme="dark"] .cat-chip:hover {
+    background: var(--surface-3, #293548);
+    color: #ffffff;
+    border-color: var(--teal, #0d9488);
+}
+
+html[data-theme="dark"] .cat-chip.active {
+    background: var(--teal, #0d9488);
+    color: #ffffff;
+    border-color: var(--teal, #0d9488);
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.4);
+}
+
+/* Meta Selectors & Order Types */
+html[data-theme="dark"] .pos-meta-selectors-card {
+    background: var(--surface, #111827);
+    border-color: var(--border, #334155);
+}
+
+html[data-theme="dark"] .order-type-btn {
+    color: var(--text-secondary, #cbd5e1);
+}
+
+html[data-theme="dark"] .order-type-btn.active {
+    background: var(--teal, #0d9488);
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(13, 148, 136, 0.4);
+}
+
+html[data-theme="dark"] .customer-select-btn,
+html[data-theme="dark"] .customer-info-pill,
+html[data-theme="dark"] .gear-settings-btn {
+    background: var(--surface-2, #1f2937);
+    border-color: var(--border, #334155);
+    color: var(--text, #f1f5f9);
+}
+
+html[data-theme="dark"] .table-picker-select {
+    background: var(--surface-2, #1f2937);
+    border-color: var(--border, #334155);
+    color: var(--text, #f1f5f9);
+}
+
+/* Stepper inside cart */
+html[data-theme="dark"] .item-stepper button {
+    background: var(--surface-2, #1f2937);
+    color: var(--text, #f1f5f9);
+    border: 1px solid var(--border, #334155);
+}
+
+html[data-theme="dark"] .item-stepper button:hover {
+    background: var(--teal, #0d9488);
+    color: #ffffff;
+    border-color: var(--teal, #0d9488);
+}
+
+html[data-theme="dark"] .item-stepper span {
+    color: var(--text, #f1f5f9);
+}
+
+/* Search input */
+html[data-theme="dark"] .search-input-wrap input {
+    background: var(--surface-2, #1f2937);
+    border-color: var(--border, #334155);
+    color: var(--text, #f1f5f9);
+}
+
+html[data-theme="dark"] .search-input-wrap input:focus {
+    background: var(--surface-2, #1f2937);
+    border-color: var(--teal, #0d9488);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.25);
+}
+
+/* Floating Bottom Navigation Bar */
+html[data-theme="dark"] .pos-bottom-nav-bar .bottom-nav-btn {
+    background: rgba(17, 24, 39, 0.92);
+    border-color: var(--border, #334155);
+    color: var(--teal-light, #2dd4bf);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .pos-bottom-nav-bar .bottom-nav-btn:hover {
+    background: var(--surface-2, #1f2937);
+    border-color: var(--teal, #0d9488);
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .pos-bottom-nav-bar .bottom-nav-btn.btn-main-screen {
+    color: #fbbf24;
+}
+
+@media (max-width: 768px) {
+    html[data-theme="dark"] .pos-bottom-nav-bar {
+        background: var(--surface, #111827);
+        border-top-color: var(--border, #334155);
+    }
+}
+
