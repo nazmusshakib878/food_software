@@ -1907,6 +1907,48 @@ orders = [
         items: [{ id: 'item_tikka_sauce', qty: 1, price: 2.00 }]
     },
     {
+        id: 'ORD-TEST-D108',
+        orderNumber: 'D.108',
+        seq: 108,
+        date: new Date().toISOString(),
+        total: 35.00,
+        status: 'new',
+        method: 'Cash',
+        cashierName: 'Saddam Lin',
+        customer: 'Cash Customer',
+        companyId: 'CMP-001',
+        branchId: 'BR-001',
+        items: [{ id: 'item_tikka_sauce', qty: 1, price: 2.00 }]
+    },
+    {
+        id: 'ORD-TEST-A127',
+        orderNumber: 'A.127',
+        seq: 127,
+        date: new Date().toISOString(),
+        total: 42.00,
+        status: 'new',
+        method: 'Cash',
+        cashierName: 'Nawaf Saeed Ali',
+        customer: 'Cash Customer',
+        companyId: 'CMP-001',
+        branchId: 'BR-001',
+        items: [{ id: 'item_tikka_sauce', qty: 1, price: 2.00 }]
+    },
+    {
+        id: 'ORD-TEST-B129',
+        orderNumber: 'B.129',
+        seq: 129,
+        date: new Date().toISOString(),
+        total: 58.00,
+        status: 'new',
+        method: 'Cash',
+        cashierName: 'Rihan Ali',
+        customer: 'Cash Customer',
+        companyId: 'CMP-001',
+        branchId: 'BR-001',
+        items: [{ id: 'item_tikka_sauce', qty: 1, price: 2.00 }]
+    },
+    {
         id: 'ORD-LEGACY-001',
         orderNumber: 'ORD-1014',
         seq: 1014,
@@ -2169,6 +2211,58 @@ renderReceipt(orderHistoricalD);
 assert("Section 27 Test 7: Historical Staff receipt displays Order D.176", elements['recOrderNum'].innerText === 'D.176');
 const kotHistoricalHtml = getKitchenOrderTicketHtml(orderHistoricalD);
 assert("Section 27 Test 8: Historical Staff KOT ticket displays Order D.176", kotHistoricalHtml.includes('D.176'));
+
+// Historical photograph examples: D.108 (Saddam Lin), A.127 (Nawaf Saeed Ali), B.129 (Rihan Ali)
+const orderD108Photo = {
+    id: 'ORD-108',
+    orderNumber: 'D.108',
+    seq: 108,
+    date: new Date().toISOString(),
+    cashierName: 'Saddam Lin',
+    total: 50.00,
+    subtotal: 43.48,
+    tax: 6.52,
+    paid: 50.00,
+    change: 0.00,
+    items: [{ id: 'item_tikka_sauce', enName: 'Tikka sauce', arName: 'صوص تيكا', price: 50.00, qty: 1 }]
+};
+renderReceipt(orderD108Photo);
+assert("Section 27 Test 8A: Photo order D.108 displays D.108 on receipt", elements['recOrderNum'].innerText === 'D.108');
+assert("Section 27 Test 8B: Photo order D.108 displays cashier Saddam Lin", elements['recCashier'].innerText === 'Saddam Lin');
+
+const orderA127Photo = {
+    id: 'ORD-127',
+    orderNumber: 'A.127',
+    seq: 127,
+    date: new Date().toISOString(),
+    cashierName: 'Nawaf Saeed Ali',
+    total: 60.00,
+    subtotal: 52.17,
+    tax: 7.83,
+    paid: 60.00,
+    change: 0.00,
+    items: [{ id: 'item_tikka_sauce', enName: 'Tikka sauce', arName: 'صوص تيكا', price: 60.00, qty: 1 }]
+};
+renderReceipt(orderA127Photo);
+assert("Section 27 Test 8C: Photo order A.127 displays A.127 on receipt", elements['recOrderNum'].innerText === 'A.127');
+assert("Section 27 Test 8D: Photo order A.127 displays cashier Nawaf Saeed Ali", elements['recCashier'].innerText === 'Nawaf Saeed Ali');
+
+const orderB129Photo = {
+    id: 'ORD-129',
+    orderNumber: 'B.129',
+    seq: 129,
+    date: new Date().toISOString(),
+    cashierName: 'Rihan Ali',
+    total: 70.00,
+    subtotal: 60.87,
+    tax: 9.13,
+    paid: 70.00,
+    change: 0.00,
+    items: [{ id: 'item_tikka_sauce', enName: 'Tikka sauce', arName: 'صوص تيكا', price: 70.00, qty: 1 }]
+};
+renderReceipt(orderB129Photo);
+assert("Section 27 Test 8E: Photo order B.129 displays B.129 on receipt", elements['recOrderNum'].innerText === 'B.129');
+assert("Section 27 Test 8F: Photo order B.129 displays cashier Rihan Ali", elements['recCashier'].innerText === 'Rihan Ali');
 
 // Test 25: Verify Staff 2 frontend orderCreatorPrefix in payment.js never generates D
 let prefixStaff2 = (currentUser => {

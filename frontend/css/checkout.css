@@ -198,6 +198,10 @@
     transition: all 0.15s ease;
     box-sizing: border-box;
 }
+.pay-input-row input::placeholder {
+    color: #94a3b8;
+    opacity: 0.8;
+}
 .pay-input-row input:focus {
     cursor: text;
 }
@@ -316,6 +320,15 @@ html[data-theme="dark"] .pay-input-row input {
     background: var(--surface);
     color: var(--text);
     border-color: var(--border);
+}
+
+html[data-theme="dark"] .pay-input-row input::placeholder {
+    color: var(--muted, #64748b);
+    opacity: 0.85;
+}
+
+html[data-theme="dark"] .pay-accordion-header i {
+    color: var(--teal-light, #2dd4bf);
 }
 
 html[data-theme="dark"] .pay-input-row input.active-input {

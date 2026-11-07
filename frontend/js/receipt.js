@@ -93,7 +93,7 @@ function renderReceipt(order) {
 
     const cashierEl = document.getElementById('recCashier');
     if (cashierEl) {
-        cashierEl.innerText = order.cashier || (typeof currentUser !== 'undefined' && currentUser ? (currentUser.name || currentUser.nameEn) : 'Cashier') || 'Nawaf Saeed';
+        cashierEl.innerText = order.cashierName || order.userName || order.cashier || (typeof currentUser !== 'undefined' && currentUser ? (currentUser.name || currentUser.nameEn) : 'Cashier') || 'Nawaf Saeed';
     }
 
     const tbody = document.getElementById('recItemsTbody');
@@ -351,7 +351,7 @@ function getKitchenOrderTicketHtml(targetOrder) {
     const timeLabel = currentLang === 'ar' ? 'الوقت:' : 'Time:';
     const cashierLabel = currentLang === 'ar' ? 'الكاشير:' : 'Cashier:';
     const timeStr = order.dateFormatted || new Date().toLocaleString();
-    const cashierName = order.cashier || (typeof currentUser !== 'undefined' ? currentUser.name : 'Cashier') || 'Cashier';
+    const cashierName = order.cashierName || order.userName || order.cashier || (typeof currentUser !== 'undefined' ? currentUser.name : 'Cashier') || 'Cashier';
 
     return `
         <div class="kot-header">

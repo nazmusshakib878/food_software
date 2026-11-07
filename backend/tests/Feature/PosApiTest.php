@@ -651,10 +651,26 @@ class PosApiTest extends TestCase
             'raw_payload' => ['order_number' => 'D.196'],
         ]);
 
-        // Both B and D are classified as STAFF
+        // Historical prompt examples: D.108 (Saddam Lin), A.127 (Nawaf Saeed Ali), B.129 (Rihan Ali)
+        $orderD108 = PosOrder::create([
+            'id' => 'ORD-SEED-D108',
+            'order_number' => 'D.108',
+            'client_order_id' => 'D.108',
+            'company_id' => $cashier->company_id,
+            'branch_id' => $cashier->branch_id,
+            'user_id' => (string)$staff2->id,
+            'grand_total' => 45,
+            'paid' => 45,
+            'raw_payload' => ['order_number' => 'D.108'],
+        ]);
+
+        // Both B and D are classified as STAFF, D marked as legacy
         $this->assertEquals('STAFF', $orderD196->creator_classification['label']);
         $this->assertTrue($orderD196->creator_classification['is_staff']);
         $this->assertFalse($orderD196->creator_classification['is_cashier']);
+        $this->assertEquals('STAFF', $orderD108->creator_classification['label']);
+        $this->assertTrue($orderD108->creator_classification['is_legacy']);
+        $this->assertEquals('D.108', $orderD108->order_number);
 
         // 4. If A.182 exists, the next Cashier order must be A.183
         // Even if client attempts to send B.999, server strictly enforces Cashier = A prefix
