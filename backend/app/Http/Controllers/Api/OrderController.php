@@ -30,8 +30,8 @@ class OrderController extends Controller
             ->where('branch_id', $user->branch_id);
 
         if ($request->filled('status')) $query->where('status', $request->query('status'));
-        if ($request->filled('from')) $query->whereDate('created_at', '>=', $request->query('from'));
-        if ($request->filled('to')) $query->whereDate('created_at', '<=', $request->query('to'));
+        if ($request->filled('from')) $query->where('created_at', '>=', $request->date('from')->startOfDay());
+        if ($request->filled('to')) $query->where('created_at', '<=', $request->date('to')->endOfDay());
 
         if ($request->filled('creator')) {
             $creator = strtolower((string) $request->query('creator'));

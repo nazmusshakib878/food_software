@@ -44,7 +44,10 @@ class AuthController extends Controller
         }
 
         // Search authorized users
-        $users = User::all();
+        $users = User::query()->get([
+            'id', 'name', 'name_en', 'name_ar', 'staff_id', 'role', 'pin_hash', 'salt',
+            'company_id', 'branch_id', 'can_open_sidebar', 'permissions',
+        ]);
         $authenticatedUser = null;
 
         foreach ($users as $u) {

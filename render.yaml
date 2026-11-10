@@ -54,7 +54,7 @@ services:
       - key: SESSION_SAME_SITE
         value: lax
       - key: CACHE_STORE
-        value: database
+        value: file
       - key: QUEUE_CONNECTION
         value: database
       - key: APP_TIMEZONE

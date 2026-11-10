@@ -7,6 +7,7 @@ use App\Models\PosCategory;
 use App\Models\PosProduct;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class CatalogController extends Controller
@@ -14,11 +15,12 @@ class CatalogController extends Controller
     public function categories(Request $request): JsonResponse
     {
         $user = $request->user();
-        $categories = PosCategory::where('company_id', $user->company_id)
+        $cacheKey = $this->categoryCacheKey($user->company_id, $user->branch_id);
+        $categories = Cache::remember($cacheKey, now()->addMinutes(10), fn () => PosCategory::where('company_id', $user->company_id)
             ->where('branch_id', $user->branch_id)
             ->where('is_active', true)
             ->orderBy('sort_order')
-            ->get();
+            ->get());
 
         return response()->json(['success' => true, 'categories' => $categories]);
     }
@@ -60,6 +62,7 @@ class CatalogController extends Controller
             'icon' => $data['icon'] ?? null,
             'sort_order' => $data['sortOrder'] ?? 0,
         ]);
+        $this->forgetCategoriesAfterCommit($user->company_id, $user->branch_id);
 
         return response()->json(['success' => true, 'category' => $category], 201);
     }
@@ -81,6 +84,7 @@ class CatalogController extends Controller
                 ->where('category_id', $category->category_id)->update(['category_id' => $target->category_id]);
             $category->update(['is_active' => false]);
         });
+        $this->forgetCategoriesAfterCommit($user->company_id, $user->branch_id);
         return response()->json(['success' => true]);
     }
 
@@ -123,6 +127,7 @@ class CatalogController extends Controller
             'stock_on_hand' => (($data['trackStock'] ?? false) ? ($data['stockOnHand'] ?? 0) : null),
             'low_stock_threshold' => $data['lowStockThreshold'] ?? null,
         ]);
+        $this->forgetCategoriesAfterCommit($user->company_id, $user->branch_id);
 
         return response()->json(['success' => true, 'product' => $product], 201);
     }
@@ -163,6 +168,7 @@ class CatalogController extends Controller
             elseif ($product->stock_on_hand === null) $product->stock_on_hand = 0;
         }
         $product->save();
+        $this->forgetCategoriesAfterCommit($user->company_id, $user->branch_id);
 
         return response()->json(['success' => true, 'product' => $product->refresh()]);
     }
@@ -170,6 +176,16 @@ class CatalogController extends Controller
     private function canManageCatalog($user): bool
     {
         return $user->role === 'admin' || in_array('catalog_manage', $user->permissions ?? [], true);
+    }
+
+    private function categoryCacheKey(string $companyId, string $branchId): string
+    {
+        return 'catalog:categories:'.hash('sha256', $companyId."\0".$branchId);
+    }
+
+    private function forgetCategoriesAfterCommit(string $companyId, string $branchId): void
+    {
+        DB::afterCommit(fn () => Cache::forget($this->categoryCacheKey($companyId, $branchId)));
     }
 
     private function imageRule(): \Closure
