@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY docker/opcache-production.ini /usr/local/etc/php/conf.d/99-opcache-production.ini
 WORKDIR /var/www/html
 COPY . .
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader \

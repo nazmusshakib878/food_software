@@ -21,4 +21,5 @@ if [ -z "${APP_URL:-}" ] && [ -n "${RENDER_EXTERNAL_HOSTNAME:-}" ]; then
 fi
 
 php artisan config:cache
+php artisan view:cache
 exec apache2-foreground

@@ -748,13 +748,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof updateKdsStockAlert === 'function') updateKdsStockAlert();
     restoreBackendSession();
     window.setInterval(() => {
-        if (currentUser && currentUser.role !== 'guest') {
+        if (document.visibilityState === 'visible' && currentUser && currentUser.role !== 'guest') {
             if (typeof refreshShiftStatuses === 'function') refreshShiftStatuses();
             if (typeof currentView !== 'undefined' && currentView === 'returns' && typeof refreshOrdersSilently === 'function') {
                 refreshOrdersSilently();
             }
         }
-    }, 10000);
+    }, 30000);
 });
 
 async function refreshOrdersSilently() {
