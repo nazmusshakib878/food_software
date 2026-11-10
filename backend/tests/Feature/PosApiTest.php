@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\PosInventoryMovement;
 use App\Models\PosProduct;
 use App\Models\PosOrder;
+use App\Models\PosPaymentTransaction;
 use App\Models\Branch;
 use App\Models\Company;
 use Database\Seeders\DatabaseSeeder;
@@ -420,11 +421,44 @@ class PosApiTest extends TestCase
             'id' => 'ORD-REPORT-OTHER', 'company_id' => 'CMP-OTHER', 'branch_id' => 'BR-OTHER',
             'status' => 'completed', 'grand_total' => 500, 'tax' => 65.22, 'discount' => 0,
         ]);
+        PosPaymentTransaction::create([
+            'id' => (string) \Illuminate\Support\Str::uuid(), 'order_id' => 'ORD-REPORT-OWN',
+            'company_id' => $cashier->company_id, 'branch_id' => $cashier->branch_id,
+            'method' => 'Cash', 'amount' => 20, 'status' => 'recorded_manual',
+        ]);
+        PosPaymentTransaction::create([
+            'id' => (string) \Illuminate\Support\Str::uuid(), 'order_id' => 'ORD-REPORT-OTHER',
+            'company_id' => 'CMP-OTHER', 'branch_id' => 'BR-OTHER',
+            'method' => 'Card', 'amount' => 500, 'status' => 'recorded_manual',
+        ]);
+        PosInventoryMovement::create([
+            'company_id' => $cashier->company_id, 'branch_id' => $cashier->branch_id,
+            'product_id' => 'DAMAGED-REPORT-PRODUCT', 'quantity_delta' => -2,
+            'quantity_after' => 8, 'reason' => 'damage', 'note' => 'Test damage record',
+        ]);
+        PosInventoryMovement::create([
+            'company_id' => 'CMP-OTHER', 'branch_id' => 'BR-OTHER',
+            'product_id' => 'OTHER-DAMAGED-PRODUCT', 'quantity_delta' => -4,
+            'quantity_after' => 6, 'reason' => 'damage', 'note' => 'Other tenant record',
+        ]);
 
         $this->actingAs($cashier, 'sanctum')->getJson('/api/reports?period=day&date='.now()->format('Y-m-d'))
             ->assertOk()->assertJsonPath('summary.totalOrders', 1)
             ->assertJsonPath('summary.totalSales', 20)
+            ->assertJsonCount(1, 'paymentTransactions')
+            ->assertJsonPath('paymentTransactions.0.method', 'Cash')
+            ->assertJsonCount(1, 'damagedMovements')
+            ->assertJsonPath('damagedMovements.0.product_id', 'DAMAGED-REPORT-PRODUCT')
             ->assertJsonPath('orders.0.id', 'ORD-REPORT-OWN');
+
+        $this->actingAs($cashier, 'sanctum')->getJson('/api/reports/invoices?from='.now()->format('Y-m-d').'&to='.now()->format('Y-m-d').'&per_page=1')
+            ->assertOk()
+            ->assertJsonPath('summary.invoiceCount', 1)
+            ->assertJsonPath('summary.totalSales', 20)
+            ->assertJsonPath('pagination.total', 1)
+            ->assertJsonPath('pagination.currentPage', 1)
+            ->assertJsonCount(1, 'invoices')
+            ->assertJsonPath('invoices.0.id', 'ORD-REPORT-OWN');
     }
 
     public function test_branch_administration_is_company_scoped_and_permission_checked(): void

@@ -820,6 +820,13 @@ const i18n = {
         rep_sub_durations: "أوقات إنجاز الخدمة",
         rep_sub_totals: "تقرير الإجماليات",
         rep_sub_active_meals: "الوجبات النشطة حالياً",
+        rep_active_invoices: "الفواتير النشطة",
+        rep_active_items: "أصناف الفواتير النشطة",
+        rep_outgoing_invoices: "فواتير الطلبات المكتملة",
+        rep_outgoing_items: "أصناف الطلبات المكتملة",
+        rep_outgoing_returns: "المرتجعات المسجلة",
+        rep_outgoing_damage: "توالف الطلبات الصادرة",
+        rep_zakat_invoices: "فواتير الزكاة",
         rep_sub_meals_cat: "تقارير فئات الوجبات",
 
         // Admin Tables & Views
@@ -1188,6 +1195,13 @@ const i18n = {
         rep_sub_durations: "Service Durations",
         rep_sub_totals: "Totals Report",
         rep_sub_active_meals: "Active Meals",
+        rep_active_invoices: "Active Invoices Report",
+        rep_active_items: "Active Items Report",
+        rep_outgoing_invoices: "Outgoing Invoices Report",
+        rep_outgoing_items: "Outgoing Items Report",
+        rep_outgoing_returns: "Outgoing Returned Items",
+        rep_outgoing_damage: "Outgoing Damaged Items",
+        rep_zakat_invoices: "Zakat Invoices Report",
         rep_sub_meals_cat: "Meal Category Reports",
 
         // Admin Tables & Views

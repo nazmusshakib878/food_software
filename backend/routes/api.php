@@ -45,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Reports (RBAC protected: Cashier only)
     Route::get('/reports', [ReportController::class, 'index']);
+    Route::get('/reports/invoices', [ReportController::class, 'invoices']);
     Route::get('/branches', [BranchController::class, 'index']);
     Route::post('/branches', [BranchController::class, 'store']);
 

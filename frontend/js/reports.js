@@ -5,17 +5,29 @@
 
 // Active Report State
 let activeReportModule = 'invoice_reports';
+function reportLocalDateValue(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 let reportDateFrom = (() => {
     const d = new Date();
     d.setDate(1); // 1st of current month
-    return d.toISOString().split('T')[0];
+    return reportLocalDateValue(d);
 })();
 let reportDateTo = (() => {
-    return new Date().toISOString().split('T')[0];
+    return reportLocalDateValue(new Date());
 })();
 let reportOrdersCache = null;
 let reportOrdersRange = null;
 let reportOrdersLoading = false;
+let reportSupplementalData = { paymentTransactions: [], shifts: [], damagedMovements: [], catalog: [], business: {} };
+let reportCatalogLookup = new Map();
+let invoiceReportPage = 1;
+let invoiceReportResult = null;
+let invoiceReportRequestKey = null;
+let invoiceReportLoading = false;
 
 // Temporary Live Editing State for Balancing & Reconciliation
 let balancingInputs = {};
@@ -48,15 +60,41 @@ async function loadReportOrdersFromServer() {
     if (!response.ok || !data.success || !Array.isArray(data.orders)) {
         throw new Error(data.error || `Report request failed (${response.status})`);
     }
+    reportSupplementalData = {
+        paymentTransactions: Array.isArray(data.paymentTransactions) ? data.paymentTransactions : [],
+        shifts: Array.isArray(data.shifts) ? data.shifts : [],
+        damagedMovements: Array.isArray(data.damagedMovements) ? data.damagedMovements : [],
+        catalog: Array.isArray(data.catalog) ? data.catalog : [],
+        business: data.business || {}
+    };
+    reportCatalogLookup = new Map(reportSupplementalData.catalog.map(product => [product.product_id, product]));
+    const transactionBreakdownByOrder = new Map();
+    reportSupplementalData.paymentTransactions.forEach(transaction => {
+        if (String(transaction.status || '').toLowerCase().includes('refund')) return;
+        const orderId = transaction.order_id;
+        if (!transactionBreakdownByOrder.has(orderId)) transactionBreakdownByOrder.set(orderId, {});
+        const breakdown = transactionBreakdownByOrder.get(orderId);
+        breakdown[transaction.method || 'Other'] = (Number(breakdown[transaction.method || 'Other']) || 0) + (Number(transaction.amount) || 0);
+    });
     reportOrdersCache = data.orders.map(o => ({
-        id: o.id, seq: o.seq, date: o.created_at, dateFormatted: o.created_at,
+        id: o.id, orderNumber: o.order_number || o.id, seq: o.seq, date: o.created_at, dateFormatted: o.created_at,
         type: o.order_type_id, orderTypeId: o.order_type_id, orderType: o.order_type_name || o.order_type_id,
         table: o.table, customer: o.customer_name || o.customer_id, customerId: o.customer_id,
         cashier: o.user_id, status: o.status, method: o.method, payMethod: o.method,
+        shiftId: o.shift_id, paymentBreakdown: transactionBreakdownByOrder.get(o.id) || o.payment_breakdown || null,
         total: Number(o.grand_total), grandTotal: Number(o.grand_total), subtotal: Number(o.subtotal),
         tax: Number(o.tax), discount: Number(o.discount), paid: Number(o.paid), change: Number(o.change),
         companyId: o.company_id, branchId: o.branch_id,
-        items: (o.items || []).map(i => ({ id: i.item_id, enName: i.en_name, arName: i.ar_name, price: Number(i.price), qty: Number(i.qty) }))
+        items: (o.items || []).map(i => {
+            const product = reportCatalogLookup.get(i.item_id);
+            return {
+                id: i.item_id, enName: i.en_name, arName: i.ar_name,
+                price: Number(i.price), qty: Number(i.qty),
+                catId: product?.category_id || null,
+                categoryNameEn: product?.category_name_en || null,
+                categoryNameAr: product?.category_name_ar || null
+            };
+        })
     }));
     reportOrdersRange = key;
 }
@@ -149,7 +187,26 @@ function renderActiveReport() {
             renderTotalsReport(container);
             break;
         case 'active_meals':
-            renderActiveMealsReport(container);
+        case 'active_invoices_report':
+            renderOrderFlowReport(container, 'active', false);
+            break;
+        case 'active_items_report':
+            renderOrderFlowReport(container, 'active', true);
+            break;
+        case 'outgoing_invoices_report':
+            renderOrderFlowReport(container, 'outgoing', false);
+            break;
+        case 'outgoing_items_report':
+            renderOrderFlowReport(container, 'outgoing', true);
+            break;
+        case 'outgoing_returns_report':
+            renderUnavailableReport(container, 'Outgoing Returned Items', 'Return records are not stored in the current database schema.');
+            break;
+        case 'outgoing_damaged_report':
+            renderDamagedItemsReport(container, true);
+            break;
+        case 'zakat_invoices_report':
+            renderUnavailableReport(container, 'Zakat Invoices Report', 'No Zakat invoice fields or calculation rules exist in the current database schema.');
             break;
         case 'meals_reports':
             renderMealsReports(container);
@@ -217,6 +274,14 @@ function renderReportHeader(title, showDateFilter = true) {
 function onReportDateChange() {
     const fromInput = document.getElementById('repDateFromInput') || document.getElementById('invRepDateFrom');
     const toInput = document.getElementById('repDateToInput') || document.getElementById('invRepDateTo');
+    const nextFrom = fromInput?.value || reportDateFrom;
+    const nextTo = toInput?.value || reportDateTo;
+    if (nextFrom > nextTo) {
+        if (typeof showToast === 'function') showToast(currentLang === 'ar' ? 'يجب أن يكون تاريخ البداية قبل تاريخ النهاية' : 'From Date must be on or before To Date', 'warning');
+        if (fromInput) fromInput.value = reportDateFrom;
+        if (toInput) toInput.value = reportDateTo;
+        return;
+    }
     if (fromInput && fromInput.value) reportDateFrom = fromInput.value;
     if (toInput && toInput.value) reportDateTo = toInput.value;
     reportOrdersRange = null;
@@ -226,9 +291,39 @@ function onReportDateChange() {
 function onInvoiceReportDateChange() {
     const fromEl = document.getElementById('invRepDateFrom') || document.getElementById('repDateFromInput');
     const toEl = document.getElementById('invRepDateTo') || document.getElementById('repDateToInput');
+    if (fromEl?.value && toEl?.value && fromEl.value > toEl.value) {
+        if (typeof showToast === 'function') showToast(currentLang === 'ar' ? 'يجب أن يكون تاريخ البداية قبل تاريخ النهاية' : 'From Date must be on or before To Date', 'warning');
+        fromEl.value = reportDateFrom;
+        toEl.value = reportDateTo;
+        return;
+    }
     if (fromEl && fromEl.value) reportDateFrom = fromEl.value;
     if (toEl && toEl.value) reportDateTo = toEl.value;
+    invoiceReportPage = 1;
+    invoiceReportResult = null;
     reportOrdersRange = null;
+    renderActiveReport();
+}
+
+async function fetchInvoiceReport(page = 1, perPage = 50, all = false) {
+    const makeUrl = (p) => `/api/reports/invoices?${new URLSearchParams({ from: reportDateFrom, to: reportDateTo, page: String(p), per_page: String(perPage) })}`;
+    const response = await fetch(makeUrl(page), { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success || !Array.isArray(data.invoices)) throw new Error(data.error || `Invoice report request failed (${response.status})`);
+    if (!all) return data;
+    const invoices = [...data.invoices];
+    for (let nextPage = 2; nextPage <= data.pagination.lastPage; nextPage++) {
+        const next = await fetch(makeUrl(nextPage), { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+        const nextData = await next.json().catch(() => ({}));
+        if (!next.ok || !nextData.success || !Array.isArray(nextData.invoices)) throw new Error(nextData.error || 'Could not load all invoices for printing.');
+        invoices.push(...nextData.invoices);
+    }
+    return { ...data, invoices };
+}
+
+function setInvoiceReportPage(page) {
+    invoiceReportPage = Math.max(1, Number(page) || 1);
+    invoiceReportResult = null;
     renderActiveReport();
 }
 
@@ -263,13 +358,26 @@ function printCurrentReport(title) {
  * - Total: Customer payable total sales
  */
 function getInvoiceReportsData() {
+    if (invoiceReportResult) {
+        const summary = invoiceReportResult.summary;
+        return {
+            orders: invoiceReportResult.invoices.map(mapReportInvoice),
+            invoicesCount: Number(summary.invoiceCount) || 0,
+            summary: {
+                netTotal: Number(summary.totalSales) - Number(summary.totalReturns || 0),
+                totalDiscount: Number(summary.totalDiscount) || 0,
+                totalTax: Number(summary.totalTax) || 0,
+                totalFutureReturns: summary.totalFutureReturns,
+                totalReturns: summary.totalReturns,
+                total: Number(summary.totalSales) || 0
+            }
+        };
+    }
     if (typeof ensureSeedOrders === 'function') {
         ensureSeedOrders();
     }
     const filtered = getFilteredOrders();
     const invoicesCount = filtered.length;
-    const taxRate = (typeof storeSettings !== 'undefined' && Number(storeSettings.taxRate)) || 15;
-
     let totalSales = 0;
     let totalDiscount = 0;
     let totalTax = 0;
@@ -281,18 +389,10 @@ function getInvoiceReportsData() {
         totalSales += orderTotal;
         totalDiscount += Number(o.discount) || 0;
 
-        if (o.status === 'refunded' || o.status === 'returned') {
-            totalReturns += orderTotal;
-        } else if (Array.isArray(o.cancelledItems)) {
-            totalReturns += o.cancelledItems.reduce((cs, ci) => cs + (Number(ci.amount || (ci.price * ci.qty)) || 0), 0);
-        } else if (o.returns) {
-            totalReturns += Number(o.returns) || 0;
-        }
+        totalReturns += Number(o.return_amount ?? o.returns) || 0;
 
         if (o.tax !== undefined && o.tax !== null) {
             totalTax += Number(o.tax) || 0;
-        } else if (taxRate > 0) {
-            totalTax += (orderTotal * taxRate) / (100 + taxRate);
         }
     });
 
@@ -316,6 +416,17 @@ function getInvoiceReportsData() {
     };
 }
 
+function mapReportInvoice(o) {
+    return {
+        id: o.id, orderNumber: o.order_number || o.client_order_id || o.id, seq: o.seq,
+        date: o.created_at, orderType: o.order_type_name || o.order_type_id,
+        payMethod: o.method, customer: o.customer_name || o.customer_id,
+        cashier: o.user?.name || o.staff_id || o.user_id,
+        total: Number(o.grand_total) || 0, grandTotal: Number(o.grand_total) || 0,
+        tax: Number(o.tax) || 0, discount: Number(o.discount) || 0
+    };
+}
+
 /**
  * 1. INVOICE REPORTS RENDERER (Foodie POS 3-Section Layout)
  * - SECTION A: Fixed Top (Header + From/To Date Filter + 6-Column, 2-Row Overall Sales Summary Table)
@@ -324,6 +435,22 @@ function getInvoiceReportsData() {
  */
 function renderInvoiceReports(container) {
     if (!container) return;
+
+    const requestKey = `${reportDateFrom}|${reportDateTo}|${invoiceReportPage}`;
+    if (!invoiceReportResult || invoiceReportRequestKey !== requestKey) {
+        if (!invoiceReportLoading) {
+            invoiceReportLoading = true;
+            fetchInvoiceReport(invoiceReportPage).then(data => {
+                invoiceReportResult = data;
+                invoiceReportRequestKey = requestKey;
+                renderActiveReport();
+            }).catch(error => {
+                container.innerHTML = `<div class="access-denied-box" role="alert">${escapeHtml(error.message || 'Invoice report is unavailable.')}</div>`;
+            }).finally(() => { invoiceReportLoading = false; });
+        }
+        container.innerHTML = `<div class="report-loading" role="status">${currentLang === 'ar' ? 'ÙŠØªÙ… ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØªÙ‚Ø±ÙŠØ±...' : 'Loading invoice report…'}</div>`;
+        return;
+    }
 
     const data = getInvoiceReportsData();
     const filtered = data.orders;
@@ -376,8 +503,8 @@ function renderInvoiceReports(container) {
                                 <td>${formatCurrency(summary.netTotal)}</td>
                                 <td>${formatCurrency(summary.totalDiscount)}</td>
                                 <td>${formatCurrency(summary.totalTax)}</td>
-                                <td>${formatCurrency(summary.totalFutureReturns)}</td>
-                                <td>${formatCurrency(summary.totalReturns)}</td>
+                                <td>${summary.totalFutureReturns == null ? (currentLang === 'ar' ? '?????? ????????' : 'Unavailable') : formatCurrency(summary.totalFutureReturns)}</td>
+                                <td>${summary.totalReturns == null ? (currentLang === 'ar' ? '?????? ????????' : 'Unavailable') : formatCurrency(summary.totalReturns)}</td>
                                 <td>${formatCurrency(summary.total)}</td>
                             </tr>
                         </tbody>
@@ -409,8 +536,8 @@ function renderInvoiceReports(container) {
                                         <tr><td colspan="9" class="text-center py-4 text-muted">${currentLang === 'ar' ? 'لا توجد فواتير في هذه الفترة' : 'No invoices found'}</td></tr>
                                     ` : filtered.map((o, idx) => `
                                         <tr>
-                                            <td>${idx + 1}</td>
-                                            <td><strong>#${escapeHtml(o.seq || o.id)}</strong></td>
+                                            <td>${((invoiceReportResult.pagination.currentPage - 1) * invoiceReportResult.pagination.perPage) + idx + 1}</td>
+                                            <td><strong>#${escapeHtml(o.orderNumber || o.seq || o.id)}</strong></td>
                                             <td><span class="badge-subtle">${escapeHtml(o.orderType || 'محلي')}</span></td>
                                             <td><span class="badge-subtle">${escapeHtml(o.payMethod || o.method || 'Cash')}</span></td>
                                             <td>${escapeHtml(o.customer || 'عميل نقدي')}</td>
@@ -435,6 +562,11 @@ function renderInvoiceReports(container) {
                 </div>
             </main>
 
+                <div class="report-pagination no-print" aria-label="Invoice pages">
+                    <button type="button" class="btn btn-sm btn-secondary-pos" ${invoiceReportResult.pagination.currentPage <= 1 ? 'disabled' : ''} onclick="setInvoiceReportPage(${invoiceReportResult.pagination.currentPage - 1})">Previous</button>
+                    <span>${invoiceReportResult.pagination.currentPage} / ${invoiceReportResult.pagination.lastPage} ? ${invoicesCount} invoices</span>
+                    <button type="button" class="btn btn-sm btn-secondary-pos" ${invoiceReportResult.pagination.currentPage >= invoiceReportResult.pagination.lastPage ? 'disabled' : ''} onclick="setInvoiceReportPage(${invoiceReportResult.pagination.currentPage + 1})">Next</button>
+                </div>
             <!-- SECTION C: FIXED BOTTOM -->
             <footer class="invoice-report-bottom">
                 <button type="button" class="btn invoice-report-btn-back" onclick="switchView('pos')" title="${currentLang === 'ar' ? 'الرجوع لنقاط البيع' : 'Back to POS'}">
@@ -456,6 +588,14 @@ function renderInvoiceReports(container) {
  * Prints the complete report with overall summary and all matching invoices for the selected date range.
  */
 function printInvoiceReport() {
+    fetchInvoiceReport(1, 100, true).then(result => printLoadedInvoiceReport(result)).catch(error => {
+        if (typeof showToast === 'function') showToast(error.message || 'Could not load invoice report for printing.', 'danger');
+    });
+}
+
+function printLoadedInvoiceReport(result) {
+    const prior = invoiceReportResult;
+    invoiceReportResult = result;
     const data = getInvoiceReportsData();
     const title = currentLang === 'ar' ? 'تقارير الفواتير' : 'Invoice Reports';
     const storeName = (typeof storeSettings !== 'undefined' && (currentLang === 'ar' ? (storeSettings.nameAr || storeSettings.nameEn) : (storeSettings.nameEn || storeSettings.nameAr))) || 'NUR FOODES';
@@ -519,7 +659,7 @@ function printInvoiceReport() {
                     ${orders.map((o, idx) => `
                         <tr style="page-break-inside: avoid; break-inside: avoid;">
                             <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${idx + 1}</td>
-                            <td style="padding: 6px 8px; border: 1px solid #e2e8f0; font-weight: 600;">#${escapeHtml(o.seq || o.id)}</td>
+                            <td style="padding: 6px 8px; border: 1px solid #e2e8f0; font-weight: 600;">#${escapeHtml(o.orderNumber || o.seq || o.id)}</td>
                             <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${escapeHtml(o.orderType || 'محلي')}</td>
                             <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${escapeHtml(o.payMethod || o.method || 'Cash')}</td>
                             <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${escapeHtml(o.customer || 'عميل نقدي')}</td>
@@ -534,6 +674,7 @@ function printInvoiceReport() {
     `;
 
     routePrintJob('reports', html, title);
+    invoiceReportResult = prior;
 }
 
 // Debounce lock for historical invoice reprinting
@@ -741,41 +882,7 @@ function getItemsReportData() {
     // Date range boundaries in local business timezone:
     // Timestamp >= Start of From Date (00:00:00.000)
     // Timestamp < Start of day after To Date (00:00:00.000 of next day)
-    const fromParts = (reportDateFrom || '').split('-');
-    let fromTime;
-    if (fromParts.length === 3) {
-        fromTime = new Date(Number(fromParts[0]), Number(fromParts[1]) - 1, Number(fromParts[2]), 0, 0, 0, 0).getTime();
-    } else {
-        fromTime = new Date((reportDateFrom || '') + "T00:00:00").getTime();
-    }
-
-    const toParts = (reportDateTo || '').split('-');
-    let toNextDayTime;
-    if (toParts.length === 3) {
-        toNextDayTime = new Date(Number(toParts[0]), Number(toParts[1]) - 1, Number(toParts[2]) + 1, 0, 0, 0, 0).getTime();
-    } else {
-        toNextDayTime = new Date((reportDateTo || '') + "T23:59:59.999").getTime() + 1;
-    }
-
-    const allOrders = (typeof orders !== 'undefined' && Array.isArray(orders)) ? orders : [];
-
-    // Filter by date range and valid order timestamps
-    let filteredOrders = allOrders.filter(o => {
-        if (!o.date) return true;
-        const orderTime = new Date(o.date).getTime();
-        if (isNaN(orderTime)) return false;
-        return orderTime >= fromTime && orderTime < toNextDayTime;
-    });
-
-    // Check company and branch permissions
-    if (typeof currentUser !== 'undefined' && currentUser && currentUser.role !== 'admin') {
-        if (currentUser.branchId) {
-            filteredOrders = filteredOrders.filter(o => !o.branchId || o.branchId === currentUser.branchId);
-        }
-        if (currentUser.companyId) {
-            filteredOrders = filteredOrders.filter(o => !o.companyId || o.companyId === currentUser.companyId);
-        }
-    }
+    let filteredOrders = getFilteredOrders();
 
     // Exclude unpaid, void, draft orders
     filteredOrders = filteredOrders.filter(o => {
@@ -783,12 +890,14 @@ function getItemsReportData() {
         return true;
     });
 
-    const taxRate = (typeof storeSettings !== 'undefined' && Number(storeSettings.taxRate)) || 15;
-
     // Collect all catalog categories
-    const allCategories = (typeof categories !== 'undefined' && Array.isArray(categories))
+    const savedCategories = (typeof categories !== 'undefined' && Array.isArray(categories))
         ? categories
         : ((typeof DEFAULT_CATEGORIES !== 'undefined' && Array.isArray(DEFAULT_CATEGORIES)) ? DEFAULT_CATEGORIES : []);
+    const catalogCategories = [...new Map((reportSupplementalData.catalog || [])
+        .filter(product => product.category_id)
+        .map(product => [product.category_id, { id: product.category_id, nameEn: product.category_name_en || product.category_id, nameAr: product.category_name_ar || product.category_id }])).values()];
+    const allCategories = [...new Map([...savedCategories, ...catalogCategories].map(category => [category.id, category])).values()];
 
     const catMap = {};
 
@@ -835,18 +944,6 @@ function getItemsReportData() {
                 orderReturnedMap[k].qty += retQty;
                 orderReturnedMap[k].amount += (ri.lineTotal !== undefined ? ri.lineTotal : (retQty * retPrice));
             });
-        } else if (order.status === 'cancelled' || order.status === 'returned' || order.isReturned === true) {
-            // Entire order cancelled/returned
-            if (Array.isArray(order.items)) {
-                order.items.forEach(it => {
-                    const k = it.id || it.name;
-                    if (!orderReturnedMap[k]) orderReturnedMap[k] = { qty: 0, amount: 0 };
-                    const q = Number(it.qty) || 1;
-                    const p = Number(it.price) || 0;
-                    orderReturnedMap[k].qty += q;
-                    orderReturnedMap[k].amount += (q * p);
-                });
-            }
         }
 
         // 2. Process order items
@@ -861,33 +958,7 @@ function getItemsReportData() {
                     lineTotal += (addSum * qty);
                 }
 
-                // Resolve category ID
-                let catId = it.catId || it.category;
-                if (!catId) {
-                    const catalogItem = (typeof items !== 'undefined' && Array.isArray(items)) 
-                        ? items.find(ci => ci.id === it.id || ci.enName === it.name || ci.arName === it.name) 
-                        : null;
-                    if (catalogItem && catalogItem.catId) {
-                        catId = catalogItem.catId;
-                    } else if (typeof DEFAULT_ITEMS !== 'undefined' && Array.isArray(DEFAULT_ITEMS)) {
-                        const defItem = DEFAULT_ITEMS.find(ci => ci.id === it.id || ci.enName === it.name || ci.arName === it.name);
-                        if (defItem && defItem.catId) catId = defItem.catId;
-                    }
-                }
-                if (!catId) {
-                    const nameLower = (it.name || it.enName || '').toLowerCase();
-                    if (nameLower.includes('grill') || nameLower.includes('sandwich') || nameLower.includes('kebab') || nameLower.includes('fries') || nameLower.includes('sauce') || nameLower.includes('cheese')) {
-                        catId = 'sandwiches';
-                    } else if (nameLower.includes('meal') || nameLower.includes('burger')) {
-                        catId = 'meals';
-                    } else if (nameLower.includes('pepsi') || nameLower.includes('cola') || nameLower.includes('water') || nameLower.includes('juice') || nameLower.includes('soda')) {
-                        catId = 'drinks';
-                    } else if (nameLower.includes('tea') || nameLower.includes('coffee')) {
-                        catId = 'hot_drinks';
-                    } else {
-                        catId = 'unclassified';
-                    }
-                }
+                const catId = it.catId || it.category || 'unclassified';
 
                 const catEntry = getCategoryEntry(catId);
 
@@ -907,6 +978,8 @@ function getItemsReportData() {
                 catEntry.itemsMap[itemId].qty += qty;
                 catEntry.itemsMap[itemId].totalVal += lineTotal;
                 catEntry.total += lineTotal;
+                const orderItemsGross = (order.items || []).reduce((sum, line) => sum + (Number(line.price) || 0) * (Number(line.qty) || 0), 0);
+                if (orderItemsGross > 0) catEntry.tax += (Number(order.tax) || 0) * lineTotal / orderItemsGross;
 
                 // Handle item-level return field if present
                 if (it.returnedQty && !orderReturnedMap[itemId]) {
@@ -981,7 +1054,7 @@ function getItemsReportData() {
         cat.returns = Math.round(cat.returns * 100) / 100;
         cat.futureReturns = 0.00;
         cat.netTotal = Math.round((cat.total - cat.returns) * 100) / 100;
-        cat.tax = taxRate > 0 ? Math.round(((cat.netTotal * taxRate) / (100 + taxRate)) * 100) / 100 : 0;
+        cat.tax = Math.round((Number(cat.tax) || 0) * 100) / 100;
 
         cat.name = currentLang === 'ar' ? cat.nameAr : cat.nameEn;
         cat.items = itemsArr.map(it => ({
@@ -1535,25 +1608,21 @@ function calculateFinancialsForOrders(orderList, isAr = false) {
     let totalDiscount = 0;
     let totalReturns = 0;
     let totalFutureReturns = 0;
+    let totalTax = 0;
     const paymentMethodsMap = {};
 
     (orderList || []).forEach(o => {
         const orderTotal = Number(o.grandTotal !== undefined ? o.grandTotal : (o.total || 0)) || 0;
         const orderDiscountVal = Number(o.discount) || 0;
-        let orderReturnsVal = 0;
-        if (o.status === 'refunded' || o.status === 'returned') {
-            orderReturnsVal = orderTotal;
-        } else if (Array.isArray(o.cancelledItems) && o.cancelledItems.length > 0) {
-            orderReturnsVal = o.cancelledItems.reduce((sum, ci) => sum + (Number(ci.lineTotal || ci.amount || (ci.price * ci.qty)) || 0), 0);
-        } else if (o.returns) {
-            orderReturnsVal = Number(o.returns) || 0;
-        }
+        const orderReturnsVal = Number(o.return_amount ?? o.returns) || 0;
         const orderFutureRetVal = Number(o.futureReturns) || 0;
+        const orderTaxVal = Number(o.tax) || 0;
 
         totalSales += orderTotal;
         totalDiscount += orderDiscountVal;
         totalReturns += orderReturnsVal;
         totalFutureReturns += orderFutureRetVal;
+        totalTax += orderTaxVal;
 
         // Check if split payments or payment breakdown exists
         const breakdown = o.paymentBreakdown;
@@ -1582,13 +1651,15 @@ function calculateFinancialsForOrders(orderList, isAr = false) {
                         totalSales: 0,
                         totalDiscount: 0,
                         totalReturns: 0,
-                        totalFutureReturns: 0
+                        totalFutureReturns: 0,
+                        totalTax: 0
                     };
                 }
                 paymentMethodsMap[normKey].totalSales += amt;
                 paymentMethodsMap[normKey].totalDiscount += Math.round(orderDiscountVal * ratio * 100) / 100;
                 paymentMethodsMap[normKey].totalReturns += Math.round(orderReturnsVal * ratio * 100) / 100;
                 paymentMethodsMap[normKey].totalFutureReturns += Math.round(orderFutureRetVal * ratio * 100) / 100;
+                paymentMethodsMap[normKey].totalTax += Math.round(orderTaxVal * ratio * 100) / 100;
             });
         } else {
             const key = o.method || o.payMethod || o.paymentMethod || 'Cash';
@@ -1608,13 +1679,15 @@ function calculateFinancialsForOrders(orderList, isAr = false) {
                     totalSales: 0,
                     totalDiscount: 0,
                     totalReturns: 0,
-                    totalFutureReturns: 0
+                    totalFutureReturns: 0,
+                    totalTax: 0
                 };
             }
             paymentMethodsMap[normKey].totalSales += orderTotal;
             paymentMethodsMap[normKey].totalDiscount += orderDiscountVal;
             paymentMethodsMap[normKey].totalReturns += orderReturnsVal;
             paymentMethodsMap[normKey].totalFutureReturns += orderFutureRetVal;
+            paymentMethodsMap[normKey].totalTax += orderTaxVal;
         }
     });
 
@@ -1622,8 +1695,8 @@ function calculateFinancialsForOrders(orderList, isAr = false) {
     totalDiscount = Math.round(totalDiscount * 100) / 100;
     totalReturns = Math.round(totalReturns * 100) / 100;
     totalFutureReturns = Math.round(totalFutureReturns * 100) / 100;
+    totalTax = Math.round(totalTax * 100) / 100;
     const netTotal = Math.round((totalSales - totalReturns) * 100) / 100;
-    const totalTax = Math.round((netTotal * 15) / 115 * 100) / 100;
 
     const paymentMethodsList = Object.values(paymentMethodsMap).map(pm => {
         const pmSales = Math.round(pm.totalSales * 100) / 100;
@@ -1631,7 +1704,7 @@ function calculateFinancialsForOrders(orderList, isAr = false) {
         const pmReturns = Math.round(pm.totalReturns * 100) / 100;
         const pmFutureReturns = Math.round(pm.totalFutureReturns * 100) / 100;
         const pmNet = Math.round((pmSales - pmReturns) * 100) / 100;
-        const pmTax = Math.round((pmNet * 15) / 115 * 100) / 100;
+        const pmTax = Math.round((Number(pm.totalTax) || 0) * 100) / 100;
         return {
             key: pm.key,
             methodId: pm.methodId,
@@ -1675,25 +1748,20 @@ function getDailyShiftsReportData() {
     const toTime = new Date(reportDateTo + "T23:59:59.999").getTime();
 
     // 1. Filter orders strictly within the date range
-    const allOrders = (typeof orders !== 'undefined' && Array.isArray(orders)) ? orders : [];
-    const filteredOrders = allOrders.filter(o => {
-        if (!o.date) return true;
-        const oTime = new Date(o.date).getTime();
-        return !isNaN(oTime) && oTime >= fromTime && oTime <= toTime;
-    });
+    const filteredOrders = getFilteredOrders();
 
     // 2. Calculate overall summary and overall payment types
     const overallFinancials = calculateFinancialsForOrders(filteredOrders, isAr);
 
     // 3. Retrieve and filter shifts
-    let allShifts = [];
-    if (typeof getShiftsCollection === 'function') {
-        allShifts = getShiftsCollection();
-    } else if (typeof shifts !== 'undefined' && Array.isArray(shifts)) {
-        allShifts = shifts;
-    } else if (typeof DEFAULT_SHIFTS !== 'undefined' && Array.isArray(DEFAULT_SHIFTS)) {
-        allShifts = DEFAULT_SHIFTS;
-    }
+    const allShifts = (reportSupplementalData.shifts || []).map(shift => ({
+        ...shift,
+        cashier: shift.cashier || shift.cashier_en || shift.cashier_ar || '—',
+        cashierEn: shift.cashier_en || shift.cashier || '—',
+        cashierAr: shift.cashier_ar || shift.cashier || '—',
+        openedAt: shift.opened_at,
+        closedAt: shift.closed_at
+    }));
 
     // Clone to prevent mutating original collection
     const clonedShifts = JSON.parse(JSON.stringify(allShifts));
@@ -1753,33 +1821,7 @@ function getDailyShiftsReportData() {
         }
     });
 
-    // Handle any remaining unassigned orders if shifts exist or synthesize safe shift section
-    const unassignedOrders = filteredOrders.filter(o => !attributedOrderIds.has(o.id));
-    if (unassignedOrders.length > 0) {
-        if (shiftSections.length > 0) {
-            // Assign to the most relevant or active shift
-            const targetShift = shiftSections[0];
-            const combinedOrders = targetShift.orders.concat(unassignedOrders);
-            targetShift.orders = combinedOrders;
-            targetShift.financials = calculateFinancialsForOrders(combinedOrders, isAr);
-        } else {
-            // Create a general branch shift section so orders are never lost
-            const synthShift = {
-                id: 'SH-MAIN',
-                cashier: isAr ? 'الكاشير' : 'Cashier',
-                cashierEn: 'Cashier',
-                cashierAr: 'الكاشير',
-                status: 'closed',
-                openedAt: reportDateFrom + 'T08:00:00',
-                closedAt: reportDateTo + 'T23:59:59'
-            };
-            shiftSections.push({
-                shift: synthShift,
-                financials: calculateFinancialsForOrders(unassignedOrders, isAr),
-                orders: unassignedOrders
-            });
-        }
-    }
+    // Keep orders without a recorded shift unattributed. Never invent shift records.
 
     // Sequence labeling for repeated staff names (e.g. "Nawaf Saeed (1)", "Nawaf Saeed (2)")
     const nameCounts = {};
@@ -2438,8 +2480,8 @@ if (typeof global !== 'undefined') {
 
 
 // 4. DAMAGED ITEMS REPORT
-function renderDamagedItemsReport(container) {
-    const damagedData = [];
+function renderDamagedItemsReport(container, outgoingOnly = false) {
+    const damagedData = (reportSupplementalData.damagedMovements || []).filter(row => !outgoingOnly || Boolean(row.order_id));
 
     container.innerHTML = `
         ${renderReportHeader(currentLang === 'ar' ? 'تقرير التوالف والهالك' : 'Damaged Items Report')}
@@ -2462,12 +2504,12 @@ function renderDamagedItemsReport(container) {
                             ${damagedData.length ? damagedData.map((d, idx) => `
                                 <tr>
                                     <td>${idx + 1}</td>
-                                    <td><strong>${escapeHtml(currentLang === 'ar' ? d.item : d.itemEn)}</strong></td>
-                                    <td><span class="badge-pill bg-danger-subtle text-danger">${d.qty}</span></td>
-                                    <td>${formatCurrency(d.cost)}</td>
-                                    <td>${escapeHtml(currentLang === 'ar' ? d.reasonAr : d.reasonEn)}</td>
-                                    <td>${escapeHtml(d.user)}</td>
-                                    <td class="text-end">${d.date}</td>
+                                    <td><strong>${escapeHtml(currentLang === 'ar' ? (d.name_ar || d.name_en || d.product_id) : (d.name_en || d.product_id))}</strong></td>
+                                    <td><span class="badge-pill bg-danger-subtle text-danger">${Math.abs(Number(d.quantity_delta) || 0)}</span></td>
+                                    <td>—</td>
+                                    <td>${escapeHtml(d.note || d.reason)}</td>
+                                    <td>${escapeHtml(d.user_id || '—')}</td>
+                                    <td class="text-end">${escapeHtml(d.created_at || '')}</td>
                                 </tr>
                             `).join('') : `<tr><td colspan="7" class="text-center">No inventory damage records are available.</td></tr>`}
                         </tbody>
@@ -2480,59 +2522,28 @@ function renderDamagedItemsReport(container) {
 
 // 5. APPLICATION REPORTS
 function renderApplicationReports(container) {
-    const filtered = getFilteredOrders();
-    const appStats = applications.map(app => {
-        const appOrders = filtered.filter(o => o.customerId === app.id || (o.customer && o.customer.includes(app.nameAr)));
-        const totalSales = appOrders.reduce((sum, o) => sum + (Number(o.grandTotal) || 0), 0);
-        const commissionAmount = (totalSales * (app.commission || 15)) / 100;
-        const netAfterCommission = totalSales - commissionAmount;
-
-        return {
-            nameAr: app.nameAr,
-            nameEn: app.nameEn,
-            count: appOrders.length,
-            totalSales,
-            commissionPct: app.commission || 15,
-            commissionAmount,
-            netAfterCommission
-        };
+    const grouped = new Map();
+    getFilteredOrders().forEach(order => {
+        const label = order.orderType || order.type || 'Unknown';
+        const row = grouped.get(label) || { label, count: 0, total: 0 };
+        row.count += 1;
+        row.total += Number(order.grandTotal) || 0;
+        grouped.set(label, row);
     });
-
+    const rows = [...grouped.values()];
     container.innerHTML = `
-        ${renderReportHeader(currentLang === 'ar' ? 'تقرير مبيعات تطبيقات التوصيل' : 'Delivery Application Reports')}
-        <div class="report-printable-area">
-            <div class="report-table-card">
-                <div class="table-responsive">
-                    <table class="report-table">
-                        <thead>
-                            <tr>
-                                <th>${currentLang === 'ar' ? 'التطبيق' : 'Application'}</th>
-                                <th>${currentLang === 'ar' ? 'عدد الطلبات' : 'Orders Count'}</th>
-                                <th>${currentLang === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</th>
-                                <th>${currentLang === 'ar' ? 'نسبة العمولة' : 'Commission %'}</th>
-                                <th>${currentLang === 'ar' ? 'قيمة العمولة' : 'Commission Amount'}</th>
-                                <th class="text-end">${currentLang === 'ar' ? 'الصافي للمطعم' : 'Restaurant Net'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${appStats.map(app => `
-                                <tr>
-                                    <td><strong>${escapeHtml(currentLang === 'ar' ? app.nameAr : app.nameEn)}</strong></td>
-                                    <td><span class="badge-pill">${app.count}</span></td>
-                                    <td>${formatCurrency(app.totalSales)}</td>
-                                    <td>${app.commissionPct}%</td>
-                                    <td>${formatCurrency(app.commissionAmount)}</td>
-                                    <td class="text-end fw-bold text-success">${formatCurrency(app.netAfterCommission)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    `;
+        ${renderReportHeader(currentLang === 'ar' ? 'تقرير التطبيقات' : 'Application Reports')}
+        <div class="report-printable-area"><div class="report-table-card"><div class="table-responsive">
+            <table class="report-table"><thead><tr>
+                <th>${currentLang === 'ar' ? 'نوع الطلب المسجل' : 'Recorded Order Type'}</th>
+                <th>${currentLang === 'ar' ? 'عدد الطلبات' : 'Order Count'}</th>
+                <th class="text-end">${currentLang === 'ar' ? 'إجمالي المبيعات المسجلة' : 'Recorded Sales'}</th>
+            </tr></thead><tbody>
+                ${rows.length ? rows.map(row => `<tr><td><strong>${escapeHtml(row.label)}</strong></td><td>${row.count}</td><td class="text-end">${formatCurrency(row.total)}</td></tr>`).join('') : `<tr><td colspan="3" class="text-center">${currentLang === 'ar' ? 'لا توجد طلبات في الفترة المحددة' : 'No orders in the selected period.'}</td></tr>`}
+            </tbody></table>
+            <p class="text-muted">${currentLang === 'ar' ? 'بيانات العمولات والتسويات غير مسجلة في قاعدة البيانات.' : 'Commission and settlement data are not recorded in the database.'}</p>
+        </div></div></div>`;
 }
-
 // 6. SERVICE DURATIONS REPORT
 function renderServiceDurationsReport(container) {
     const durations = [];
@@ -2577,7 +2588,7 @@ function renderTotalsReport(container) {
     const filtered = getFilteredOrders();
     const grossSales = filtered.reduce((s, o) => s + (Number(o.subtotal) || 0), 0);
     const totalDiscounts = filtered.reduce((s, o) => s + (Number(o.discount) || 0), 0);
-    const taxableTotal = filtered.reduce((s, o) => s + (Number(o.taxableAmount) || 0), 0);
+    const taxableTotal = filtered.reduce((s, o) => s + Math.max(0, (Number(o.grandTotal) || 0) - (Number(o.tax) || 0)), 0);
     const totalTax = filtered.reduce((s, o) => s + (Number(o.tax) || 0), 0);
     const grandTotal = filtered.reduce((s, o) => s + (Number(o.grandTotal) || 0), 0);
 
@@ -2598,7 +2609,7 @@ function renderTotalsReport(container) {
                     <span class="card-val">${formatCurrency(taxableTotal)}</span>
                 </div>
                 <div class="summary-card">
-                    <span class="card-lbl">${currentLang === 'ar' ? 'ضريبة القيمة المضافة (15%)' : 'VAT (15%)'}</span>
+                    <span class="card-lbl">${currentLang === 'ar' ? 'ضريبة القيمة المضافة المسجلة' : 'Recorded VAT'}</span>
                     <span class="card-val">${formatCurrency(totalTax)}</span>
                 </div>
                 <div class="summary-card highlight-card">
@@ -2611,42 +2622,46 @@ function renderTotalsReport(container) {
 }
 
 // 8. ACTIVE MEALS REPORTS
-function renderActiveMealsReport(container) {
-    const activeMeals = [];
-
+function renderOrderFlowReport(container, flow, showItems) {
+    const isOutgoing = flow === 'outgoing';
+    const title = `${isOutgoing ? 'Outgoing' : 'Active'} ${showItems ? 'Items' : 'Invoices'} Report`;
+    const relevantOrders = getFilteredOrders().filter(order => {
+        const status = String(order.status || '').toLowerCase();
+        if (isOutgoing) return status === 'completed';
+        return !['completed', 'cancelled', 'refunded', 'returned'].includes(status);
+    });
+    const rows = relevantOrders.flatMap(order => showItems
+        ? (order.items || []).map(item => ({ order, item }))
+        : [{ order, item: null }]);
     container.innerHTML = `
-        ${renderReportHeader(currentLang === 'ar' ? 'الوجبات النشطة حالياً' : 'Active Meals Report', false)}
-        <div class="report-printable-area">
-            <div class="report-table-card">
-                <div class="table-responsive">
-                    <table class="report-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>${currentLang === 'ar' ? 'الوجبة' : 'Meal'}</th>
-                                <th>${currentLang === 'ar' ? 'الطلب / الطاولة' : 'Order / Table'}</th>
-                                <th>${currentLang === 'ar' ? 'وقت البدء' : 'Started'}</th>
-                                <th class="text-end">${currentLang === 'ar' ? 'حالة الوجبة' : 'Meal Status'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${activeMeals.length ? activeMeals.map((m, idx) => `
-                                <tr>
-                                    <td>${idx + 1}</td>
-                                    <td><strong>${escapeHtml(currentLang === 'ar' ? m.nameAr : m.nameEn)}</strong></td>
-                                    <td>${escapeHtml(m.table)}</td>
-                                    <td>${currentLang === 'ar' ? m.startedAr : m.startedEn}</td>
-                                    <td class="text-end"><span class="badge-pill bg-warning-subtle text-warning">${currentLang === 'ar' ? m.statusAr : m.statusEn}</span></td>
-                                </tr>
-                            `).join('') : `<tr><td colspan="5" class="text-center">No live kitchen order data is available.</td></tr>`}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    `;
+        ${renderReportHeader(currentLang === 'ar' ? (isOutgoing ? 'تقارير الطلبات المكتملة' : 'تقارير الفواتير النشطة') : title)}
+        <div class="report-printable-area"><div class="report-table-card"><div class="table-responsive">
+            <table class="report-table"><thead><tr>
+                <th>${currentLang === 'ar' ? 'رقم الفاتورة' : 'Invoice ID'}</th>
+                ${!showItems ? `<th>${currentLang === 'ar' ? 'رقم الطلب' : 'Order Number'}</th>` : ''}
+                <th>${currentLang === 'ar' ? 'العميل' : 'Customer'}</th>
+                <th>${currentLang === 'ar' ? 'التاريخ' : 'Date'}</th>
+                ${showItems ? `<th>${currentLang === 'ar' ? 'المنتج' : 'Product'}</th><th>${currentLang === 'ar' ? 'الكمية' : 'Qty'}</th>` : ''}
+                <th>${currentLang === 'ar' ? 'نوع الطلب' : 'Delivery Type'}</th>
+                <th>${currentLang === 'ar' ? 'حالة الطلب' : 'Order Status'}</th>
+                <th class="text-end">${currentLang === 'ar' ? 'الإجمالي' : 'Total'}</th>
+            </tr></thead><tbody>
+                ${rows.length ? rows.map(({ order, item }) => `<tr><td>${escapeHtml(order.id)}</td>${!showItems ? `<td>${escapeHtml(order.orderNumber || order.id)}</td>` : ''}<td>${escapeHtml(order.customer || '—')}</td><td>${escapeHtml(order.date || '')}</td>${showItems ? `<td>${escapeHtml(item ? (currentLang === 'ar' ? (item.arName || item.enName) : item.enName) : '')}</td><td>${item ? Number(item.qty) || 0 : 0}</td>` : ''}<td>${escapeHtml(order.orderType || order.type || '—')}</td><td>${escapeHtml(order.status || '—')}</td><td class="text-end">${formatCurrency(showItems && item ? (Number(item.price) || 0) * (Number(item.qty) || 0) : order.grandTotal)}</td></tr>`).join('') : `<tr><td colspan="${showItems ? 7 : 7}" class="text-center">${currentLang === 'ar' ? 'لا توجد سجلات في الفترة المحددة' : `No ${isOutgoing ? 'outgoing' : 'active'} records in the selected period.`}</td></tr>`}
+            </tbody></table>
+        </div></div></div>`;
 }
 
+function renderUnavailableReport(container, title, message) {
+    const isAr = currentLang === 'ar';
+    container.innerHTML = `${renderReportHeader(isAr ? 'التقرير غير متاح' : title)}
+        <div class="report-printable-area"><div class="report-table-card" role="status" style="padding:24px">
+            ${escapeHtml(isAr ? 'لا تتوفر حقول أو سجلات مطابقة في قاعدة البيانات الحالية.' : message)}
+        </div></div>`;
+}
+
+function renderActiveMealsReport(container) {
+    renderOrderFlowReport(container, 'active', false);
+}
 // 9. MEALS REPORTS
 function renderMealsReports(container) {
     const categoriesById = new Map((categories || []).map(category => [category.id, category]));
@@ -2700,82 +2715,47 @@ function renderMealsReports(container) {
 
 // 10. PAYMENT TYPE REPORT
 function renderPaymentTypeReport(container) {
-    const filtered = getFilteredOrders();
-    const payTotals = {};
-
-    paymentMethods.forEach(pm => {
-        payTotals[pm.id] = {
-            nameAr: pm.nameAr,
-            nameEn: pm.nameEn,
-            total: 0,
-            count: 0
-        };
+    const grouped = new Map();
+    (reportSupplementalData.paymentTransactions || []).forEach(tx => {
+        const key = tx.method || 'Other';
+        const row = grouped.get(key) || { method: key, count: 0, amount: 0, refunds: 0 };
+        const amount = Number(tx.amount) || 0;
+        row.count += 1;
+        if (String(tx.status || '').toLowerCase().includes('refund')) row.refunds += Math.abs(amount);
+        else row.amount += amount;
+        grouped.set(key, row);
     });
-
-    filtered.forEach(o => {
-        const pm = (o.payMethod || '').toLowerCase();
-        let matched = paymentMethods.find(m => pm.includes(m.nameAr.toLowerCase()) || pm.includes(m.nameEn.toLowerCase()) || pm.includes(m.id));
-        if (!matched) matched = paymentMethods[0];
-        if (matched && payTotals[matched.id]) {
-            payTotals[matched.id].total += (Number(o.grandTotal) || 0);
-            payTotals[matched.id].count += 1;
-        }
-    });
-
-    const rows = Object.values(payTotals);
-
+    const rows = [...grouped.values()];
     container.innerHTML = `
         ${renderReportHeader(currentLang === 'ar' ? 'تقرير طرق الدفع' : 'Payment Type Report')}
-        <div class="report-printable-area">
-            <div class="report-table-card">
-                <div class="table-responsive">
-                    <table class="report-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>${currentLang === 'ar' ? 'طريقة الدفع' : 'Payment Method'}</th>
-                                <th>${currentLang === 'ar' ? 'عدد العمليات' : 'Transactions'}</th>
-                                <th class="text-end">${currentLang === 'ar' ? 'المبلغ الإجمالي' : 'Total Amount'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rows.map((r, idx) => `
-                                <tr>
-                                    <td>${idx + 1}</td>
-                                    <td><strong>${escapeHtml(currentLang === 'ar' ? r.nameAr : r.nameEn)}</strong></td>
-                                    <td><span class="badge-pill">${r.count}</span></td>
-                                    <td class="text-end fw-bold">${formatCurrency(r.total)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    `;
+        <div class="report-printable-area"><div class="report-table-card"><div class="table-responsive">
+            <table class="report-table"><thead><tr>
+                <th>${currentLang === 'ar' ? 'طريقة الدفع' : 'Payment Method'}</th>
+                <th>${currentLang === 'ar' ? 'عدد المعاملات' : 'Transactions'}</th>
+                <th>${currentLang === 'ar' ? 'إجمالي المبالغ المسجلة' : 'Recorded Amount'}</th>
+                <th class="text-end">${currentLang === 'ar' ? 'المبالغ المعادة المسجلة' : 'Recorded Refunds'}</th>
+                <th class="text-end">${currentLang === 'ar' ? 'الصافي' : 'Net Amount'}</th>
+            </tr></thead><tbody>
+                ${rows.length ? rows.map(row => `<tr><td><strong>${escapeHtml(row.method)}</strong></td><td>${row.count}</td><td>${formatCurrency(row.amount)}</td><td class="text-end">${formatCurrency(row.refunds)}</td><td class="text-end">${formatCurrency(row.amount - row.refunds)}</td></tr>`).join('') : `<tr><td colspan="5" class="text-center">${currentLang === 'ar' ? 'لا توجد معاملات دفع مسجلة في الفترة المحددة' : 'No payment transactions are recorded for this period.'}</td></tr>`}
+            </tbody></table>
+        </div></div></div>`;
 }
-
 // 11. BALANCING PAYMENT METHODS (Live editable & saved history)
 function renderBalancingPayments(container) {
-    const filtered = getFilteredOrders();
-    const defaultTotals = {
-        'cash': 850.00,
-        'mada_1': 1420.00,
-        'mada_2': 980.00,
-        'visa': 450.00,
-        'apps': 1200.00
-    };
-
-    // Calculate actual orders totals if present
-    filtered.forEach(o => {
-        const m = (o.payMethod || '').toLowerCase();
-        if (m.includes('mada') && m.includes('2')) defaultTotals['mada_2'] += Number(o.grandTotal) || 0;
-        else if (m.includes('mada')) defaultTotals['mada_1'] += Number(o.grandTotal) || 0;
-        else if (m.includes('visa')) defaultTotals['visa'] += Number(o.grandTotal) || 0;
-        else if (m.includes('app')) defaultTotals['apps'] += Number(o.grandTotal) || 0;
-        else defaultTotals['cash'] += Number(o.grandTotal) || 0;
+    const defaultTotals = {};
+    const methods = [...(paymentMethods || [])];
+    methods.forEach(method => { defaultTotals[method.id] = 0; });
+    (reportSupplementalData.paymentTransactions || []).forEach(tx => {
+        const rawMethod = String(tx.method || 'Other');
+        let method = methods.find(candidate => [candidate.id, candidate.nameEn, candidate.nameAr].some(value => String(value || '').toLowerCase() === rawMethod.toLowerCase()));
+        if (!method) {
+            const id = `recorded_${rawMethod.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
+            method = { id, nameEn: rawMethod, nameAr: rawMethod, category: 'Recorded', categoryEn: 'Recorded', categoryAr: 'مسجل' };
+            methods.push(method);
+            defaultTotals[id] = 0;
+        }
+        defaultTotals[method.id] += Number(tx.amount) || 0;
     });
-
     const lastBalancing = balancingRecords && balancingRecords.length > 0 ? balancingRecords[balancingRecords.length - 1] : null;
 
     container.innerHTML = `
@@ -2801,7 +2781,7 @@ function renderBalancingPayments(container) {
                             </tr>
                         </thead>
                         <tbody>
-                            ${paymentMethods.map(pm => {
+                            ${methods.map(pm => {
                                 const sysTotal = Math.round((defaultTotals[pm.id] || 0) * 100) / 100;
                                 const actualVal = balancingInputs[pm.id] !== undefined ? balancingInputs[pm.id] : sysTotal;
                                 const diff = Math.round((actualVal - sysTotal) * 100) / 100;
@@ -2872,66 +2852,24 @@ function saveBalancingRecord() {
 
 // 12. APPLICATIONS DATA REVIEW
 function renderApplicationsReview(container) {
-    const appData = applications.map(app => {
-        const total = 1850.00;
-        const returns = 50.00;
-        const net = total - returns;
-        const actual = appReviewInputs[app.id] !== undefined ? appReviewInputs[app.id] : net;
-        const diff = actual - net;
-
-        return {
-            id: app.id,
-            nameAr: app.nameAr,
-            nameEn: app.nameEn,
-            total,
-            returns,
-            net,
-            actual,
-            diff
-        };
+    const totals = new Map();
+    getFilteredOrders().forEach(order => {
+        const key = order.orderType || order.type || 'Unknown';
+        const row = totals.get(key) || { type: key, count: 0, amount: 0 };
+        row.count += 1;
+        row.amount += Number(order.grandTotal) || 0;
+        totals.set(key, row);
     });
-
+    const rows = [...totals.values()];
     container.innerHTML = `
-        ${renderReportHeader(currentLang === 'ar' ? 'مراجعة بيانات التطبيقات' : 'Applications Data Review')}
-        <div class="report-printable-area">
-            <div class="report-table-card">
-                <div class="table-responsive">
-                    <table class="report-table">
-                        <thead>
-                            <tr>
-                                <th>${currentLang === 'ar' ? 'التطبيق' : 'Application'}</th>
-                                <th>${currentLang === 'ar' ? 'الإجمالي' : 'Total'}</th>
-                                <th>${currentLang === 'ar' ? 'المرتجعات' : 'Returns'}</th>
-                                <th>${currentLang === 'ar' ? 'الصافي' : 'Net Total'}</th>
-                                <th style="width: 170px;">${currentLang === 'ar' ? 'المبلغ الفعلي' : 'Actual'}</th>
-                                <th class="text-end">${currentLang === 'ar' ? 'الفارق' : 'Difference'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${appData.map(a => `
-                                <tr>
-                                    <td><strong>${escapeHtml(currentLang === 'ar' ? a.nameAr : a.nameEn)}</strong></td>
-                                    <td>${formatCurrency(a.total)}</td>
-                                    <td class="text-danger">${formatCurrency(a.returns)}</td>
-                                    <td class="fw-bold">${formatCurrency(a.net)}</td>
-                                    <td>
-                                        <input type="number" step="0.01" class="form-control form-control-sm" 
-                                            value="${a.actual}" 
-                                            oninput="onAppReviewInputChange('${a.id}', ${a.net}, this.value)">
-                                    </td>
-                                    <td class="text-end fw-bold ${a.diff === 0 ? 'text-success' : 'text-danger'}" id="appdiff_${a.id}">
-                                        ${formatCurrency(a.diff)}
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    `;
+        ${renderReportHeader(currentLang === 'ar' ? 'مراجعة بيانات الطلبات' : 'Applications Data Review')}
+        <div class="report-printable-area"><div class="report-table-card"><div class="table-responsive">
+            <table class="report-table"><thead><tr><th>${currentLang === 'ar' ? 'نوع الطلب المسجل' : 'Recorded Order Type'}</th><th>${currentLang === 'ar' ? 'عدد الطلبات' : 'Order Count'}</th><th>${currentLang === 'ar' ? 'إجمالي المبيعات' : 'Recorded Sales'}</th></tr></thead><tbody>
+                ${rows.length ? rows.map(row => `<tr><td>${escapeHtml(row.type)}</td><td>${row.count}</td><td>${formatCurrency(row.amount)}</td></tr>`).join('') : `<tr><td colspan="3" class="text-center">${currentLang === 'ar' ? 'لا توجد بيانات في الفترة المحددة' : 'No data in the selected period.'}</td></tr>`}
+            </tbody></table>
+            <p class="text-muted">${currentLang === 'ar' ? 'بيانات تسويات التطبيقات والمرتجعات غير متاحة في قاعدة البيانات.' : 'Application settlement and refund records are not available in the database.'}</p>
+        </div></div></div>`;
 }
-
 function onAppReviewInputChange(appId, net, valStr) {
     const num = parseFloat(valStr) || 0;
     appReviewInputs[appId] = num;
