@@ -12,14 +12,21 @@ use App\Models\PosCustomer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-// Lightweight readiness probe used by Render. Keep the production driver guard,
-// but avoid opening a fresh TiDB connection for every health check.
+// Readiness probe used by Render. Verify that the configured database is
+// reachable before reporting the application as ready.
 Route::get('/health', function () {
-    if (app()->environment('production') && DB::connection()->getDriverName() !== 'mysql') {
+    try {
+        $connection = DB::connection();
+        if (app()->environment('production') && $connection->getDriverName() !== 'mysql') {
+            return response()->json(['status' => 'unavailable'], 503);
+        }
+
+        $connection->getPdo();
+
+        return response()->json(['status' => 'ok']);
+    } catch (\Throwable) {
         return response()->json(['status' => 'unavailable'], 503);
     }
-
-    return response()->json(['status' => 'ok']);
 });
 
 // Public Authentication endpoints
