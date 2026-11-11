@@ -45,7 +45,16 @@ const html = fs.readFileSync(path.join(frontendRoot, 'index.html'), 'utf8');
 const dom = new JSDOM(html, {
     runScripts: 'dangerously',
     url: 'http://localhost/',
-    pretendToBeVisual: true
+    pretendToBeVisual: true,
+    beforeParse(window) {
+        window.fetch = async url => {
+            const path = new URL(url, 'http://localhost').pathname;
+            const payload = path === '/api/reports/invoices'
+                ? { success: true, invoices: [], pagination: { currentPage: 1, lastPage: 1, perPage: 50, total: 0 }, summary: { invoiceCount: 0, totalSales: 0, totalReturns: 0, totalDiscount: 0, totalTax: 0, totalFutureReturns: 0 } }
+                : { success: false, orders: [], paymentTransactions: [], shifts: [], damagedMovements: [], catalog: [], business: {} };
+            return { ok: path === '/api/reports/invoices', status: path === '/api/reports/invoices' ? 200 : 401, json: async () => payload };
+        };
+    }
 });
 
 const window = dom.window;
@@ -60,7 +69,17 @@ for (const file of scriptFiles) {
     scriptContent += fs.readFileSync(path.join(frontendRoot, file), 'utf8') + '\n';
 }
 
-window.eval(scriptContent);
+const invoiceFixture = {
+    id: 'QA-INV-1', order_number: 'QA-INV-1', created_at: '2026-10-01T10:00:00.000Z',
+    order_type_name: 'Delivery', method: 'Cash', customer_name: 'QA Customer', user_id: 'QA Cashier',
+    grand_total: 120, subtotal: 120, tax: 18, discount: 0
+};
+const invoiceFixtureResult = {
+    invoices: [invoiceFixture],
+    pagination: { currentPage: 1, lastPage: 1, perPage: 50, total: 1 },
+    summary: { invoiceCount: 1, totalSales: 120, totalReturns: 0, totalDiscount: 0, totalTax: 18, totalFutureReturns: 0 }
+};
+window.eval(`${scriptContent}\ninvoiceReportResult = ${JSON.stringify(invoiceFixtureResult)}; invoiceReportRequestKey = reportDateFrom + '|' + reportDateTo + '|' + invoiceReportPage; window.__qaSetInvoiceDate = (from, to) => { reportDateFrom = from; reportDateTo = to; invoiceReportRequestKey = reportDateFrom + '|' + reportDateTo + '|' + invoiceReportPage; };`);
 window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
 // Render Invoice Reports in English
@@ -151,8 +170,7 @@ assert('Test M: Invoice count badge exists in header', countBadge !== null);
 assert('Test M: Invoice count matches filtered length', countBadge.textContent.includes(String(invoiceData.invoicesCount)));
 
 // Modify date filters to test reactive update
-window.reportDateFrom = '2026-10-01';
-window.reportDateTo = '2026-10-01';
+window.__qaSetInvoiceDate('2026-10-01', '2026-10-01');
 window.renderInvoiceReports(container);
 const updatedTds = container.querySelectorAll('.invoice-overall-summary-table td');
 assert('Test J: Re-rendering with date filter updates summary values properly', updatedTds.length === 6);
@@ -160,8 +178,7 @@ const updatedCountBadge = container.querySelector('#invoiceCountBadge');
 assert('Test J: Invoice count badge updates with date filter', updatedCountBadge !== null);
 
 // Reset date filters
-window.reportDateFrom = '2026-10-01';
-window.reportDateTo = '2026-10-28';
+window.__qaSetInvoiceDate('2026-10-01', '2026-10-28');
 window.renderInvoiceReports(container);
 
 // Test K: Individual Row Print Button Binding
@@ -179,7 +196,7 @@ let reportPrintJob = null;
 window.routePrintJob = function(channel, htmlContent, title) {
     reportPrintJob = { channel, htmlContent, title };
 };
-window.printInvoiceReport();
+window.printLoadedInvoiceReport(invoiceFixtureResult);
 assert('Test L: printInvoiceReport executed routePrintJob', reportPrintJob !== null);
 assert('Test L: print channel is reports', reportPrintJob && reportPrintJob.channel === 'reports');
 assert('Test L: Print HTML contains 6-column overall summary table', reportPrintJob && reportPrintJob.htmlContent.includes('Total Discount Value') && reportPrintJob.htmlContent.includes('#42556b'));
@@ -211,6 +228,7 @@ const itemsThs = itemsTable.querySelectorAll('th');
 assert('Test Q: Items Report retains its established 5 columns', itemsThs.length === 5);
 
 console.log(`\n=== Invoice Reports Acceptance Test Suite: ${passedTests} Passed, ${failedTests} Failed ===`);
+window.close();
 if (failedTests > 0) {
     process.exit(1);
 }

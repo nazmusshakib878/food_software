@@ -21,13 +21,14 @@ let reportDateTo = (() => {
 })();
 let reportOrdersCache = null;
 let reportOrdersRange = null;
-let reportOrdersLoading = false;
+let reportOrdersLoadingKey = null;
 let reportSupplementalData = { paymentTransactions: [], shifts: [], damagedMovements: [], catalog: [], business: {} };
 let reportCatalogLookup = new Map();
 let invoiceReportPage = 1;
 let invoiceReportResult = null;
 let invoiceReportRequestKey = null;
-let invoiceReportLoading = false;
+let invoiceReportLoadingKey = null;
+let reportsNavigationExpanded = true;
 
 // Temporary Live Editing State for Balancing & Reconciliation
 let balancingInputs = {};
@@ -60,6 +61,7 @@ async function loadReportOrdersFromServer() {
     if (!response.ok || !data.success || !Array.isArray(data.orders)) {
         throw new Error(data.error || `Report request failed (${response.status})`);
     }
+    if (`${reportDateFrom}|${reportDateTo}` !== key) return;
     reportSupplementalData = {
         paymentTransactions: Array.isArray(data.paymentTransactions) ? data.paymentTransactions : [],
         shifts: Array.isArray(data.shifts) ? data.shifts : [],
@@ -114,18 +116,72 @@ function openReportModule(moduleId) {
     closeSideDrawer();
 }
 
+function renderReportsNavigation() {
+    const list = document.getElementById('reportsNavigationList');
+    if (!list) return;
+    const source = document.getElementById('drawerReportsSubmenu');
+    if (!source) return;
+    list.innerHTML = '';
+    const group = document.createElement('button');
+    group.type = 'button';
+    group.className = 'reports-navigation-group';
+    group.setAttribute('aria-expanded', String(reportsNavigationExpanded));
+    group.innerHTML = `<i class="fa-solid fa-chart-line"></i><span>${escapeHtml(i18n?.[currentLang]?.drawer_rep_sales || (currentLang === 'ar' ? 'تقارير المبيعات' : 'Sales Reports'))}</span><i class="fa-solid ${reportsNavigationExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} reports-group-chevron"></i>`;
+    list.appendChild(group);
+    const appendReport = (item, isChild = false) => {
+        const id = item.getAttribute('data-report-id');
+        if (!canAccessReportModule(id)) return;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `reports-navigation-item${isChild ? ' reports-navigation-child' : ''}`;
+        button.dataset.reportId = id;
+        button.setAttribute('aria-current', id === activeReportModule ? 'page' : 'false');
+        button.classList.toggle('active', id === activeReportModule);
+        button.innerHTML = item.innerHTML;
+        button.querySelectorAll('[data-i18n]').forEach(label => {
+            const key = label.getAttribute('data-i18n');
+            if (i18n?.[currentLang]?.[key]) label.textContent = i18n[currentLang][key];
+        });
+        button.hidden = isChild && !reportsNavigationExpanded;
+        list.appendChild(button);
+    };
+    source.querySelectorAll('.drawer-sub-item[data-report-id]').forEach(item => appendReport(item, true));
+    document.querySelectorAll('.drawer-menu-item[data-report-id]').forEach(item => {
+        appendReport(item);
+    });
+    if (!list.dataset?.eventsBound && typeof list.addEventListener === 'function') {
+        list.addEventListener('click', event => {
+            if (event.target.closest('.reports-navigation-group')) {
+                reportsNavigationExpanded = !reportsNavigationExpanded;
+                renderReportsNavigation();
+                return;
+            }
+            const item = event.target.closest('.reports-navigation-item[data-report-id]');
+            if (item) openReportModule(item.dataset.reportId);
+        });
+        if (list.dataset) list.dataset.eventsBound = 'true';
+    }
+}
+
 // Main Report Screen Renderer
 function renderActiveReport() {
     const container = document.getElementById('reportModuleContent');
     if (!container) return;
+    renderReportsNavigation();
+    const reportsLabel = document.querySelector('.reports-navigation-heading [data-i18n="reports_nav"]');
+    if (reportsLabel) reportsLabel.textContent = i18n?.[currentLang]?.reports_nav || (currentLang === 'ar' ? 'التقارير' : 'Reports');
 
     const requestedRange = `${reportDateFrom}|${reportDateTo}`;
     if (currentUser && currentUser.role !== 'guest' && reportOrdersRange !== requestedRange) {
-        if (!reportOrdersLoading) {
-            reportOrdersLoading = true;
-            loadReportOrdersFromServer().then(() => renderActiveReport()).catch(error => {
-                container.innerHTML = `<div class="access-denied-box" role="alert">${escapeHtml(error.message || 'Database reports are unavailable.')}</div>`;
-            }).finally(() => { reportOrdersLoading = false; });
+        if (reportOrdersLoadingKey !== requestedRange) {
+            reportOrdersLoadingKey = requestedRange;
+            loadReportOrdersFromServer().then(() => {
+                if (reportOrdersRange === requestedRange) renderActiveReport();
+            }).catch(error => {
+                if (`${reportDateFrom}|${reportDateTo}` === requestedRange) container.innerHTML = `<div class="access-denied-box" role="alert">${escapeHtml(error.message || 'Database reports are unavailable.')}</div>`;
+            }).finally(() => {
+                if (reportOrdersLoadingKey === requestedRange) reportOrdersLoadingKey = null;
+            });
         }
         return;
     }
@@ -187,6 +243,8 @@ function renderActiveReport() {
             renderTotalsReport(container);
             break;
         case 'active_meals':
+            renderOrderFlowReport(container, 'active', false, currentLang === 'ar' ? '\u062a\u0642\u0627\u0631\u064a\u0631 \u0627\u0644\u0648\u062c\u0628\u0627\u062a \u0627\u0644\u0646\u0634\u0637\u0629' : 'Active Meals Reports');
+            break;
         case 'active_invoices_report':
             renderOrderFlowReport(container, 'active', false);
             break;
@@ -237,12 +295,17 @@ function renderActiveReport() {
     }
 }
 
+function backFromReports() {
+    const destination = typeof previousPosView !== 'undefined' && previousPosView !== 'reports_screen' ? previousPosView : 'pos';
+    switchView(destination);
+}
+
 // Common Date Range Component Header
 function renderReportHeader(title, showDateFilter = true) {
     return `
         <div class="report-header-bar">
             <div class="report-title-group">
-                <button type="button" class="btn btn-icon btn-secondary-pos" onclick="switchView('pos')" title="${currentLang === 'ar' ? 'الرجوع لنقاط البيع' : 'Back to POS'}">
+                <button type="button" class="btn btn-icon btn-secondary-pos" onclick="backFromReports()" title="${currentLang === 'ar' ? 'الرجوع لنقاط البيع' : 'Back to POS'}">
                     <i class="fa-solid ${currentLang === 'ar' ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
                 </button>
                 <h2 class="report-screen-title">${escapeHtml(title)}</h2>
@@ -438,15 +501,18 @@ function renderInvoiceReports(container) {
 
     const requestKey = `${reportDateFrom}|${reportDateTo}|${invoiceReportPage}`;
     if (!invoiceReportResult || invoiceReportRequestKey !== requestKey) {
-        if (!invoiceReportLoading) {
-            invoiceReportLoading = true;
+        if (invoiceReportLoadingKey !== requestKey) {
+            invoiceReportLoadingKey = requestKey;
             fetchInvoiceReport(invoiceReportPage).then(data => {
+                if (`${reportDateFrom}|${reportDateTo}|${invoiceReportPage}` !== requestKey || activeReportModule !== 'invoice_reports') return;
                 invoiceReportResult = data;
                 invoiceReportRequestKey = requestKey;
                 renderActiveReport();
             }).catch(error => {
-                container.innerHTML = `<div class="access-denied-box" role="alert">${escapeHtml(error.message || 'Invoice report is unavailable.')}</div>`;
-            }).finally(() => { invoiceReportLoading = false; });
+                if (`${reportDateFrom}|${reportDateTo}|${invoiceReportPage}` === requestKey) container.innerHTML = `<div class="access-denied-box" role="alert">${escapeHtml(error.message || 'Invoice report is unavailable.')}</div>`;
+            }).finally(() => {
+                if (invoiceReportLoadingKey === requestKey) invoiceReportLoadingKey = null;
+            });
         }
         container.innerHTML = `<div class="report-loading" role="status">${currentLang === 'ar' ? 'ÙŠØªÙ… ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØªÙ‚Ø±ÙŠØ±...' : 'Loading invoice report…'}</div>`;
         return;
@@ -464,7 +530,7 @@ function renderInvoiceReports(container) {
                 <div class="invoice-report-top-header">
                     <div class="invoice-report-title-wrap">
                         <span class="invoice-report-breadcrumb">
-                            <span class="breadcrumb-root" onclick="switchView('pos')">${currentLang === 'ar' ? 'التقارير' : 'Reports'}</span>
+                            <span class="breadcrumb-root" onclick="backFromReports()">${currentLang === 'ar' ? 'التقارير' : 'Reports'}</span>
                             <span class="breadcrumb-separator">/</span>
                             <span class="breadcrumb-current">${currentLang === 'ar' ? 'تقارير الفواتير' : 'Invoice Reports'}</span>
                         </span>
@@ -569,7 +635,7 @@ function renderInvoiceReports(container) {
                 </div>
             <!-- SECTION C: FIXED BOTTOM -->
             <footer class="invoice-report-bottom">
-                <button type="button" class="btn invoice-report-btn-back" onclick="switchView('pos')" title="${currentLang === 'ar' ? 'الرجوع لنقاط البيع' : 'Back to POS'}">
+                <button type="button" class="btn invoice-report-btn-back" onclick="backFromReports()" title="${currentLang === 'ar' ? 'الرجوع لنقاط البيع' : 'Back to POS'}">
                     <i class="fa-solid ${currentLang === 'ar' ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
                     <span>${currentLang === 'ar' ? 'رجوع' : 'Back'}</span>
                 </button>
@@ -1238,7 +1304,7 @@ function renderItemsReport(container) {
 
             <!-- SECTION C: FIXED BOTTOM -->
             <footer class="items-report-bottom">
-                <button type="button" class="btn items-report-btn-back" onclick="switchView('pos')" title="${currentLang === 'ar' ? 'الرجوع لنقاط البيع' : 'Back to POS'}">
+                <button type="button" class="btn items-report-btn-back" onclick="backFromReports()" title="${currentLang === 'ar' ? 'الرجوع لنقاط البيع' : 'Back to POS'}">
                     <i class="fa-solid ${currentLang === 'ar' ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
                     <span>${currentLang === 'ar' ? 'رجوع' : 'Back'}</span>
                 </button>
@@ -1471,7 +1537,10 @@ function resolveOrderPartner(order) {
         }
     }
     const nameAr = (appObj && appObj.nameAr) || fb.nameAr || matchedId;
-    const companyNameAr = (custObj && custObj.nameAr) || fb.companyNameAr || '';
+    const customerArabicName = (custObj && custObj.nameAr) || '';
+    const companyNameAr = customerArabicName.includes(' - ')
+        ? customerArabicName.slice(customerArabicName.indexOf(' - ') + 3).trim()
+        : customerArabicName || fb.companyNameAr || '';
 
     return {
         id: matchedId,
@@ -2084,7 +2153,7 @@ function renderDailyShiftsReport(container) {
 
             <!-- SECTION C: FIXED BOTTOM -->
             <footer class="daily-shifts-report-bottom">
-                <button type="button" class="btn daily-shifts-btn-back" onclick="switchView('pos')" title="${isAr ? 'الرجوع لنقاط البيع' : 'Back to POS'}">
+                <button type="button" class="btn daily-shifts-btn-back" onclick="backFromReports()" title="${isAr ? 'الرجوع لنقاط البيع' : 'Back to POS'}">
                     <i class="fa-solid fa-arrow-left"></i>
                     <span>${isAr ? 'رجوع' : 'Back'}</span>
                 </button>
@@ -2622,9 +2691,9 @@ function renderTotalsReport(container) {
 }
 
 // 8. ACTIVE MEALS REPORTS
-function renderOrderFlowReport(container, flow, showItems) {
+function renderOrderFlowReport(container, flow, showItems, customTitle = null) {
     const isOutgoing = flow === 'outgoing';
-    const title = `${isOutgoing ? 'Outgoing' : 'Active'} ${showItems ? 'Items' : 'Invoices'} Report`;
+    const title = customTitle || `${isOutgoing ? 'Outgoing' : 'Active'} ${showItems ? 'Items' : 'Invoices'} Report`;
     const relevantOrders = getFilteredOrders().filter(order => {
         const status = String(order.status || '').toLowerCase();
         if (isOutgoing) return status === 'completed';
@@ -2634,7 +2703,7 @@ function renderOrderFlowReport(container, flow, showItems) {
         ? (order.items || []).map(item => ({ order, item }))
         : [{ order, item: null }]);
     container.innerHTML = `
-        ${renderReportHeader(currentLang === 'ar' ? (isOutgoing ? 'تقارير الطلبات المكتملة' : 'تقارير الفواتير النشطة') : title)}
+        ${renderReportHeader(customTitle || (currentLang === 'ar' ? (isOutgoing ? 'تقارير الطلبات المكتملة' : 'تقارير الفواتير النشطة') : title))}
         <div class="report-printable-area"><div class="report-table-card"><div class="table-responsive">
             <table class="report-table"><thead><tr>
                 <th>${currentLang === 'ar' ? 'رقم الفاتورة' : 'Invoice ID'}</th>

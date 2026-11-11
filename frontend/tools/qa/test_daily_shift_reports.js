@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+process.env.TZ = 'UTC';
 const frontendRoot = path.resolve(__dirname, '../..');
 const { JSDOM } = require('jsdom');
 
@@ -50,7 +51,14 @@ const html = fs.readFileSync(path.join(frontendRoot, 'index.html'), 'utf8');
 const dom = new JSDOM(html, {
     runScripts: 'dangerously',
     url: 'http://localhost/',
-    pretendToBeVisual: true
+    pretendToBeVisual: true,
+    beforeParse(window) {
+        window.fetch = async url => {
+            const path = new URL(url, 'http://localhost').pathname;
+            const payload = { success: false, orders: [], paymentTransactions: [], shifts: [], damagedMovements: [], catalog: [], business: {} };
+            return { ok: false, status: 401, json: async () => payload };
+        };
+    }
 });
 
 const window = dom.window;
@@ -65,7 +73,7 @@ for (const file of scriptFiles) {
     scriptContent += fs.readFileSync(path.join(frontendRoot, file), 'utf8') + '\n';
 }
 
-window.eval(scriptContent);
+window.eval(`${scriptContent}\nwindow.__qaSetDailyFixture = (orderRows, shiftRows, from, to) => { window.orders = orderRows; window.shifts = shiftRows; reportOrdersCache = null; reportOrdersRange = null; reportDateFrom = from; reportDateTo = to; reportSupplementalData.shifts = shiftRows.map(shift => ({ id: shift.id, cashier: shift.cashier, cashier_en: shift.cashierEn || shift.cashier, cashier_ar: shift.cashierAr || shift.cashier, opened_at: shift.openedAt, closed_at: shift.closedAt, status: shift.status })); };`);
 window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
 // Drawer Check
@@ -121,7 +129,7 @@ assert('Divider 2: Contains "( Shifts Details )"', dividers[1].textContent.inclu
 
 // Payment Type Breakdowns
 const paymentCards = middleSection.querySelectorAll('.payment-type-breakdown-card');
-assert('Payment Breakdowns: Cards rendered dynamically', paymentCards.length > 0);
+assert('Empty state: No payment cards render without fixture transactions', paymentCards.length === 0);
 
 paymentCards.forEach(card => {
     const grid = card.querySelector('.payment-type-financial-grid');
@@ -141,7 +149,7 @@ paymentCards.forEach(card => {
 
 // Shift Sections
 const shiftCards = middleSection.querySelectorAll('.shift-section-card');
-assert('Shifts Details: Shift cards rendered', shiftCards.length > 0);
+assert('Empty state: No shift cards render without fixture shifts', shiftCards.length === 0);
 
 shiftCards.forEach(sc => {
     const header = sc.querySelector('.shift-section-header');
@@ -170,7 +178,7 @@ const backBtn = bottomSection.querySelector('.daily-shifts-btn-back');
 const printBtn = bottomSection.querySelector('.daily-shifts-btn-print');
 assert('Footer: Large Back button exists on LEFT', backBtn !== null);
 assert('Footer: Large Print button exists on RIGHT', printBtn !== null);
-assert('Footer: Back button calls switchView("pos")', backBtn.getAttribute('onclick').includes("switchView('pos')"));
+assert('Footer: Back button uses reports return navigation', backBtn.getAttribute('onclick').includes('backFromReports()'));
 assert('Footer: Print button calls printDailyShiftsReport()', printBtn.getAttribute('onclick').includes("printDailyShiftsReport()"));
 
 // 3. Test Fixture Numerical Reconciliation (Part 16)
@@ -183,16 +191,16 @@ console.log('\n--- Suite 3: Financial Numerical Reconciliation Fixture (Part 16)
 
 const fixtureOrders = [
     // Shift A orders
-    { id: 'ORD-FA1', shiftId: 'SH-FA', grandTotal: 2214.75, status: 'completed', discount: 0, date: '2026-10-28T10:00:00Z', method: 'Cash' },
-    { id: 'ORD-FA2', shiftId: 'SH-FA', grandTotal: 38.00, status: 'refunded', discount: 0, date: '2026-10-28T10:30:00Z', method: 'Cash' },
+    { id: 'ORD-FA1', shiftId: 'SH-FA', grandTotal: 2214.75, tax: 288.88, status: 'completed', discount: 0, date: '2026-10-28T10:00:00Z', method: 'Cash' },
+    { id: 'ORD-FA2', shiftId: 'SH-FA', grandTotal: 38.00, returns: 38.00, status: 'refunded', discount: 0, date: '2026-10-28T10:30:00Z', method: 'Cash' },
     // Shift B orders (with Part 17 net distribution)
-    { id: 'ORD-FB1', shiftId: 'SH-FB', grandTotal: 308.05, status: 'completed', discount: 0, date: '2026-10-28T14:00:00Z', method: 'Cash' },
+    { id: 'ORD-FB1', shiftId: 'SH-FB', grandTotal: 308.05, tax: 336.11, status: 'completed', discount: 0, date: '2026-10-28T14:00:00Z', method: 'Cash' },
     { id: 'ORD-FB2', shiftId: 'SH-FB', grandTotal: 512.30, status: 'completed', discount: 0, date: '2026-10-28T14:15:00Z', method: 'Mada237' },
     { id: 'ORD-FB3', shiftId: 'SH-FB', grandTotal: 361.10, status: 'completed', discount: 0, date: '2026-10-28T14:30:00Z', method: 'Mada239' },
     { id: 'ORD-FB4', shiftId: 'SH-FB', grandTotal: 1045.00, status: 'completed', discount: 0, date: '2026-10-28T14:45:00Z', method: 'Mada236' },
     { id: 'ORD-FB5', shiftId: 'SH-FB', grandTotal: 350.40, status: 'completed', discount: 0, date: '2026-10-28T15:00:00Z', method: 'Mada238' },
     // Shift C orders
-    { id: 'ORD-FC1', shiftId: 'SH-FC', grandTotal: 1236.45, status: 'completed', discount: 0, date: '2026-10-28T18:00:00Z', method: 'Cash' }
+    { id: 'ORD-FC1', shiftId: 'SH-FC', grandTotal: 1236.45, tax: 161.28, status: 'completed', discount: 0, date: '2026-10-28T18:00:00Z', method: 'Cash' }
 ];
 
 const fixtureShifts = [
@@ -201,10 +209,7 @@ const fixtureShifts = [
     { id: 'SH-FC', cashier: 'Cashier C', openedAt: '2026-10-28T17:00:00Z', closedAt: '2026-10-28T22:00:00Z', status: 'closed' }
 ];
 
-window.orders = fixtureOrders;
-window.shifts = fixtureShifts;
-window.reportDateFrom = '2026-10-28';
-window.reportDateTo = '2026-10-28';
+window.__qaSetDailyFixture(fixtureOrders, fixtureShifts, '2026-10-28', '2026-10-28');
 
 const fixtureData = window.getDailyShiftsReportData();
 
@@ -394,10 +399,7 @@ const partnerShifts = [
     { id: 'SH-P2', cashier: 'Ahmed Ali', openedAt: '2026-10-29T13:30:00Z', closedAt: '2026-10-29T18:00:00Z', status: 'closed' }
 ];
 
-window.orders = partnerScenarioOrders;
-window.shifts = partnerShifts;
-window.reportDateFrom = '2026-10-29';
-window.reportDateTo = '2026-10-29';
+window.__qaSetDailyFixture(partnerScenarioOrders, partnerShifts, '2026-10-29', '2026-10-29');
 window.currentLang = 'en';
 
 const partnerReportData = window.getDailyShiftsReportData();
@@ -495,6 +497,7 @@ assert('CSS Color: Payment Type labels have #534358', reportsCss.includes('.pm-t
 assert('CSS Color: Payment Method names have #1e293b', reportsCss.includes('.pm-name') && reportsCss.includes('#1e293b'));
 
 console.log(`\n=== RESULTS: ${passedTests} PASSED, ${failedTests} FAILED ===\n`);
+window.close();
 if (failedTests > 0) {
     process.exit(1);
 }

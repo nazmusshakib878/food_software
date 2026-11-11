@@ -658,8 +658,14 @@
 
         <!-- ================= VIEW 4: REPORTS & MANAGEMENT VIEW ================= -->
         <div class="screen-view reports-screen-container" id="reportsView">
+            <aside class="reports-navigation" id="reportsNavigation" aria-label="Reports navigation">
+                <div class="reports-navigation-heading"><i class="fa-solid fa-chart-line"></i><span data-i18n="reports_nav">Reports</span></div>
+                <div class="reports-navigation-list" id="reportsNavigationList"></div>
+            </aside>
+            <div class="reports-main-panel" id="reportsMainPanel">
             <div id="reportModuleContent">
                 <!-- Rendered dynamically via js/reports.js -->
+            </div>
             </div>
         </div>
 

@@ -3,8 +3,10 @@
    ========================================================= */
 
 let currentView = 'pos';
+let previousPosView = 'pos';
 
 function switchView(viewName) {
+    if (viewName === 'reports_screen' && currentView !== 'reports_screen') previousPosView = currentView;
     currentView = viewName;
     if (viewName === 'admin' && currentUser && !['admin', 'manager'].includes(currentUser.role)) {
         showToast('Access Denied: Admin role required', 'danger');
