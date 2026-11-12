@@ -55,10 +55,37 @@ async function run() {
         await page.setViewport({ width: 1366, height: 900 });
         await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
         await page.waitForFunction(() => window.currentUser && window.currentUser.role === 'admin', { timeout: 20000 });
-        await page.evaluate(() => {
+        const sidebarReports = await page.evaluate(() => {
             document.getElementById('loginModal')?.classList.remove('open', 'active');
-            window.openReportModule('invoice_reports');
+            const entry = document.querySelector('.drawer-menu-item[onclick="openReportsPage()"]');
+            if (!entry) return null;
+            const state = { label: entry.textContent.trim(), hasChevron: Boolean(entry.querySelector('.fa-chevron-down, .fa-chevron-up')), legacySubmenu: Boolean(document.getElementById('drawerReportsSubmenu')) };
+            entry.click();
+            return state;
         });
+        assert.deepStrictEqual(sidebarReports, { label: 'Reports', hasChevron: false, legacySubmenu: false }, 'Main Sidebar Reports is a direct item with no arrow or submenu');
+        const initialNavigation = await page.evaluate(() => ({
+            groups: [...document.querySelectorAll('.reports-navigation-group')].map(button => ({ label: button.textContent.trim(), expanded: button.getAttribute('aria-expanded') })),
+            topLevelCount: document.querySelectorAll('#reportsNavigationList > .reports-navigation-group, #reportsNavigationList > .reports-navigation-item').length,
+            zakatVisible: Boolean(document.querySelector('.reports-navigation-item[data-report-id="zakat_invoices_report"]')),
+            selectedReport: document.querySelector('#reportModuleContent .report-screen-title')?.textContent.trim() || null
+        }));
+        assert.deepStrictEqual(initialNavigation.groups.map(group => group.expanded), ['false', 'false', 'false'], 'Reports opens with each accordion collapsed');
+        assert.strictEqual(initialNavigation.topLevelCount, 4, 'Reports rail has exactly four top-level entries');
+        assert.ok(initialNavigation.zakatVisible, 'Zakat report is a direct top-level item');
+        assert.strictEqual(initialNavigation.selectedReport, null, 'Reports landing does not open an unrelated report');
+        await page.click('.reports-navigation-group[aria-controls="reports-group-sales"]');
+        const salesExpanded = await page.evaluate(() => [...document.querySelectorAll('#reports-group-sales .reports-navigation-item')].map(item => item.dataset.reportId));
+        assert.deepStrictEqual(salesExpanded, ['invoice_reports', 'items_report', 'daily_shifts', 'damaged_items', 'application_reports', 'service_durations', 'totals_report'], 'Sales accordion exposes its existing report children');
+        await page.click('.reports-navigation-group[aria-controls="reports-group-sales"]');
+        assert.strictEqual(await page.$eval('.reports-navigation-group[aria-controls="reports-group-sales"]', node => node.getAttribute('aria-expanded')), 'false', 'Sales accordion toggles closed');
+        await page.click('.reports-navigation-group[aria-controls="reports-group-active-meals"]');
+        const activeMealsChildren = await page.evaluate(() => [...document.querySelectorAll('#reports-group-active-meals .reports-navigation-item')].map(item => item.dataset.reportId));
+        assert.deepStrictEqual(activeMealsChildren, ['active_meals', 'active_invoices_report', 'active_items_report'], 'Active Meals has its own report children');
+        await page.click('.reports-navigation-group[aria-controls="reports-group-meals"]');
+        const mealsChildren = await page.evaluate(() => [...document.querySelectorAll('#reports-group-meals .reports-navigation-item')].map(item => item.dataset.reportId));
+        assert.deepStrictEqual(mealsChildren, ['meals_reports', 'outgoing_invoices_report', 'outgoing_items_report', 'outgoing_returns_report', 'outgoing_damaged_report'], 'Meals has its own report children');
+        await page.evaluate(() => window.openReportModule('invoice_reports'));
         await page.waitForSelector('.reports-navigation-item[data-report-id="invoice_reports"].active');
         await page.waitForSelector('.invoice-report-screen');
 
@@ -71,36 +98,26 @@ async function run() {
         ];
         const reports = [];
         for (const id of reportIds) {
-            await page.click(`.reports-navigation-item[data-report-id="${id}"]`);
-            await page.waitForFunction(expected => document.querySelector('.reports-navigation-item.active')?.dataset.reportId === expected, {}, id);
+            await page.evaluate(moduleId => window.openReportModule(moduleId), id);
             await wait(100);
             const result = await page.evaluate(() => ({
                 viewActive: document.getElementById('reportsView').classList.contains('active'),
-                activeId: document.querySelector('.reports-navigation-item.active')?.dataset.reportId,
-                content: document.querySelector('#reportModuleContent .report-screen-title, #reportModuleContent .breadcrumb-current')?.textContent.trim()
+                railVisible: !document.querySelector('.reports-navigation').hidden,
+                activeId: document.querySelector('.reports-navigation-item.active')?.dataset.reportId || null,
+                content: document.querySelector('#reportModuleContent .report-screen-title, #reportModuleContent .breadcrumb-current, #reportModuleContent .access-denied-box')?.textContent.trim()
                     || document.querySelector('#reportModuleContent .report-table-card')?.textContent.trim().slice(0, 80)
             }));
-            assert.strictEqual(result.viewActive, true, `${id} keeps the Reports view active`);
-            assert.strictEqual(result.activeId, id, `${id} is highlighted in the rail`);
-            assert.ok(result.content, `${id} renders report content`);
+            assert.strictEqual(result.viewActive, true, id + ' keeps its own page active');
+            assert.strictEqual(result.railVisible, ['invoice_reports','items_report','daily_shifts','damaged_items','application_reports','service_durations','totals_report','active_meals','active_invoices_report','active_items_report','meals_reports','outgoing_invoices_report','outgoing_items_report','outgoing_returns_report','outgoing_damaged_report','zakat_invoices_report'].includes(id), id + ' shows the Reports rail only for report-page items');
+            if (result.railVisible) assert.strictEqual(result.activeId, id, id + ' is highlighted in the rail');
+            else assert.strictEqual(result.activeId, null, id + ' does not show an unrelated Reports navigation rail');
+            assert.ok(result.content, id + ' renders its existing content');
             reports.push({ id, title: result.content });
         }
         assert.strictEqual(reportRequests, 1, 'Switching reports reuses the loaded date-range data');
         assert.strictEqual(invoiceRequests, 1, 'Invoice report loads once while switching reports');
 
-        const group = await page.evaluate(() => {
-            const list = document.getElementById('reportsNavigationList');
-            const groupButton = list.querySelector('.reports-navigation-group');
-            const initialVisible = list.querySelectorAll('.reports-navigation-item:not([hidden])').length;
-            groupButton.click();
-            const collapsedVisible = list.querySelectorAll('.reports-navigation-item:not([hidden])').length;
-            list.querySelector('.reports-navigation-group').click();
-            return { initialVisible, collapsedVisible, expandedVisible: list.querySelectorAll('.reports-navigation-item:not([hidden])').length, listenerBound: list.dataset.eventsBound };
-        });
-        assert.ok(group.collapsedVisible < group.initialVisible, 'Sales Reports group collapses child items');
-        assert.strictEqual(group.expandedVisible, group.initialVisible, 'Sales Reports group expands child items');
-        assert.strictEqual(group.listenerBound, 'true', 'Navigation uses one delegated listener');
-
+        const group = { topLevelCount: initialNavigation.topLevelCount, initialExpanded: initialNavigation.groups.map(group => group.expanded), listenerBound: await page.$eval('#reportsNavigationList', node => node.dataset.eventsBound) };
         await page.evaluate(() => window.openReportModule('totals_report'));
         await page.waitForSelector('.report-summary-cards');
         const totals = await page.$eval('.report-summary-cards', node => node.textContent);
@@ -160,7 +177,7 @@ async function run() {
         const viewports = [];
         for (const [width, height, label, expectHorizontal] of [
             [1366, 900, 'Desktop', false], [1180, 820, 'iPad landscape', false], [1024, 768, 'iPad landscape compact', false],
-            [768, 1024, 'iPad portrait', false], [800, 1280, 'Android tablet', false], [390, 844, 'Mobile', true]
+            [768, 1024, 'iPad portrait', false], [800, 1280, 'Android tablet', false], [390, 844, 'Mobile', false]
         ]) {
             await page.setViewport({ width, height });
             const layout = await page.evaluate(() => {

@@ -811,7 +811,6 @@ const i18n = {
         // Drawer
         drawer_brand_name: "نظام نقاط البيع والإدارة",
         drawer_sales_reports_title: "تقارير المبيعات والعمليات",
-        drawer_rep_sales: "1. تقارير المبيعات",
         rep_sub_invoices: "تقارير الفواتير",
         rep_sub_items: "تقرير الأصناف",
         rep_sub_shifts: "تقارير الورديات اليومية",
@@ -828,6 +827,9 @@ const i18n = {
         rep_outgoing_damage: "توالف الطلبات الصادرة",
         rep_zakat_invoices: "فواتير الزكاة",
         rep_sub_meals_cat: "تقارير فئات الوجبات",
+        reports_group_sales: "\u062a\u0642\u0627\u0631\u064a\u0631 \u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a",
+        rep_active_meals_group: "\u062a\u0642\u0627\u0631\u064a\u0631 \u0627\u0644\u0648\u062c\u0628\u0627\u062a \u0627\u0644\u0646\u0634\u0637\u0629",
+        rep_meals_group: "\u062a\u0642\u0627\u0631\u064a\u0631 \u0627\u0644\u0648\u062c\u0628\u0627\u062a",
 
         // Admin Tables & Views
         th_order_id: "رقم الطلب",
@@ -1186,7 +1188,6 @@ const i18n = {
         // Drawer
         drawer_brand_name: "POS & Management System",
         drawer_sales_reports_title: "Sales & Operations Reports",
-        drawer_rep_sales: "1. Sales Reports",
         rep_sub_invoices: "Invoice Reports",
         rep_sub_items: "Items Report",
         rep_sub_shifts: "Daily Shift Reports",
@@ -1203,6 +1204,9 @@ const i18n = {
         rep_outgoing_damage: "Outgoing Damaged Items",
         rep_zakat_invoices: "Zakat Invoices Report",
         rep_sub_meals_cat: "Meal Category Reports",
+        reports_group_sales: "Sales Reports",
+        rep_active_meals_group: "Active Meals Reports",
+        rep_meals_group: "Meals Reports",
 
         // Admin Tables & Views
         th_order_id: "Order ID",

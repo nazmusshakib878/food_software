@@ -407,15 +407,6 @@ function closeSideDrawer() {
     document.getElementById('sideDrawerOverlay')?.classList.remove('open');
 }
 
-function toggleDrawerReportsSubmenu() {
-    const sub = document.getElementById('drawerReportsSubmenu');
-    const arrow = document.getElementById('drawerReportsArrow');
-    if (!sub) return;
-    const isShown = sub.style.display !== 'none';
-    sub.style.display = isShown ? 'none' : 'flex';
-    if (arrow) arrow.className = isShown ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
-}
-
 /* Toast Notifications */
 function showToast(message, type = 'info') {
     const shelf = document.getElementById('toastShelf');

@@ -4,7 +4,8 @@
    ========================================================= */
 
 // Active Report State
-let activeReportModule = 'invoice_reports';
+let activeReportModule = null;
+let reportsPageActive = false;
 function reportLocalDateValue(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -28,7 +29,29 @@ let invoiceReportPage = 1;
 let invoiceReportResult = null;
 let invoiceReportRequestKey = null;
 let invoiceReportLoadingKey = null;
-let reportsNavigationExpanded = true;
+const reportsNavigationGroups = [
+    { id: 'sales', label: 'Sales Reports', translationKey: 'reports_group_sales', icon: 'fa-chart-line', reports: [
+        ['invoice_reports', 'fa-receipt', 'rep_sub_invoices'], ['items_report', 'fa-box-open', 'rep_sub_items'],
+        ['daily_shifts', 'fa-user-clock', 'rep_sub_shifts'], ['damaged_items', 'fa-trash-can', 'rep_sub_damaged'],
+        ['application_reports', 'fa-mobile-screen-button', 'rep_sub_apps'], ['service_durations', 'fa-stopwatch', 'rep_sub_durations'],
+        ['totals_report', 'fa-calculator', 'rep_sub_totals']
+    ] },
+    { id: 'active-meals', label: 'Active Meals Reports', translationKey: 'rep_active_meals_group', icon: 'fa-fire', reports: [
+        ['active_meals', 'fa-bowl-food', 'rep_sub_active_meals'], ['active_invoices_report', 'fa-file-invoice', 'rep_active_invoices'],
+        ['active_items_report', 'fa-bowl-food', 'rep_active_items']
+    ] },
+    { id: 'meals', label: 'Meals Reports', translationKey: 'rep_meals_group', icon: 'fa-chart-pie', reports: [
+        ['meals_reports', 'fa-chart-pie', 'rep_sub_meals_cat'], ['outgoing_invoices_report', 'fa-truck-fast', 'rep_outgoing_invoices'],
+        ['outgoing_items_report', 'fa-boxes-stacked', 'rep_outgoing_items'], ['outgoing_returns_report', 'fa-rotate-left', 'rep_outgoing_returns'],
+        ['outgoing_damaged_report', 'fa-triangle-exclamation', 'rep_outgoing_damage']
+    ] }
+];
+const zakatReportNavigationItem = ['zakat_invoices_report', 'fa-file-invoice-dollar', 'rep_zakat_invoices'];
+const reportsNavigationExpanded = { sales: false, 'active-meals': false, meals: false };
+
+function reportNavigationGroupFor(moduleId) {
+    return reportsNavigationGroups.find(group => group.reports.some(([id]) => id === moduleId))?.id || null;
+}
 
 // Temporary Live Editing State for Balancing & Reconciliation
 let balancingInputs = {};
@@ -104,13 +127,28 @@ async function loadReportOrdersFromServer() {
 // Set Active Report Screen
 function openReportModule(moduleId) {
     if (typeof canAccessReportModule === 'function' && !canAccessReportModule(moduleId)) {
-        if (typeof showToast === 'function') {
-            showToast(typeof currentLang !== 'undefined' && currentLang === 'ar' ? "غير مصرح: لا تملك صلاحية الوصول للتقارير" : "ACCESS DENIED: Insufficient permissions", "danger");
-        }
+        if (typeof showToast === 'function') showToast(currentLang === 'ar' ? '\u0644\u0627 \u062a\u0645\u0644\u0643 \u0635\u0644\u0627\u062d\u064a\u0629 \u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u062a\u0642\u0627\u0631\u064a\u0631' : 'ACCESS DENIED: Insufficient permissions', 'danger');
         if (typeof switchView === 'function') switchView('pos');
         return;
     }
     activeReportModule = moduleId;
+    const parentGroup = reportNavigationGroupFor(moduleId);
+    reportsPageActive = Boolean(parentGroup || moduleId === zakatReportNavigationItem[0]);
+    if (parentGroup) reportsNavigationExpanded[parentGroup] = true;
+    switchView('reports_screen');
+    renderActiveReport();
+    closeSideDrawer();
+}
+
+function openReportsPage() {
+    if (!canAccessReports()) {
+        if (typeof showToast === 'function') showToast('Access Denied: Reports permission required', 'danger');
+        closeSideDrawer();
+        return;
+    }
+    activeReportModule = null;
+    reportsPageActive = true;
+    Object.keys(reportsNavigationExpanded).forEach(groupId => { reportsNavigationExpanded[groupId] = false; });
     switchView('reports_screen');
     renderActiveReport();
     closeSideDrawer();
@@ -119,47 +157,60 @@ function openReportModule(moduleId) {
 function renderReportsNavigation() {
     const list = document.getElementById('reportsNavigationList');
     if (!list) return;
-    const source = document.getElementById('drawerReportsSubmenu');
-    if (!source) return;
+    const rail = document.getElementById('reportsNavigation');
+    if (rail) rail.hidden = !reportsPageActive;
+    if (!reportsPageActive) {
+        list.innerHTML = '';
+        return;
+    }
     list.innerHTML = '';
-    const group = document.createElement('button');
-    group.type = 'button';
-    group.className = 'reports-navigation-group';
-    group.setAttribute('aria-expanded', String(reportsNavigationExpanded));
-    group.innerHTML = `<i class="fa-solid fa-chart-line"></i><span>${escapeHtml(i18n?.[currentLang]?.drawer_rep_sales || (currentLang === 'ar' ? 'تقارير المبيعات' : 'Sales Reports'))}</span><i class="fa-solid ${reportsNavigationExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} reports-group-chevron"></i>`;
-    list.appendChild(group);
-    const appendReport = (item, isChild = false) => {
-        const id = item.getAttribute('data-report-id');
+    const translate = key => i18n?.[currentLang]?.[key] || '';
+    const appendReport = (item, isChild, target) => {
+        const id = item[0], icon = item[1], labelKey = item[2];
         if (!canAccessReportModule(id)) return;
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = `reports-navigation-item${isChild ? ' reports-navigation-child' : ''}`;
+        button.className = 'reports-navigation-item' + (isChild ? ' reports-navigation-child' : '');
         button.dataset.reportId = id;
-        button.setAttribute('aria-current', id === activeReportModule ? 'page' : 'false');
+        if (id === activeReportModule) button.setAttribute('aria-current', 'page');
         button.classList.toggle('active', id === activeReportModule);
-        button.innerHTML = item.innerHTML;
-        button.querySelectorAll('[data-i18n]').forEach(label => {
-            const key = label.getAttribute('data-i18n');
-            if (i18n?.[currentLang]?.[key]) label.textContent = i18n[currentLang][key];
-        });
-        button.hidden = isChild && !reportsNavigationExpanded;
-        list.appendChild(button);
+        const label = translate(labelKey) || (id === zakatReportNavigationItem[0] ? 'Zakat Invoices Report' : id);
+        button.innerHTML = '<i class="fa-solid ' + icon + '" aria-hidden="true"></i><span>' + escapeHtml(label) + '</span>';
+        target.appendChild(button);
     };
-    source.querySelectorAll('.drawer-sub-item[data-report-id]').forEach(item => appendReport(item, true));
-    document.querySelectorAll('.drawer-menu-item[data-report-id]').forEach(item => {
-        appendReport(item);
+    reportsNavigationGroups.forEach(group => {
+        const expanded = reportsNavigationExpanded[group.id];
+        const heading = document.createElement('button');
+        heading.type = 'button';
+        heading.className = 'reports-navigation-group';
+        heading.setAttribute('aria-expanded', String(expanded));
+        heading.setAttribute('aria-controls', 'reports-group-' + group.id);
+        heading.innerHTML = '<i class="fa-solid ' + group.icon + '" aria-hidden="true"></i><span>' + escapeHtml(translate(group.translationKey) || group.label) + '</span><i class="fa-solid ' + (expanded ? 'fa-chevron-up' : 'fa-chevron-down') + ' reports-group-chevron" aria-hidden="true"></i>';
+        list.appendChild(heading);
+        const children = document.createElement('div');
+        children.className = 'reports-navigation-children';
+        children.id = 'reports-group-' + group.id;
+        children.hidden = !expanded;
+        group.reports.forEach(item => appendReport(item, true, children));
+        list.appendChild(children);
     });
-    if (!list.dataset?.eventsBound && typeof list.addEventListener === 'function') {
+    appendReport(zakatReportNavigationItem, false, list);
+    if (!list.dataset.eventsBound) {
         list.addEventListener('click', event => {
-            if (event.target.closest('.reports-navigation-group')) {
-                reportsNavigationExpanded = !reportsNavigationExpanded;
+            const groupButton = event.target.closest('.reports-navigation-group');
+            if (groupButton) {
+                const groupId = groupButton.getAttribute('aria-controls').replace('reports-group-', '');
+                reportsNavigationExpanded[groupId] = !reportsNavigationExpanded[groupId];
                 renderReportsNavigation();
+                [...list.querySelectorAll('.reports-navigation-group')]
+                    .find(button => button.getAttribute('aria-controls') === 'reports-group-' + groupId)
+                    ?.focus();
                 return;
             }
             const item = event.target.closest('.reports-navigation-item[data-report-id]');
             if (item) openReportModule(item.dataset.reportId);
         });
-        if (list.dataset) list.dataset.eventsBound = 'true';
+        list.dataset.eventsBound = 'true';
     }
 }
 
@@ -170,6 +221,12 @@ function renderActiveReport() {
     renderReportsNavigation();
     const reportsLabel = document.querySelector('.reports-navigation-heading [data-i18n="reports_nav"]');
     if (reportsLabel) reportsLabel.textContent = i18n?.[currentLang]?.reports_nav || (currentLang === 'ar' ? 'التقارير' : 'Reports');
+
+    if (!activeReportModule) {
+        const prompt = currentLang === 'ar' ? '\u0627\u062e\u062a\u0631 \u062a\u0642\u0631\u064a\u0631\u0627\u064b \u0644\u0639\u0631\u0636\u0647' : 'Select a report to view it.';
+        container.innerHTML = '<div class="reports-empty-state"><i class="fa-solid fa-chart-line" aria-hidden="true"></i><p>' + escapeHtml(prompt) + '</p></div>';
+        return;
+    }
 
     const requestedRange = `${reportDateFrom}|${reportDateTo}`;
     if (currentUser && currentUser.role !== 'guest' && reportOrdersRange !== requestedRange) {
